@@ -69,11 +69,11 @@ export default function NextStepCRM() {
         city: 'Arlington',
         state: 'VA',
         zip_code: '22201',
-        property_type: 'single_family' as const,
+        property_type: 'single_family',
         home_value: 450000,
         desired_proceeds: 200000,
         loan_officer: 'Sarah Mitchell',
-        pipeline_status: 'qualified' as const,
+        pipeline_status: 'qualified',
         created_at: new Date().toISOString()
       },
       {
@@ -89,11 +89,11 @@ export default function NextStepCRM() {
         city: 'Bethesda',
         state: 'MD',
         zip_code: '20814',
-        property_type: 'condo' as const,
+        property_type: 'condo',
         home_value: 620000,
         desired_proceeds: 150000,
         loan_officer: 'James Parker',
-        pipeline_status: 'counseling' as const,
+        pipeline_status: 'counseling',
         created_at: new Date().toISOString()
       }
     ])
