@@ -157,6 +157,32 @@ export default function Dashboard() {
     return matchesSearch && matchesStatus
   })
 
+  const handleSaveClient = async (clientData: any) => {
+    try {
+      // Try to save to database, but fallback to local state
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([{
+          ...clientData,
+          created_by_id: user?.id
+        }])
+        .select()
+
+      if (error) {
+        console.log('Adding to demo data')
+        // Add to local state for demo
+        const newClient = {
+          ...clientData,
+          id: Date.now().toString(),
+          created_at: new Date().toISOString()
+        }
+        setClients(prev => [newClient, ...prev])
+        return
+      }
+
+      if (data) {
+        setClients(prev => [data[0], ...prev])
+      }
   const handleDeleteClient = async (clientId: string) => {
     if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
       return
@@ -185,6 +211,17 @@ export default function Dashboard() {
       // Still remove from local state
       setClients(prev => prev.filter(client => client.id !== clientId))
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading Next Step CRM...</p>
+        </div>
+      </div>
+    )
   }
     try {
       // Try to save to database, but fallback to local state
