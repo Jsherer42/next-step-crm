@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Eye, User } from 'lucide-react'
+import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
 
 // Client interface
 interface Client {
@@ -33,6 +33,7 @@ export default function Home() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
 
   const supabase = createClientComponentClient()
 
@@ -119,6 +120,68 @@ export default function Home() {
     }
   }
 
+  const handleSaveClient = async (clientData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([clientData])
+        .select()
+
+      if (error) {
+        console.log('Database error, adding to local state:', error.message)
+        const newClient = {
+          ...clientData,
+          id: Date.now().toString(),
+          created_at: new Date().toISOString()
+        }
+        setClients(prev => [newClient, ...prev])
+      } else {
+        setClients(prev => [data[0], ...prev])
+      }
+      setShowAddForm(false)
+    } catch (error) {
+      console.log('Error saving client, adding locally')
+      const newClient = {
+        ...clientData,
+        id: Date.now().toString(),
+        created_at: new Date().toISOString()
+      }
+      setClients(prev => [newClient, ...prev])
+      setShowAddForm(false)
+    }
+  }
+
+  const handleDeleteClient = async (clientId: string) => {
+    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId)
+
+      if (error) {
+        console.log('Database error, removing from local state:', error.message)
+      }
+      
+      // Remove from local state regardless of database result
+      setClients(prev => prev.filter(c => c.id !== clientId))
+      
+      // Close detail modal if we're viewing the deleted client
+      if (selectedClient?.id === clientId) {
+        setSelectedClient(null)
+      }
+    } catch (error) {
+      console.log('Error deleting from database, removing locally')
+      setClients(prev => prev.filter(c => c.id !== clientId))
+      if (selectedClient?.id === clientId) {
+        setSelectedClient(null)
+      }
+    }
+  }
+
   // Utility functions
   const calculateAge = (dateOfBirth: string) => {
     const today = new Date()
@@ -142,14 +205,14 @@ export default function Home() {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      'new_lead': 'bg-blue-500 text-white',
-      'qualified': 'bg-green-500 text-white',
-      'counseling': 'bg-amber-500 text-white',
-      'application': 'bg-purple-500 text-white',
-      'processing': 'bg-orange-500 text-white',
-      'closed': 'bg-gray-500 text-white'
+      'new_lead': 'bg-blue-500/80 text-white',
+      'qualified': 'bg-green-500/80 text-white',
+      'counseling': 'bg-amber-500/80 text-white',
+      'application': 'bg-purple-500/80 text-white',
+      'processing': 'bg-orange-500/80 text-white',
+      'closed': 'bg-gray-500/80 text-white'
     }
-    return colors[status as keyof typeof colors] || 'bg-gray-500 text-white'
+    return colors[status as keyof typeof colors] || 'bg-gray-500/80 text-white'
   }
 
   if (loading) {
@@ -164,75 +227,114 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 20%, #059669 40%, #10b981 60%, #0ea5e9 80%, #1d4ed8 100%)',
+      backgroundSize: '400% 400%',
+      animation: 'gradientShift 15s ease infinite'
+    }}>
+      <style jsx>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+      `}</style>
+
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-white/5 rounded-full animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-green-400/10 rounded-full" style={{animation: 'float 6s ease-in-out infinite'}}></div>
+        <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-blue-400/10 rounded-full" style={{animation: 'float 8s ease-in-out infinite delay-2s'}}></div>
+        <div className="absolute bottom-20 right-1/3 w-28 h-28 bg-white/5 rounded-full animate-pulse"></div>
+      </div>
+
       {/* Header */}
-      <div className="bg-white shadow-lg border-b border-gray-200">
+      <div className="bg-white/10 backdrop-blur-md shadow-2xl border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <HomeIcon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Next Step</h1>
-                <p className="text-blue-600 font-semibold">City First FHA Retirement CRM</p>
+              <div className="flex items-center space-x-4">
+                {/* Enhanced City First Logo */}
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300" style={{animation: 'pulse 3s ease-in-out infinite'}}>
+                  <HomeIcon className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold text-white drop-shadow-lg">
+                    Next Step
+                  </h1>
+                  <p className="text-blue-100 font-semibold text-lg">City First FHA Retirement CRM</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <button 
                 onClick={() => setShowAddForm(true)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-2xl hover:shadow-green-500/25 hover:scale-110 transition-all duration-300 transform hover:-translate-y-1"
+                style={{animation: 'pulse 2s ease-in-out infinite'}}
               >
-                <Plus className="w-5 h-5 mr-2" />
+                <Plus className="w-6 h-6 mr-3" />
                 Add New Client
               </button>
+              <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-xl border border-white/30 shadow-xl">
+                <div className="text-white font-semibold">
+                  Welcome, <span className="text-green-200">{user?.email || 'demo@cityfirst.com'}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/70 w-6 h-6" />
             <input
               type="text"
               placeholder="Search clients..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-12 pr-4 py-4 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl focus:ring-4 focus:ring-green-400/50 focus:border-white/50 shadow-xl text-white placeholder-white/70 text-lg font-medium hover:bg-white/25 transition-all duration-300"
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Filter className="w-5 h-5 text-gray-400" />
+          <div className="flex items-center bg-white/20 backdrop-blur-md px-6 py-4 rounded-xl border border-white/30 shadow-xl">
+            <Filter className="w-5 h-5 mr-3 text-white/80" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="bg-transparent border-none focus:ring-0 focus:outline-none text-white font-semibold text-lg"
             >
-              <option value="all">All Status</option>
-              <option value="new_lead">New Lead</option>
-              <option value="qualified">Qualified</option>
-              <option value="counseling">Counseling</option>
-              <option value="application">Application</option>
-              <option value="processing">Processing</option>
-              <option value="closed">Closed</option>
+              <option value="all" className="text-gray-800">All Status</option>
+              <option value="new_lead" className="text-gray-800">New Lead</option>
+              <option value="qualified" className="text-gray-800">Qualified</option>
+              <option value="counseling" className="text-gray-800">Counseling</option>
+              <option value="application" className="text-gray-800">Application</option>
+              <option value="processing" className="text-gray-800">Processing</option>
+              <option value="closed" className="text-gray-800">Closed</option>
             </select>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-          <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 mb-12">
+          <div className="bg-white/15 backdrop-blur-md p-6 lg:p-8 rounded-2xl shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-green-400/50 transform hover:scale-105 min-w-0">
             <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
-                <DollarSign className="w-5 h-5 lg:w-6 lg:h-6 text-green-600" />
+              <div className="p-5 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-2xl flex-shrink-0" style={{animation: 'pulse 2s ease-in-out infinite'}}>
+                <DollarSign className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
-                <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">Total Pipeline</p>
-                <p className="text-lg lg:text-2xl font-bold text-gray-900 truncate">
+              <div className="ml-6 min-w-0 flex-1">
+                <p className="text-lg font-bold text-white/90 mb-1 truncate">Total Pipeline</p>
+                <p className="text-3xl lg:text-4xl font-black text-white drop-shadow-lg truncate">
                   {formatCurrency(
                     clients.reduce((sum, client) => sum + (client.desired_proceeds || 0), 0)
                   )}
@@ -241,40 +343,40 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
+          <div className="bg-white/15 backdrop-blur-md p-6 lg:p-8 rounded-2xl shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-blue-400/50 transform hover:scale-105 min-w-0">
             <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-                <Calendar className="w-5 h-5 lg:w-6 lg:h-6 text-blue-600" />
+              <div className="p-5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-2xl flex-shrink-0" style={{animation: 'pulse 2.5s ease-in-out infinite'}}>
+                <Calendar className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
-                <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">Active Clients</p>
-                <p className="text-lg lg:text-2xl font-bold text-gray-900">{filteredClients.length}</p>
+              <div className="ml-6 min-w-0 flex-1">
+                <p className="text-lg font-bold text-white/90 mb-1 truncate">Active Clients</p>
+                <p className="text-3xl lg:text-4xl font-black text-white drop-shadow-lg">{filteredClients.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
+          <div className="bg-white/15 backdrop-blur-md p-6 lg:p-8 rounded-2xl shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-orange-400/50 transform hover:scale-105 min-w-0">
             <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-lg flex-shrink-0">
-                <Phone className="w-5 h-5 lg:w-6 lg:h-6 text-orange-600" />
+              <div className="p-5 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-2xl flex-shrink-0" style={{animation: 'pulse 3s ease-in-out infinite'}}>
+                <Phone className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
-                <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">New Leads</p>
-                <p className="text-lg lg:text-2xl font-bold text-gray-900">
+              <div className="ml-6 min-w-0 flex-1">
+                <p className="text-lg font-bold text-white/90 mb-1 truncate">New Leads</p>
+                <p className="text-3xl lg:text-4xl font-black text-white drop-shadow-lg">
                   {clients.filter(c => c.pipeline_status === 'new_lead').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
+          <div className="bg-white/15 backdrop-blur-md p-6 lg:p-8 rounded-2xl shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-emerald-400/50 transform hover:scale-105 min-w-0">
             <div className="flex items-center">
-              <div className="p-3 bg-emerald-100 rounded-lg flex-shrink-0">
-                <HomeIcon className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
+              <div className="p-5 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl shadow-2xl flex-shrink-0" style={{animation: 'pulse 3.5s ease-in-out infinite'}}>
+                <HomeIcon className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
-                <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">Qualified</p>
-                <p className="text-lg lg:text-2xl font-bold text-gray-900">
+              <div className="ml-6 min-w-0 flex-1">
+                <p className="text-lg font-bold text-white/90 mb-1 truncate">Qualified</p>
+                <p className="text-3xl lg:text-4xl font-black text-white drop-shadow-lg">
                   {clients.filter(c => c.pipeline_status === 'qualified').length}
                 </p>
               </div>
@@ -289,62 +391,71 @@ export default function Home() {
             const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
             
             return (
-              <div key={client.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-                <div className="flex justify-between items-start mb-4">
+              <div key={client.id} className="bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl hover:shadow-white/10 hover:-translate-y-4 transition-all duration-500 ease-in-out border-l-4 border-green-400 hover:border-green-300 p-8 hover:bg-white/25 border border-white/30 transform hover:scale-105 hover:rotate-1">
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-2xl font-bold text-white drop-shadow-lg hover:text-green-200 transition-all duration-300">
                       {client.first_name} {client.last_name}
                     </h3>
-                    <p className="text-gray-600">Age {age}</p>
+                    <p className="text-white/80 font-semibold text-lg">Age {age}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(client.pipeline_status)}`}>
+                  <span className={`px-5 py-3 rounded-xl text-sm font-bold ${getStatusColor(client.pipeline_status)} shadow-xl hover:shadow-2xl transition-all duration-300 border border-white/30 transform hover:scale-110`}>
                     {client.pipeline_status.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center text-gray-600">
-                      <Phone className="w-4 h-4 mr-2" />
-                      <span className="text-sm">{client.phone}</span>
+                <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center text-white/90">
+                      <Phone className="w-5 h-5 mr-3 text-green-300" />
+                      <span className="font-medium">{client.phone}</span>
                     </div>
-                    <div className="flex items-center text-gray-600">
-                      <Mail className="w-4 h-4 mr-2" />
-                      <span className="text-sm">{client.email || 'No email'}</span>
+                    <div className="flex items-center text-white/90">
+                      <Mail className="w-5 h-5 mr-3 text-blue-300" />
+                      <span className="font-medium">{client.email || 'No email'}</span>
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <div className="flex items-center text-gray-600">
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      <span className="text-sm">Home: {formatCurrency(client.home_value)}</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center text-white/90">
+                      <DollarSign className="w-5 h-5 mr-3 text-green-300" />
+                      <span className="font-medium">Home: {formatCurrency(client.home_value)}</span>
                     </div>
-                    <div className="flex items-center text-gray-600">
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      <span className="text-sm">Desired: {formatCurrency(client.desired_proceeds)}</span>
+                    <div className="flex items-center text-white/90">
+                      <DollarSign className="w-5 h-5 mr-3 text-emerald-300" />
+                      <span className="font-medium">Desired: {formatCurrency(client.desired_proceeds)}</span>
                     </div>
                   </div>
                 </div>
 
                 {client.is_married && client.spouse_first_name && (
-                  <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-                    <span className="text-blue-800 text-sm font-medium">
+                  <div className="mb-6 p-4 bg-blue-400/20 backdrop-blur-sm rounded-xl border border-blue-300/30">
+                    <span className="text-blue-100 font-semibold">
                       👫 Married to {client.spouse_first_name} {client.spouse_last_name} (Age {spouseAge})
                     </span>
                   </div>
                 )}
 
-                <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                  <div className="text-gray-600 text-sm">
-                    <div>Source: <span className="font-medium">{client.lead_source || 'Unknown'}</span></div>
+                <div className="flex justify-between items-center pt-6 border-t border-white/20">
+                  <div className="text-white/80 font-medium">
+                    <div>Source: <span className="text-green-200 font-bold">{client.lead_source || 'Unknown'}</span></div>
                   </div>
-                  <button 
-                    onClick={() => setSelectedClient(client)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    View
-                  </button>
+                  <div className="flex space-x-3">
+                    <button 
+                      onClick={() => setSelectedClient(client)}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-5 py-3 rounded-xl font-bold shadow-2xl hover:shadow-blue-500/25 hover:scale-110 transition-all duration-300 flex items-center transform hover:-translate-y-1"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      View
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteClient(client.id)}
+                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-5 py-3 rounded-xl font-bold shadow-2xl hover:shadow-red-500/25 hover:scale-110 transition-all duration-300 flex items-center transform hover:-translate-y-1"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             )
@@ -353,8 +464,8 @@ export default function Home() {
 
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-lg">No clients found</div>
-            <p className="text-gray-500 mt-2">Add your first client to get started!</p>
+            <div className="text-white/60 text-lg">No clients found</div>
+            <p className="text-white/40 mt-2">Add your first client to get started!</p>
           </div>
         )}
       </div>
@@ -371,22 +482,14 @@ export default function Home() {
       {showAddForm && (
         <AddClientForm 
           onClose={() => setShowAddForm(false)} 
-          onSave={(clientData) => {
-            const newClient = {
-              ...clientData,
-              id: Date.now().toString(),
-              created_at: new Date().toISOString()
-            }
-            setClients(prev => [newClient, ...prev])
-            setShowAddForm(false)
-          }} 
+          onSave={handleSaveClient} 
         />
       )}
     </div>
   )
 }
 
-// Simple Client Detail Modal
+// Client Detail Modal Component
 function ClientDetailModal({ client, onClose }: { client: Client, onClose: () => void }) {
   const age = new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()
   const spouseAge = client.spouse_date_of_birth ? 
@@ -402,44 +505,44 @@ function ClientDetailModal({ client, onClose }: { client: Client, onClose: () =>
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/30">
+        <div className="p-8">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">
                 {client.first_name} {client.last_name}
               </h2>
-              <p className="text-gray-600">Age {age} • {client.pipeline_status.replace('_', ' ').toUpperCase()}</p>
+              <p className="text-gray-600 text-lg">Age {age} • {client.pipeline_status.replace('_', ' ').toUpperCase()}</p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              ✕
+              <X className="w-6 h-6 text-gray-500" />
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-4">
-              <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center p-4 bg-blue-50 rounded-xl">
                 <Phone className="w-5 h-5 mr-3 text-blue-600" />
                 <span className="font-medium text-gray-700">{client.phone}</span>
               </div>
               
-              <div className="flex items-center p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center p-4 bg-green-50 rounded-xl">
                 <Mail className="w-5 h-5 mr-3 text-green-600" />
                 <span className="font-medium text-gray-700">{client.email || 'No email provided'}</span>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+              <div className="flex items-center p-4 bg-emerald-50 rounded-xl">
                 <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
                 <span className="font-medium text-gray-700">Home Value: {formatCurrency(client.home_value)}</span>
               </div>
               
-              <div className="flex items-center p-3 bg-purple-50 rounded-lg">
+              <div className="flex items-center p-4 bg-purple-50 rounded-xl">
                 <DollarSign className="w-5 h-5 mr-3 text-purple-600" />
                 <span className="font-medium text-gray-700">Desired: {formatCurrency(client.desired_proceeds)}</span>
               </div>
@@ -447,7 +550,7 @@ function ClientDetailModal({ client, onClose }: { client: Client, onClose: () =>
           </div>
 
           {client.is_married && client.spouse_first_name && (
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="mb-6 p-6 bg-blue-50 rounded-xl border border-blue-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-2">👫 Spouse Information</h3>
               <p className="text-gray-700">
                 <strong>{client.spouse_first_name} {client.spouse_last_name}</strong> (Age {spouseAge})
@@ -456,12 +559,12 @@ function ClientDetailModal({ client, onClose }: { client: Client, onClose: () =>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-gray-50 rounded-xl">
               <h4 className="font-semibold text-gray-800 mb-2">Lead Source</h4>
               <p className="text-gray-600">{client.lead_source || 'Unknown'}</p>
             </div>
             
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-gray-50 rounded-xl">
               <h4 className="font-semibold text-gray-800 mb-2">Mortgage Balance</h4>
               <p className="text-gray-600">{formatCurrency(client.mortgage_balance)}</p>
             </div>
@@ -470,7 +573,7 @@ function ClientDetailModal({ client, onClose }: { client: Client, onClose: () =>
           <div className="mt-8 flex justify-end">
             <button
               onClick={onClose}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold"
             >
               Close
             </button>
@@ -481,7 +584,7 @@ function ClientDetailModal({ client, onClose }: { client: Client, onClose: () =>
   )
 }
 
-// Simple Add Client Form
+// Add Client Form Component
 function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data: any) => void }) {
   const [formData, setFormData] = useState({
     first_name: '',
@@ -501,9 +604,69 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data
     assigned_loan_officer_id: ''
   })
 
+  const [errors, setErrors] = useState<{[key: string]: string}>({})
+
+  const loanOfficers = [
+    { id: 'jeremiah_sherer', name: 'Jeremiah Sherer' },
+    { id: 'christian_ford', name: 'Christian Ford' },
+    { id: 'jon_ford', name: 'Jon Ford' },
+    { id: 'ahmed_samura', name: 'Ahmed Samura' },
+    { id: 'ryan_sterling', name: 'Ryan Sterling' },
+    { id: 'spencer_kline', name: 'Spencer Kline' }
+  ]
+
+  const leadSources = [
+    'Forward Referral',
+    'Realtor Referral', 
+    'Mailer',
+    'Website',
+    'Phone Call',
+    'Walk-in',
+    'Social Media',
+    'Other'
+  ]
+
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {}
+
+    if (!formData.first_name.trim()) newErrors.first_name = 'First name is required'
+    if (!formData.last_name.trim()) newErrors.last_name = 'Last name is required'
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
+    if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required'
+
+    // Age validation (must be 62+)
+    if (formData.date_of_birth) {
+      const age = new Date().getFullYear() - new Date(formData.date_of_birth).getFullYear()
+      if (age < 62) {
+        newErrors.date_of_birth = 'Client must be 62 or older for reverse mortgage'
+      }
+    }
+
+    // Spouse validation if married
+    if (formData.is_married) {
+      if (!formData.spouse_first_name.trim()) newErrors.spouse_first_name = 'Spouse first name is required'
+      if (!formData.spouse_last_name.trim()) newErrors.spouse_last_name = 'Spouse last name is required'
+      if (!formData.spouse_date_of_birth) newErrors.spouse_date_of_birth = 'Spouse date of birth is required'
+      
+      if (formData.spouse_date_of_birth) {
+        const spouseAge = new Date().getFullYear() - new Date(formData.spouse_date_of_birth).getFullYear()
+        if (spouseAge < 62) {
+          newErrors.spouse_date_of_birth = 'Spouse must also be 62 or older'
+        }
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!validateForm()) {
+      return
+    }
+
     const clientData = {
       ...formData,
       home_value: formData.home_value ? parseInt(formData.home_value) : null,
@@ -519,54 +682,56 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Add New Client</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/30">
+        <div className="p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800">Add New Client</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              ✕
+              <X className="w-6 h-6 text-gray-500" />
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Personal Information */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
                 <input
                   type="text"
-                  required
                   value={formData.first_name}
                   onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.first_name ? 'border-red-500' : 'border-gray-300'}`}
                 />
+                {errors.first_name && <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
                 <input
                   type="text"
-                  required
                   value={formData.last_name}
                   onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.last_name ? 'border-red-500' : 'border-gray-300'}`}
                 />
+                {errors.last_name && <p className="text-red-500 text-sm mt-1">{errors.last_name}</p>}
               </div>
             </div>
 
+            {/* Contact Information */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
                 <input
                   type="tel"
-                  required
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                 />
+                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
               </div>
 
               <div>
@@ -575,22 +740,24 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
 
+            {/* Date of Birth */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
               <input
                 type="date"
-                required
                 value={formData.date_of_birth}
                 onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.date_of_birth ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.date_of_birth && <p className="text-red-500 text-sm mt-1">{errors.date_of_birth}</p>}
             </div>
 
+            {/* Marital Status */}
             <div>
               <label className="flex items-center space-x-3">
                 <input
@@ -603,44 +770,49 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data
               </label>
             </div>
 
+            {/* Spouse Information */}
             {formData.is_married && (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Spouse Information</h3>
                 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Spouse First Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Spouse First Name *</label>
                     <input
                       type="text"
                       value={formData.spouse_first_name}
                       onChange={(e) => setFormData({...formData, spouse_first_name: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.spouse_first_name ? 'border-red-500' : 'border-gray-300'}`}
                     />
+                    {errors.spouse_first_name && <p className="text-red-500 text-sm mt-1">{errors.spouse_first_name}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Spouse Last Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Spouse Last Name *</label>
                     <input
                       type="text"
                       value={formData.spouse_last_name}
                       onChange={(e) => setFormData({...formData, spouse_last_name: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.spouse_last_name ? 'border-red-500' : 'border-gray-300'}`}
                     />
+                    {errors.spouse_last_name && <p className="text-red-500 text-sm mt-1">{errors.spouse_last_name}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Spouse Date of Birth</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Spouse Date of Birth *</label>
                   <input
                     type="date"
                     value={formData.spouse_date_of_birth}
                     onChange={(e) => setFormData({...formData, spouse_date_of_birth: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.spouse_date_of_birth ? 'border-red-500' : 'border-gray-300'}`}
                   />
+                  {errors.spouse_date_of_birth && <p className="text-red-500 text-sm mt-1">{errors.spouse_date_of_birth}</p>}
                 </div>
               </div>
             )}
 
+            {/* Financial Information */}
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Home Value</label>
@@ -648,7 +820,7 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data
                   type="number"
                   value={formData.home_value}
                   onChange={(e) => setFormData({...formData, home_value: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="450000"
                 />
               </div>
@@ -659,7 +831,7 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data
                   type="number"
                   value={formData.mortgage_balance}
                   onChange={(e) => setFormData({...formData, mortgage_balance: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="125000"
                 />
               </div>
@@ -670,42 +842,55 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data
                   type="number"
                   value={formData.desired_proceeds}
                   onChange={(e) => setFormData({...formData, desired_proceeds: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="200000"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Lead Source</label>
-              <select
-                value={formData.lead_source}
-                onChange={(e) => setFormData({...formData, lead_source: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select lead source...</option>
-                <option value="Forward Referral">Forward Referral</option>
-                <option value="Realtor Referral">Realtor Referral</option>
-                <option value="Mailer">Mailer</option>
-                <option value="Website">Website</option>
-                <option value="Phone Call">Phone Call</option>
-                <option value="Walk-in">Walk-in</option>
-                <option value="Social Media">Social Media</option>
-                <option value="Other">Other</option>
-              </select>
+            {/* Lead Information */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lead Source</label>
+                <select
+                  value={formData.lead_source}
+                  onChange={(e) => setFormData({...formData, lead_source: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select lead source...</option>
+                  {leadSources.map(source => (
+                    <option key={source} value={source}>{source}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Loan Officer</label>
+                <select
+                  value={formData.assigned_loan_officer_id}
+                  onChange={(e) => setFormData({...formData, assigned_loan_officer_id: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select loan officer...</option>
+                  {loanOfficers.map(officer => (
+                    <option key={officer.id} value={officer.id}>{officer.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
+            {/* Form Actions */}
             <div className="flex justify-end space-x-4 pt-6">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:scale-105 transition-all duration-200 font-semibold"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 font-semibold"
               >
                 Save Client
               </button>
