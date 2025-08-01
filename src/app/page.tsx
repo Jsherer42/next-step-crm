@@ -385,16 +385,18 @@ export default function NextStepCRM() {
                         <Home className="w-4 h-4 mr-1" />
                         <span>{client.city}, {client.state}</span>
                       </div>
-                      <button
-                        onClick={() => window.open(getZillowUrl(client.street_address, client.city, client.state, client.zip_code), '_blank')}
-                        className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center"
-                        title="View on Zillow"
-                      >
-                        🏠 Zillow
-                      </button>
+                      {client.street_address && (
+                        <button
+                          onClick={() => window.open(getZillowUrl(client.street_address, client.city, client.state, client.zip_code), '_blank')}
+                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center"
+                          title="View on Zillow"
+                        >
+                          🏠 Zillow
+                        </button>
+                      )}
                     </div>
                     <div className="mt-1">
-                      {client.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} • {formatCurrency(client.home_value)}
+                      {client.property_type && client.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} • {formatCurrency(client.home_value)}
                     </div>
                   </div>
                 </div>
@@ -832,17 +834,19 @@ export default function NextStepCRM() {
                           </span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => window.open(getZillowUrl(selectedClient.street_address, selectedClient.city, selectedClient.state, selectedClient.zip_code), '_blank')}
-                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors flex items-center ml-2"
-                        title="View on Zillow"
-                      >
-                        🏠 Zillow
-                      </button>
+                      {selectedClient.street_address && (
+                        <button
+                          onClick={() => window.open(getZillowUrl(selectedClient.street_address, selectedClient.city, selectedClient.state, selectedClient.zip_code), '_blank')}
+                          className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors flex items-center ml-2"
+                          title="View on Zillow"
+                        >
+                          🏠 Zillow
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
                       <Home className="w-5 h-5 mr-3 text-emerald-600" />
-                      <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                      <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type && selectedClient.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
                     </div>
                     <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
                       <DollarSign className="w-5 h-5 mr-3 text-emerald-600" />
