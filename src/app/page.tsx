@@ -207,7 +207,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(135deg, #e0f2fe 0%, #f8fafc 25%, #f0fdfa 50%, #f8fafc 75%, #e8f5e8 100%)'
+    }}>
       {/* Header */}
       <div className="bg-gradient-to-r from-white/95 to-white/90 backdrop-blur-sm shadow-lg border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
