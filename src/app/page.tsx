@@ -60,7 +60,7 @@ export default function Home() {
     },
     {
       id: '2',
-      first_name: 'Margaret',
+      first_name: 'Margaret',  
       last_name: 'Williams',
       phone: '(555) 987-6543',
       email: 'margaret.williams@email.com',
@@ -188,9 +188,12 @@ export default function Home() {
     const birthDate = new Date(dateOfBirth)
     let age = today.getFullYear() - birthDate.getFullYear()
     const monthDiff = today.getMonth() - birthDate.getMonth()
+    
+    // Adjust age if birthday hasn't occurred this year
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--
     }
+    
     return age
   }
 
@@ -205,14 +208,14 @@ export default function Home() {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      'new_lead': 'bg-blue-500/80 text-white',
-      'qualified': 'bg-green-500/80 text-white',
-      'counseling': 'bg-amber-500/80 text-white',
-      'application': 'bg-purple-500/80 text-white',
-      'processing': 'bg-orange-500/80 text-white',
-      'closed': 'bg-gray-500/80 text-white'
+      'new_lead': 'bg-slate-100 text-slate-800',
+      'qualified': 'bg-green-100 text-green-800',
+      'counseling': 'bg-amber-100 text-amber-800',
+      'application': 'bg-blue-100 text-blue-800',
+      'processing': 'bg-orange-100 text-orange-800',
+      'closed': 'bg-green-200 text-green-900'
     }
-    return colors[status as keyof typeof colors] || 'bg-gray-500/80 text-white'
+    return colors[status as keyof typeof colors] || 'bg-slate-100 text-slate-800'
   }
 
   if (loading) {
@@ -285,7 +288,7 @@ export default function Home() {
               </button>
               <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-xl border border-white/30 shadow-xl">
                 <div className="text-white font-semibold">
-                  Welcome, <span className="text-green-200">{user?.email || 'demo@cityfirst.com'}</span>
+                  Welcome, <span className="text-green-200">demo@cityfirst.com</span>
                 </div>
               </div>
             </div>
@@ -316,7 +319,7 @@ export default function Home() {
             >
               <option value="all" className="text-gray-800">All Status</option>
               <option value="new_lead" className="text-gray-800">New Lead</option>
-              <option value="qualified" className="text-gray-800">Qualified</option>
+              <option value="qualified" className="text-gray-800">Qualified</option>  
               <option value="counseling" className="text-gray-800">Counseling</option>
               <option value="application" className="text-gray-800">Application</option>
               <option value="processing" className="text-gray-800">Processing</option>
@@ -325,59 +328,47 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 mb-12">
-          <div className="bg-white/15 backdrop-blur-md p-6 lg:p-8 rounded-2xl shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-green-400/50 transform hover:scale-105 min-w-0">
-            <div className="flex items-center">
-              <div className="p-5 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-2xl flex-shrink-0" style={{animation: 'pulse 2s ease-in-out infinite'}}>
-                <DollarSign className="w-8 h-8 text-white" />
+        {/* Stats Cards - ENHANCED Total Pipeline */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          {/* FEATURED Total Pipeline - Extra Prominent */}
+          <div className="md:col-span-2 bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-green-400/50 transform hover:scale-105">
+            <div className="flex items-center justify-center">
+              <div className="p-6 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 2s ease-in-out infinite'}}>
+                <DollarSign className="w-12 h-12 text-white" />
               </div>
-              <div className="ml-6 min-w-0 flex-1">
-                <p className="text-lg font-bold text-white/90 mb-1 truncate">Total Pipeline</p>
-                <p className="text-3xl lg:text-4xl font-black text-white drop-shadow-lg truncate">
+              <div className="ml-8 text-center">
+                <p className="text-2xl font-bold text-white/90 mb-2">💰 Total Pipeline</p>
+                <p className="text-5xl font-black text-white drop-shadow-lg">
                   {formatCurrency(
                     clients.reduce((sum, client) => sum + (client.desired_proceeds || 0), 0)
                   )}
                 </p>
+                <p className="text-green-200 font-semibold mt-1">Revenue Potential</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white/15 backdrop-blur-md p-6 lg:p-8 rounded-2xl shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-blue-400/50 transform hover:scale-105 min-w-0">
+          <div className="bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-blue-400/50 transform hover:scale-105">
             <div className="flex items-center">
-              <div className="p-5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-2xl flex-shrink-0" style={{animation: 'pulse 2.5s ease-in-out infinite'}}>
+              <div className="p-5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 2.5s ease-in-out infinite'}}>
                 <Calendar className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-6 min-w-0 flex-1">
-                <p className="text-lg font-bold text-white/90 mb-1 truncate">Active Clients</p>
-                <p className="text-3xl lg:text-4xl font-black text-white drop-shadow-lg">{filteredClients.length}</p>
+              <div className="ml-6">
+                <p className="text-lg font-bold text-white/90 mb-1">Active Clients</p>
+                <p className="text-4xl font-black text-white drop-shadow-lg">{filteredClients.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/15 backdrop-blur-md p-6 lg:p-8 rounded-2xl shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-orange-400/50 transform hover:scale-105 min-w-0">
+          <div className="bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-orange-400/50 transform hover:scale-105">
             <div className="flex items-center">
-              <div className="p-5 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-2xl flex-shrink-0" style={{animation: 'pulse 3s ease-in-out infinite'}}>
+              <div className="p-5 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 3s ease-in-out infinite'}}>
                 <Phone className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-6 min-w-0 flex-1">
-                <p className="text-lg font-bold text-white/90 mb-1 truncate">New Leads</p>
-                <p className="text-3xl lg:text-4xl font-black text-white drop-shadow-lg">
+              <div className="ml-6">
+                <p className="text-lg font-bold text-white/90 mb-1">New Leads</p>
+                <p className="text-4xl font-black text-white drop-shadow-lg">
                   {clients.filter(c => c.pipeline_status === 'new_lead').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/15 backdrop-blur-md p-6 lg:p-8 rounded-2xl shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-emerald-400/50 transform hover:scale-105 min-w-0">
-            <div className="flex items-center">
-              <div className="p-5 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl shadow-2xl flex-shrink-0" style={{animation: 'pulse 3.5s ease-in-out infinite'}}>
-                <HomeIcon className="w-8 h-8 text-white" />
-              </div>
-              <div className="ml-6 min-w-0 flex-1">
-                <p className="text-lg font-bold text-white/90 mb-1 truncate">Qualified</p>
-                <p className="text-3xl lg:text-4xl font-black text-white drop-shadow-lg">
-                  {clients.filter(c => c.pipeline_status === 'qualified').length}
                 </p>
               </div>
             </div>
