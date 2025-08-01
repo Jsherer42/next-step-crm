@@ -21,6 +21,9 @@ interface Client {
   property_type?: string
   home_value: number
   desired_proceeds: number
+  program_type?: string
+  interest_rate?: number
+  calculated_upb?: number
   loan_officer: string
   pipeline_status: 'lead' | 'qualified' | 'counseling' | 'processing' | 'closed'
   created_at: string
@@ -59,6 +62,8 @@ export default function NextStepCRM() {
     property_type: 'single_family',
     home_value: 0,
     desired_proceeds: 0,
+    program_type: 'HECM',
+    interest_rate: 3.0,
     loan_officer: '',
     pipeline_status: 'lead' as const
   })
@@ -75,7 +80,7 @@ export default function NextStepCRM() {
         date_of_birth: '1961-03-15',
         spouse_name: 'Linda Johnson',
         spouse_date_of_birth: '1963-07-22',
-        spouse_is_nbs: false,
+        spouse_is_nbs: true,
         street_address: '1247 Maple Street',
         city: 'Arlington',
         state: 'VA',
@@ -83,6 +88,9 @@ export default function NextStepCRM() {
         property_type: 'single_family',
         home_value: 450000,
         desired_proceeds: 200000,
+        program_type: 'HECM',
+        interest_rate: 3.5,
+        calculated_upb: 0,
         loan_officer: 'Christian Ford',
         pipeline_status: 'qualified' as const,
         created_at: '2024-01-15T10:30:00Z',
@@ -102,6 +110,9 @@ export default function NextStepCRM() {
         property_type: 'condo',
         home_value: 620000,
         desired_proceeds: 150000,
+        program_type: 'Equity Plus Peak',
+        interest_rate: 0, // Not needed for Equity Plus products
+        calculated_upb: 0,
         loan_officer: 'Ahmed Samura',
         pipeline_status: 'counseling' as const,
         created_at: '2024-01-18T14:15:00Z',
@@ -242,6 +253,72 @@ export default function NextStepCRM() {
     }
   }
 
+  // PLF Tables based on your actual data
+  const EQUITY_PLUS_PLF = {
+    55: { "Equity Plus": 0.338, "Equity Plus Peak": 0.391, "Equity Plus LOC": 0.338 },
+    56: { "Equity Plus": 0.341, "Equity Plus Peak": 0.393, "Equity Plus LOC": 0.341 },
+    57: { "Equity Plus": 0.343, "Equity Plus Peak": 0.395, "Equity Plus LOC": 0.343 },
+    58: { "Equity Plus": 0.346, "Equity Plus Peak": 0.397, "Equity Plus LOC": 0.346 },
+    59: { "Equity Plus": 0.349, "Equity Plus Peak": 0.401, "Equity Plus LOC": 0.349 },
+    60: { "Equity Plus": 0.353, "Equity Plus Peak": 0.404, "Equity Plus LOC": 0.353 },
+    61: { "Equity Plus": 0.356, "Equity Plus Peak": 0.407, "Equity Plus LOC": 0.356 },
+    62: { "Equity Plus": 0.360, "Equity Plus Peak": 0.410, "Equity Plus LOC": 0.360 },
+    63: { "Equity Plus": 0.364, "Equity Plus Peak": 0.414, "Equity Plus LOC": 0.364 },
+    64: { "Equity Plus": 0.368, "Equity Plus Peak": 0.417, "Equity Plus LOC": 0.368 },
+    65: { "Equity Plus": 0.372, "Equity Plus Peak": 0.421, "Equity Plus LOC": 0.372 },
+    66: { "Equity Plus": 0.376, "Equity Plus Peak": 0.425, "Equity Plus LOC": 0.376 },
+    67: { "Equity Plus": 0.381, "Equity Plus Peak": 0.429, "Equity Plus LOC": 0.381 },
+    68: { "Equity Plus": 0.385, "Equity Plus Peak": 0.434, "Equity Plus LOC": 0.385 },
+    69: { "Equity Plus": 0.390, "Equity Plus Peak": 0.438, "Equity Plus LOC": 0.390 },
+    70: { "Equity Plus": 0.395, "Equity Plus Peak": 0.443, "Equity Plus LOC": 0.395 },
+    71: { "Equity Plus": 0.400, "Equity Plus Peak": 0.448, "Equity Plus LOC": 0.400 },
+    72: { "Equity Plus": 0.405, "Equity Plus Peak": 0.453, "Equity Plus LOC": 0.405 },
+    73: { "Equity Plus": 0.411, "Equity Plus Peak": 0.458, "Equity Plus LOC": 0.411 },
+    74: { "Equity Plus": 0.416, "Equity Plus Peak": 0.464, "Equity Plus LOC": 0.416 },
+    75: { "Equity Plus": 0.422, "Equity Plus Peak": 0.470, "Equity Plus LOC": 0.422 },
+    76: { "Equity Plus": 0.428, "Equity Plus Peak": 0.476, "Equity Plus LOC": 0.428 },
+    77: { "Equity Plus": 0.434, "Equity Plus Peak": 0.482, "Equity Plus LOC": 0.434 },
+    78: { "Equity Plus": 0.441, "Equity Plus Peak": 0.489, "Equity Plus LOC": 0.441 },
+    79: { "Equity Plus": 0.447, "Equity Plus Peak": 0.495, "Equity Plus LOC": 0.447 },
+    80: { "Equity Plus": 0.454, "Equity Plus Peak": 0.502, "Equity Plus LOC": 0.454 }
+  };
+
+  // Sample HECM PLF data (simplified - you can expand this)
+  const HECM_PLF = {
+    62: { 3.0: 0.326, 3.125: 0.326, 3.25: 0.318, 3.375: 0.308, 3.5: 0.297, 3.625: 0.288, 3.75: 0.278, 3.875: 0.269 },
+    63: { 3.0: 0.332, 3.125: 0.332, 3.25: 0.324, 3.375: 0.314, 3.5: 0.304, 3.625: 0.294, 3.75: 0.285, 3.875: 0.276 },
+    64: { 3.0: 0.339, 3.125: 0.339, 3.25: 0.331, 3.375: 0.321, 3.5: 0.311, 3.625: 0.301, 3.75: 0.292, 3.875: 0.283 },
+    65: { 3.0: 0.345, 3.125: 0.345, 3.25: 0.337, 3.375: 0.327, 3.5: 0.318, 3.625: 0.308, 3.75: 0.299, 3.875: 0.290 },
+    70: { 3.0: 0.372, 3.125: 0.372, 3.25: 0.364, 3.375: 0.355, 3.5: 0.346, 3.625: 0.337, 3.75: 0.328, 3.875: 0.319 },
+    75: { 3.0: 0.403, 3.125: 0.403, 3.25: 0.395, 3.375: 0.387, 3.5: 0.378, 3.625: 0.370, 3.75: 0.361, 3.875: 0.353 },
+    80: { 3.0: 0.438, 3.125: 0.438, 3.25: 0.431, 3.375: 0.423, 3.5: 0.415, 3.625: 0.407, 3.75: 0.399, 3.875: 0.391 }
+  };
+
+  // Calculate PLF based on age, program, and interest rate
+  const calculatePLF = (age: number, program: string, interestRate: number = 3.5) => {
+    if (["Equity Plus", "Equity Plus Peak", "Equity Plus LOC"].includes(program)) {
+      const ageData = EQUITY_PLUS_PLF[age as keyof typeof EQUITY_PLUS_PLF];
+      return ageData ? ageData[program as keyof typeof ageData] : 0;
+    } else if (program === "HECM") {
+      const ageData = HECM_PLF[age as keyof typeof HECM_PLF];
+      return ageData ? (ageData[interestRate as keyof typeof ageData] || ageData[3.5]) : 0;
+    }
+    return 0;
+  };
+
+  // Calculate UPB (Unpaid Principal Balance)
+  const calculateUPB = (homeValue: number, age: number, program: string, interestRate: number = 3.5) => {
+    const plf = calculatePLF(age, program, interestRate);
+    return Math.round(homeValue * plf);
+  };
+
+  // Get youngest client age (client or spouse)
+  const getYoungestAge = (client: Client) => {
+    const clientAge = client.date_of_birth ? calculateAge(client.date_of_birth) : 99;
+    const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : 99;
+    return Math.min(clientAge, spouseAge);
+  };
+
   // Utility function to create Zillow URL
   const getZillowUrl = (address: string, city: string, state: string, zip: string) => {
     const fullAddress = `${address}, ${city}, ${state} ${zip}`
@@ -289,7 +366,10 @@ export default function NextStepCRM() {
     return matchesSearch && matchesFilter
   })
 
-  const totalPipeline = clients.reduce((sum, client) => sum + client.desired_proceeds, 0)
+  const totalPipeline = clients.reduce((sum, client) => {
+    const upb = calculateUPB(client.home_value, getYoungestAge(client), client.program_type || 'HECM', client.interest_rate || 3.5);
+    return sum + upb;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-emerald-400 to-blue-500 animate-gradient relative overflow-hidden">
@@ -435,8 +515,21 @@ export default function NextStepCRM() {
                   <div className="font-semibold text-gray-800">{formatCurrency(client.home_value)}</div>
                 </div>
                 <div className="bg-white bg-opacity-40 rounded-lg p-3">
-                  <div className="text-xs text-gray-600 mb-1">Desired Proceeds</div>
-                  <div className="font-semibold text-emerald-600">{formatCurrency(client.desired_proceeds)}</div>
+                  <div className="text-xs text-gray-600 mb-1">Calculated UPB</div>
+                  <div className="font-semibold text-emerald-600">
+                    {formatCurrency(calculateUPB(client.home_value, getYoungestAge(client), client.program_type || 'HECM', client.interest_rate || 3.5))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-4 p-2 bg-blue-50 rounded-lg">
+                <div className="text-xs text-blue-600 mb-1">Program Details</div>
+                <div className="text-sm font-medium text-blue-800">
+                  {client.program_type || 'HECM'} 
+                  {client.program_type === 'HECM' && client.interest_rate && ` @ ${client.interest_rate}%`}
+                </div>
+                <div className="text-xs text-blue-600">
+                  Age: {getYoungestAge(client)} | PLF: {(calculatePLF(getYoungestAge(client), client.program_type || 'HECM', client.interest_rate || 3.5) * 100).toFixed(1)}%
                 </div>
               </div>
 
@@ -769,6 +862,46 @@ export default function NextStepCRM() {
                       <option value="other">Other</option>
                     </select>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Program Type *
+                    </label>
+                    <select
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={newClient.program_type}
+                      onChange={(e) => setNewClient({...newClient, program_type: e.target.value})}
+                    >
+                      <option value="">Select Program</option>
+                      <option value="HECM">HECM</option>
+                      <option value="Equity Plus">Equity Plus</option>
+                      <option value="Equity Plus Peak">Equity Plus Peak</option>
+                      <option value="Equity Plus LOC">Equity Plus LOC</option>
+                    </select>
+                  </div>
+
+                  {newClient.program_type === 'HECM' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Interest Rate
+                      </label>
+                      <select
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        value={newClient.interest_rate}
+                        onChange={(e) => setNewClient({...newClient, interest_rate: Number(e.target.value)})}
+                      >
+                        <option value={3.0}>3.0%</option>
+                        <option value={3.125}>3.125%</option>
+                        <option value={3.25}>3.25%</option>
+                        <option value={3.375}>3.375%</option>
+                        <option value={3.5}>3.5%</option>
+                        <option value={3.625}>3.625%</option>
+                        <option value={3.75}>3.75%</option>
+                        <option value={3.875}>3.875%</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Financial Information */}
