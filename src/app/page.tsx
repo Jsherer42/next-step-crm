@@ -13,6 +13,7 @@ interface Client {
   date_of_birth: string
   spouse_name?: string
   spouse_date_of_birth?: string
+  spouse_is_nbs?: boolean
   street_address?: string
   city?: string
   state?: string
@@ -36,6 +37,12 @@ export default function NextStepCRM() {
   const [newNote, setNewNote] = useState('')
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [editForm, setEditForm] = useState<Partial<Client>>({})
+  const [showAddSpouse, setShowAddSpouse] = useState<string | null>(null)
+  const [spouseForm, setSpouseForm] = useState({
+    spouse_name: '',
+    spouse_date_of_birth: '',
+    spouse_is_nbs: false
+  })
 
   const [newClient, setNewClient] = useState({
     first_name: '',
@@ -68,6 +75,7 @@ export default function NextStepCRM() {
         date_of_birth: '1961-03-15',
         spouse_name: 'Linda Johnson',
         spouse_date_of_birth: '1963-07-22',
+        spouse_is_nbs: false,
         street_address: '1247 Maple Street',
         city: 'Arlington',
         state: 'VA',
@@ -87,6 +95,7 @@ export default function NextStepCRM() {
         email: 'margaret.williams@email.com',
         phone: '(555) 987-6543',
         date_of_birth: '1958-11-08',
+        spouse_is_nbs: true,
         street_address: '892 Oak Avenue',
         city: 'Bethesda',
         state: 'MD',
@@ -102,7 +111,26 @@ export default function NextStepCRM() {
     ])
   }, [])
 
-  const handleAddNote = () => {
+  const handleAddSpouse = () => {
+    if (!spouseForm.spouse_name.trim() || !showAddSpouse) return
+
+    const updatedClients = clients.map(client => {
+      if (client.id === showAddSpouse) {
+        return {
+          ...client,
+          spouse_name: spouseForm.spouse_name,
+          spouse_date_of_birth: spouseForm.spouse_date_of_birth,
+          spouse_is_nbs: spouseForm.spouse_is_nbs
+        }
+      }
+      return client
+    })
+
+    setClients(updatedClients)
+    setShowAddSpouse(null)
+    setSpouseForm({ spouse_name: '', spouse_date_of_birth: '', spouse_is_nbs: false })
+    alert('Spouse added successfully!')
+  }
     if (!newNote.trim() || !selectedClient) return
     
     const updatedClients = clients.map(client => {
@@ -121,7 +149,7 @@ export default function NextStepCRM() {
     setNewNote('')
   }
 
-  const handleEditClient = (client: Client) => {
+  const handleAddNote = () => {
     setEditingClient(client)
     setEditForm({
       first_name: client.first_name,
@@ -217,7 +245,7 @@ export default function NextStepCRM() {
   const getZillowUrl = (address: string, city: string, state: string, zip: string) => {
     const fullAddress = `${address}, ${city}, ${state} ${zip}`
     const encodedAddress = encodeURIComponent(fullAddress)
-    return `https://www.zillow.com/homes/for_sale/?searchterm=${encodedAddress}`
+    return `https://www.zillow.com/homes/${encodedAddress}_rb/`
   }
 
   // Utility functions
@@ -433,6 +461,40 @@ export default function NextStepCRM() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Add Spouse Button */}
+              {!client.spouse_name && (
+                <div className="mt-3">
+                  <button
+                    onClick={() => setShowAddSpouse(client.id)}
+                    className="w-full flex items-center justify-center px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Spouse
+                  </button>
+                </div>
+              )}
+
+              {/* Spouse Info Display */}
+              {client.spouse_name && (
+                <div className="mt-3 p-3 bg-purple-50 rounded-lg">
+                  <div className="text-sm">
+                    <div className="font-medium text-purple-700">
+                      Spouse: {client.spouse_name}
+                      {client.spouse_is_nbs && (
+                        <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                          NBS
+                        </span>
+                      )}
+                    </div>
+                    {client.spouse_date_of_birth && (
+                      <div className="text-purple-600 text-xs">
+                        Age: {calculateAge(client.spouse_date_of_birth)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -714,6 +776,81 @@ export default function NextStepCRM() {
                     className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-semibold"
                   >
                     Add Client
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Add Spouse Modal */}
+        {showAddSpouse && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Add Spouse</h2>
+                <button
+                  onClick={() => {setShowAddSpouse(null); setSpouseForm({ spouse_name: '', spouse_date_of_birth: '', spouse_is_nbs: false })}}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={(e) => { e.preventDefault(); handleAddSpouse(); }}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Spouse Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={spouseForm.spouse_name}
+                      onChange={(e) => setSpouseForm({...spouseForm, spouse_name: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={spouseForm.spouse_date_of_birth}
+                      onChange={(e) => setSpouseForm({...spouseForm, spouse_date_of_birth: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="spouse_nbs"
+                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                      checked={spouseForm.spouse_is_nbs}
+                      onChange={(e) => setSpouseForm({...spouseForm, spouse_is_nbs: e.target.checked})}
+                    />
+                    <label htmlFor="spouse_nbs" className="ml-2 text-sm font-medium text-gray-700">
+                      Spouse is Non-Borrowing Spouse (NBS)
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {setShowAddSpouse(null); setSpouseForm({ spouse_name: '', spouse_date_of_birth: '', spouse_is_nbs: false })}}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors font-semibold"
+                  >
+                    Add Spouse
                   </button>
                 </div>
               </form>
