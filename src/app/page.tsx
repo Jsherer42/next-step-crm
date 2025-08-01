@@ -379,17 +379,17 @@ export default function NextStepCRM() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <Home className="w-4 h-4 mr-1" />
-                        <span>{client.city && client.state ? `${client.city}, ${client.state}` : 'No address'}</span>
+                        <span>
+                          {client.city || 'No city'}, {client.state || 'No state'}
+                        </span>
                       </div>
-                      {client.street_address && client.city && client.state && client.zip_code && (
-                        <button
-                          onClick={() => window.open(getZillowUrl(client.street_address, client.city, client.state, client.zip_code), '_blank')}
-                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center"
-                          title="View on Zillow"
-                        >
-                          🏠 Zillow
-                        </button>
-                      )}
+                      <button
+                        onClick={() => window.open(getZillowUrl(client.street_address || '', client.city || '', client.state || '', client.zip_code || ''), '_blank')}
+                        className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center"
+                        title="View on Zillow"
+                      >
+                        🏠 Zillow
+                      </button>
                     </div>
                     <div className="mt-1">
                       {client.property_type && client.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} • {formatCurrency(client.home_value)}
@@ -808,41 +808,37 @@ export default function NextStepCRM() {
                   </div>
                 </div>
 
-                {/* Property Details Section */}
-                {selectedClient.street_address && (
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <Home className="w-5 h-5 mr-2 text-emerald-600" />
-                      Property Details
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                        <div className="flex items-center">
-                          <Home className="w-5 h-5 mr-3 text-emerald-600" />
-                          <div>
-                            <span className="font-medium text-gray-700">Property: </span>
-                            <span className="text-gray-600">
-                              {selectedClient.street_address}, {selectedClient.city}, {selectedClient.state} {selectedClient.zip_code}
-                            </span>
-                          </div>
+                {/* Property Details Section - ALWAYS SHOW */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Home className="w-5 h-5 mr-2 text-emerald-600" />
+                    Property Details
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
+                      <div className="flex items-center">
+                        <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                        <div>
+                          <span className="font-medium text-gray-700">Property: </span>
+                          <span className="text-gray-600">
+                            {selectedClient.street_address || 'No address'}, {selectedClient.city || 'No city'}, {selectedClient.state || 'No state'} {selectedClient.zip_code || 'No zip'}
+                          </span>
                         </div>
-                        <button
-                          onClick={() => window.open(getZillowUrl(selectedClient.street_address!, selectedClient.city!, selectedClient.state!, selectedClient.zip_code!), '_blank')}
-                          className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors flex items-center ml-2"
-                          title="View on Zillow"
-                        >
-                          🏠 Zillow
-                        </button>
                       </div>
-                      {selectedClient.property_type && (
-                        <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
-                          <Home className="w-5 h-5 mr-3 text-emerald-600" />
-                          <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => window.open(getZillowUrl(selectedClient.street_address || '', selectedClient.city || '', selectedClient.state || '', selectedClient.zip_code || ''), '_blank')}
+                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors flex items-center ml-2"
+                        title="View on Zillow"
+                      >
+                        🏠 Zillow
+                      </button>
+                    </div>
+                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+                      <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type ? selectedClient.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not specified'}</span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="space-y-6">
