@@ -22,6 +22,7 @@ interface Client {
   desired_proceeds: number
   loan_officer: string
   pipeline_status: 'lead' | 'qualified' | 'counseling' | 'docs' | 'underwriting' | 'closing' | 'funded'
+  notes?: string[]
   created_at: string
 }
 
@@ -33,6 +34,7 @@ export default function NextStepCRM() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [newNote, setNewNote] = useState('')
 
   const [newClient, setNewClient] = useState({
     first_name: '',
@@ -74,6 +76,7 @@ export default function NextStepCRM() {
         desired_proceeds: 200000,
         loan_officer: 'Christian Ford',
         pipeline_status: 'qualified' as const,
+        notes: ['Initial consultation completed - client interested in line of credit option', 'Appraisal scheduled for next week'],
         created_at: new Date().toISOString()
       },
       {
@@ -94,6 +97,7 @@ export default function NextStepCRM() {
         desired_proceeds: 150000,
         loan_officer: 'Ahmed Samura',
         pipeline_status: 'counseling' as const,
+        notes: ['Referred by financial advisor', 'Spouse has questions about inheritance impact'],
         created_at: new Date().toISOString()
       }
     ])
@@ -215,13 +219,30 @@ export default function NextStepCRM() {
     }
   }
 
+  const handleAddNote = () => {
+    if (!newNote.trim() || !selectedClient) return
+    
+    const updatedClients = clients.map(client => {
+      if (client.id === selectedClient.id) {
+        const updatedClient = {
+          ...client,
+          notes: [...(client.notes || []), `${new Date().toLocaleDateString()} - ${newNote.trim()}`]
+        }
+        setSelectedClient(updatedClient)
+        return updatedClient
+      }
+      return client
+    })
+    
+    setClients(updatedClients)
+    setNewNote('')
+  }
+
   const handleDeleteClient = (clientId: string) => {
     setClients(clients.filter(client => client.id !== clientId))
     setShowDeleteConfirm(null)
     alert('Client deleted successfully!')
   }
-
-  const teamMembers = [
     'Christian Ford',
     'Ahmed Samura', 
     'Joe Catanzaro',
@@ -836,6 +857,40 @@ export default function NextStepCRM() {
                       <Home className="w-5 h-5 mr-3 text-emerald-600" />
                       <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type ? selectedClient.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not specified'}</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* Sales Notes Section */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Edit2 className="w-5 h-5 mr-2 text-emerald-600" />
+                    Sales Notes
+                  </h4>
+                  <div className="space-y-3 mb-4">
+                    {selectedClient.notes?.map((note, index) => (
+                      <div key={index} className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                        <p className="text-sm text-gray-700">{note}</p>
+                      </div>
+                    )) || (
+                      <p className="text-gray-500 text-sm">No notes yet</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      placeholder="Add a note..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddNote()}
+                    />
+                    <button
+                      onClick={handleAddNote}
+                      disabled={!newNote.trim()}
+                      className="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors disabled:bg-gray-300 text-sm"
+                    >
+                      Add Note
+                    </button>
                   </div>
                 </div>
               </div>
