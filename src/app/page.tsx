@@ -95,7 +95,6 @@ export default function NextStepCRM() {
         email: 'margaret.williams@email.com',
         phone: '(555) 987-6543',
         date_of_birth: '1958-11-08',
-        spouse_is_nbs: true,
         street_address: '892 Oak Avenue',
         city: 'Bethesda',
         state: 'MD',
@@ -106,7 +105,7 @@ export default function NextStepCRM() {
         loan_officer: 'Ahmed Samura',
         pipeline_status: 'counseling' as const,
         created_at: '2024-01-18T14:15:00Z',
-        notes: ['Referred by financial advisor', 'Spouse has questions about staying in home']
+        notes: ['Referred by financial advisor', 'Interested in reverse mortgage options']
       }
     ])
   }, [])
