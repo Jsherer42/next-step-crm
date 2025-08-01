@@ -207,27 +207,37 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-gradient-to-r from-white/95 to-white/90 backdrop-blur-sm shadow-lg border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                Next Step
-              </h1>
-              <p className="text-gray-600">City First FHA Retirement CRM</p>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                {/* City First Logo Placeholder - Replace with actual logo */}
+                <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <Home className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-green-500 bg-clip-text text-transparent">
+                    Next Step
+                  </h1>
+                  <p className="text-gray-600 font-medium">City First FHA Retirement CRM</p>
+                </div>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => setShowAddForm(true)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl animate-pulse hover:animate-none"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 hover:scale-105 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl animate-pulse hover:animate-none"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Add New Client
               </button>
-              <div className="text-sm text-gray-600">
-                Welcome, {user?.email}
+              <div className="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-lg border border-gray-200/50 shadow-sm">
+                <div className="text-sm text-gray-600">
+                  Welcome, <span className="font-semibold text-gray-800">{user?.email}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -244,16 +254,16 @@ export default function Dashboard() {
               placeholder="Search clients..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md transition-all duration-200"
             />
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center bg-white/80 backdrop-blur-sm px-3 py-3 rounded-lg border border-gray-200/50 shadow-sm">
             <Filter className="w-4 h-4 mr-2 text-gray-500" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="bg-transparent border-none focus:ring-0 focus:outline-none text-gray-700"
             >
               <option value="all">All Status</option>
               <option value="new_lead">New Lead</option>
@@ -268,14 +278,14 @@ export default function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
+          <div className="bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/50 hover:border-green-200">
             <div className="flex items-center">
-              <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 rounded-lg shadow-md">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg">
+                <DollarSign className="w-7 h-7 text-white" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Pipeline</p>
-                <p className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                   {formatCurrency(
                     clients.reduce((sum, client) => sum + (client.desired_proceeds || 0), 0)
                   )}
@@ -284,40 +294,40 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
+          <div className="bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/50 hover:border-blue-200">
             <div className="flex items-center">
-              <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg shadow-md">
-                <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+                <Calendar className="w-7 h-7 text-white" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Active Clients</p>
-                <p className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">{filteredClients.length}</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">{filteredClients.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
+          <div className="bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/50 hover:border-amber-200">
             <div className="flex items-center">
-              <div className="p-3 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg shadow-md">
-                <Phone className="w-6 h-6 text-amber-600" />
+              <div className="p-4 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
+                <Phone className="w-7 h-7 text-white" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">New Leads</p>
-                <p className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
                   {clients.filter(c => c.pipeline_status === 'new_lead').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
+          <div className="bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/50 hover:border-emerald-200">
             <div className="flex items-center">
-              <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-200 rounded-lg shadow-md">
-                <Home className="w-6 h-6 text-green-600" />
+              <div className="p-4 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg">
+                <Home className="w-7 h-7 text-white" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Qualified</p>
-                <p className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
                   {clients.filter(c => c.pipeline_status === 'qualified').length}
                 </p>
               </div>
@@ -332,15 +342,15 @@ export default function Dashboard() {
             const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
             
             return (
-              <div key={client.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-in-out border-l-4 border-green-500 hover:border-green-400 backdrop-blur-sm">
+              <div key={client.id} className="bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-in-out border-l-4 border-green-500 hover:border-green-400 p-6 hover:bg-gradient-to-br hover:from-white/98 hover:to-white/90 border border-white/50">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-xl font-semibold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent hover:from-green-500 hover:to-blue-500 transition-all duration-300">
                       {client.first_name} {client.last_name}
                     </h3>
-                    <p className="text-gray-600">Age {age}</p>
+                    <p className="text-gray-600 font-medium">Age {age}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(client.pipeline_status)} shadow-sm hover:shadow-md transition-shadow duration-200`}>
+                  <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(client.pipeline_status)} shadow-md hover:shadow-lg transition-all duration-200 border border-white/50`}>
                     {client.pipeline_status.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
