@@ -72,7 +72,7 @@ export default function NextStepCRM() {
         property_type: 'single_family',
         home_value: 450000,
         desired_proceeds: 200000,
-        loan_officer: 'Sarah Mitchell',
+        loan_officer: 'Christian Ford',
         pipeline_status: 'qualified' as const,
         created_at: new Date().toISOString()
       },
@@ -92,7 +92,7 @@ export default function NextStepCRM() {
         property_type: 'condo',
         home_value: 620000,
         desired_proceeds: 150000,
-        loan_officer: 'James Parker',
+        loan_officer: 'Ahmed Samura',
         pipeline_status: 'counseling' as const,
         created_at: new Date().toISOString()
       }
@@ -221,15 +221,14 @@ export default function NextStepCRM() {
     alert('Client deleted successfully!')
   }
 
-  const loanOfficers = [
-    'Sarah Mitchell',
-    'James Parker', 
-    'Emily Rodriguez',
-    'Michael Chen',
-    'Lisa Thompson',
-    'David Wilson',
-    'Amanda Foster',
-    'Robert Kim'
+  const teamMembers = [
+    'Christian Ford',
+    'Ahmed Samura', 
+    'Joe Catanzaro',
+    'Josh Bovee',
+    'Danielle Stepp',
+    'Ryan Sterling',
+    'Spencer Kline'
   ]
 
   // Floating elements for background animation
@@ -698,7 +697,7 @@ export default function NextStepCRM() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Loan Officer *
+                    Team Member *
                   </label>
                   <select
                     value={newClient.loan_officer}
@@ -706,9 +705,9 @@ export default function NextStepCRM() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                     required
                   >
-                    <option value="">Select Loan Officer</option>
-                    {loanOfficers.map(officer => (
-                      <option key={officer} value={officer}>{officer}</option>
+                    <option value="">Select Team Member</option>
+                    {teamMembers.map(member => (
+                      <option key={member} value={member}>{member}</option>
                     ))}
                   </select>
                 </div>
@@ -858,7 +857,7 @@ export default function NextStepCRM() {
                     </div>
                     <div className="flex items-center p-3 bg-blue-50 rounded-lg">
                       <User className="w-5 h-5 mr-3 text-blue-600" />
-                      <span className="font-medium text-gray-700">Loan Officer: {selectedClient.loan_officer}</span>
+                      <span className="font-medium text-gray-700">Team Member: {selectedClient.loan_officer}</span>
                     </div>
                     <div className="flex items-center p-3 bg-blue-50 rounded-lg">
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedClient.pipeline_status)}`}>
