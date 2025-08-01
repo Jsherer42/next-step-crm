@@ -242,7 +242,7 @@ export default function NextStepCRM() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-emerald-50 to-blue-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-emerald-500 to-blue-600 animate-gradient-xy relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <FloatingElement delay={0} duration={25} size={120} opacity={0.08} />
@@ -910,6 +910,31 @@ export default function NextStepCRM() {
         }
         .animate-float {
           animation: float 20s ease-in-out infinite;
+        }
+        @keyframes gradient-xy {
+          0%, 100% {
+            background: linear-gradient(45deg, #3b82f6, #10b981, #06b6d4, #8b5cf6);
+            background-size: 400% 400%;
+            background-position: 0% 50%;
+          }
+          25% {
+            background: linear-gradient(135deg, #10b981, #06b6d4, #8b5cf6, #f59e0b);
+            background-size: 400% 400%;
+            background-position: 100% 50%;
+          }
+          50% {
+            background: linear-gradient(225deg, #06b6d4, #8b5cf6, #f59e0b, #ef4444);
+            background-size: 400% 400%;
+            background-position: 100% 100%;
+          }
+          75% {
+            background: linear-gradient(315deg, #8b5cf6, #f59e0b, #ef4444, #3b82f6);
+            background-size: 400% 400%;
+            background-position: 0% 100%;
+          }
+        }
+        .animate-gradient-xy {
+          animation: gradient-xy 8s ease infinite;
         }
       `}</style>
     </div>
