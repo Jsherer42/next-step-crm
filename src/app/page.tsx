@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
 
-// Client interface with address fields and notes
+// Client interface with address fields, notes, and spouse info
 interface Client {
   id: string
   first_name: string
@@ -130,6 +130,8 @@ export default function NextStepCRM() {
     setSpouseForm({ spouse_name: '', spouse_date_of_birth: '', spouse_is_nbs: false })
     alert('Spouse added successfully!')
   }
+
+  const handleAddNote = () => {
     if (!newNote.trim() || !selectedClient) return
     
     const updatedClients = clients.map(client => {
@@ -148,7 +150,7 @@ export default function NextStepCRM() {
     setNewNote('')
   }
 
-  const handleAddNote = () => {
+  const handleEditClient = (client: Client) => {
     setEditingClient(client)
     setEditForm({
       first_name: client.first_name,
@@ -390,7 +392,7 @@ export default function NextStepCRM() {
                   </h3>
                   <div className="text-sm text-gray-600 mt-2">
                     <div className="flex items-center">
-                      <Home className="w-4 h-4 mr-1" />
+                      <HomeIcon className="w-4 h-4 mr-1" />
                       <span>
                         {client.city || 'No city'}, {client.state || 'No state'}
                       </span>
@@ -498,6 +500,81 @@ export default function NextStepCRM() {
           ))}
         </div>
 
+        {/* Add Spouse Modal */}
+        {showAddSpouse && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Add Spouse</h2>
+                <button
+                  onClick={() => {setShowAddSpouse(null); setSpouseForm({ spouse_name: '', spouse_date_of_birth: '', spouse_is_nbs: false })}}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={(e) => { e.preventDefault(); handleAddSpouse(); }}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Spouse Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={spouseForm.spouse_name}
+                      onChange={(e) => setSpouseForm({...spouseForm, spouse_name: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={spouseForm.spouse_date_of_birth}
+                      onChange={(e) => setSpouseForm({...spouseForm, spouse_date_of_birth: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="spouse_nbs"
+                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                      checked={spouseForm.spouse_is_nbs}
+                      onChange={(e) => setSpouseForm({...spouseForm, spouse_is_nbs: e.target.checked})}
+                    />
+                    <label htmlFor="spouse_nbs" className="ml-2 text-sm font-medium text-gray-700">
+                      Spouse is Non-Borrowing Spouse (NBS)
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {setShowAddSpouse(null); setSpouseForm({ spouse_name: '', spouse_date_of_birth: '', spouse_is_nbs: false })}}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors font-semibold"
+                  >
+                    Add Spouse
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Add Client Modal */}
         {showAddClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -517,7 +594,7 @@ export default function NextStepCRM() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   <div className="lg:col-span-2">
                     <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
+                      <User className="w-5 h-5 mr-2 text-emerald-600" />
                       Personal Information
                     </h4>
                   </div>
@@ -782,81 +859,6 @@ export default function NextStepCRM() {
           </div>
         )}
 
-        {/* Add Spouse Modal */}
-        {showAddSpouse && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Add Spouse</h2>
-                <button
-                  onClick={() => {setShowAddSpouse(null); setSpouseForm({ spouse_name: '', spouse_date_of_birth: '', spouse_is_nbs: false })}}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <form onSubmit={(e) => { e.preventDefault(); handleAddSpouse(); }}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Spouse Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={spouseForm.spouse_name}
-                      onChange={(e) => setSpouseForm({...spouseForm, spouse_name: e.target.value})}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date of Birth
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={spouseForm.spouse_date_of_birth}
-                      onChange={(e) => setSpouseForm({...spouseForm, spouse_date_of_birth: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="spouse_nbs"
-                      className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
-                      checked={spouseForm.spouse_is_nbs}
-                      onChange={(e) => setSpouseForm({...spouseForm, spouse_is_nbs: e.target.checked})}
-                    />
-                    <label htmlFor="spouse_nbs" className="ml-2 text-sm font-medium text-gray-700">
-                      Spouse is Non-Borrowing Spouse (NBS)
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-4 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => {setShowAddSpouse(null); setSpouseForm({ spouse_name: '', spouse_date_of_birth: '', spouse_is_nbs: false })}}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors font-semibold"
-                  >
-                    Add Spouse
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
         {/* Edit Client Modal */}
         {editingClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -974,7 +976,7 @@ export default function NextStepCRM() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   <div className="lg:col-span-2">
                     <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <Home className="w-5 h-5 mr-2 text-emerald-600" />
+                      <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
                       Property Information
                     </h4>
                   </div>
@@ -1179,7 +1181,7 @@ export default function NextStepCRM() {
                   </div>
                 </div>
 
-                {/* Property Details Section - ALWAYS SHOW */}
+                {/* Property Details Section */}
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
