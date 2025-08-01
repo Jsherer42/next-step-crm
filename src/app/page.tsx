@@ -1,186 +1,103 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
+import { Search, Plus, Phone, Mail, Home, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
 
-// Client interface
+// Client interface with address fields
 interface Client {
   id: string
   first_name: string
   last_name: string
+  email: string
   phone: string
-  email: string | null
   date_of_birth: string
-  is_married: boolean
-  spouse_first_name: string | null
-  spouse_last_name: string | null
-  spouse_date_of_birth: string | null
-  home_value: number | null
-  mortgage_balance: number | null
-  desired_proceeds: number | null
-  lead_source: string | null
-  pipeline_status: string
-  assigned_loan_officer_id: string | null
+  spouse_name?: string
+  spouse_date_of_birth?: string
+  street_address: string
+  city: string
+  state: string
+  zip_code: string
+  property_type: 'single_family' | 'condo' | 'townhome' | 'manufactured' | 'other'
+  home_value: number
+  desired_proceeds: number
+  loan_officer: string
+  pipeline_status: 'lead' | 'qualified' | 'counseling' | 'docs' | 'underwriting' | 'closing' | 'funded'
   created_at: string
 }
 
-export default function Home() {
+export default function NextStepCRM() {
   const [clients, setClients] = useState<Client[]>([])
-  const [filteredClients, setFilteredClients] = useState<Client[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
 
-  const supabase = createClientComponentClient()
+  const [newClient, setNewClient] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    date_of_birth: '',
+    spouse_name: '',
+    spouse_date_of_birth: '',
+    street_address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    property_type: 'single_family' as const,
+    home_value: 0,
+    desired_proceeds: 0,
+    loan_officer: '',
+    pipeline_status: 'lead' as const
+  })
 
-  // Demo data for immediate functionality
-  const demoClients: Client[] = [
-    {
-      id: '1',
-      first_name: 'Robert',
-      last_name: 'Johnson',
-      phone: '(555) 123-4567',
-      email: 'robert.johnson@email.com',
-      date_of_birth: '1961-03-15',
-      is_married: false,
-      spouse_first_name: null,
-      spouse_last_name: null,
-      spouse_date_of_birth: null,
-      home_value: 450000,
-      mortgage_balance: 125000,
-      desired_proceeds: 200000,
-      lead_source: 'Forward Referral',
-      pipeline_status: 'qualified',
-      assigned_loan_officer_id: 'jeremiah_sherer',
-      created_at: '2024-01-15T10:30:00Z'
-    },
-    {
-      id: '2',
-      first_name: 'Margaret',  
-      last_name: 'Williams',
-      phone: '(555) 987-6543',
-      email: 'margaret.williams@email.com',
-      date_of_birth: '1959-08-22',
-      is_married: true,
-      spouse_first_name: 'William',
-      spouse_last_name: 'Williams',
-      spouse_date_of_birth: '1957-12-10',
-      home_value: 620000,
-      mortgage_balance: 0,
-      desired_proceeds: 150000,
-      lead_source: 'Mailer',
-      pipeline_status: 'counseling',
-      assigned_loan_officer_id: 'christian_ford',
-      created_at: '2024-01-20T14:15:00Z'
-    }
-  ]
-
-  // Load clients on component mount
+  // Initialize with demo data including addresses
   useEffect(() => {
-    loadClients()
-  }, [])
-
-  // Filter clients based on search and status
-  useEffect(() => {
-    let filtered = clients.filter(client => {
-      const matchesSearch = searchTerm === '' || 
-        `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.phone.includes(searchTerm) ||
-        (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()))
-      
-      const matchesStatus = statusFilter === 'all' || client.pipeline_status === statusFilter
-      
-      return matchesSearch && matchesStatus
-    })
-    setFilteredClients(filtered)
-  }, [clients, searchTerm, statusFilter])
-
-  const loadClients = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.log('Using demo data:', error.message)
-        setClients(demoClients)
-      } else {
-        setClients(data || demoClients)
-      }
-    } catch (error) {
-      console.log('Using demo data due to connection error')
-      setClients(demoClients)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSaveClient = async (clientData: any) => {
-    try {
-      const { data, error } = await supabase
-        .from('clients')
-        .insert([clientData])
-        .select()
-
-      if (error) {
-        console.log('Database error, adding to local state:', error.message)
-        const newClient = {
-          ...clientData,
-          id: Date.now().toString(),
-          created_at: new Date().toISOString()
-        }
-        setClients(prev => [newClient, ...prev])
-      } else {
-        setClients(prev => [data[0], ...prev])
-      }
-      setShowAddForm(false)
-    } catch (error) {
-      console.log('Error saving client, adding locally')
-      const newClient = {
-        ...clientData,
-        id: Date.now().toString(),
+    setClients([
+      {
+        id: '1',
+        first_name: 'Robert',
+        last_name: 'Johnson',
+        email: 'robert.johnson@email.com',
+        phone: '(555) 123-4567',
+        date_of_birth: '1961-03-15',
+        spouse_name: 'Linda Johnson',
+        spouse_date_of_birth: '1963-07-22',
+        street_address: '1247 Maple Street',
+        city: 'Arlington',
+        state: 'VA',
+        zip_code: '22201',
+        property_type: 'single_family' as const,
+        home_value: 450000,
+        desired_proceeds: 200000,
+        loan_officer: 'Sarah Mitchell',
+        pipeline_status: 'qualified' as const,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: '2',
+        first_name: 'Margaret',
+        last_name: 'Williams',
+        email: 'margaret.williams@email.com',
+        phone: '(555) 987-6543',
+        date_of_birth: '1959-08-22',
+        spouse_name: 'William Williams',
+        spouse_date_of_birth: '1957-12-10',
+        street_address: '892 Oak Avenue',
+        city: 'Bethesda',
+        state: 'MD',
+        zip_code: '20814',
+        property_type: 'condo' as const,
+        home_value: 620000,
+        desired_proceeds: 150000,
+        loan_officer: 'James Parker',
+        pipeline_status: 'counseling' as const,
         created_at: new Date().toISOString()
       }
-      setClients(prev => [newClient, ...prev])
-      setShowAddForm(false)
-    }
-  }
-
-  const handleDeleteClient = async (clientId: string) => {
-    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-      return
-    }
-
-    try {
-      const { error } = await supabase
-        .from('clients')
-        .delete()
-        .eq('id', clientId)
-
-      if (error) {
-        console.log('Database error, removing from local state:', error.message)
-      }
-      
-      // Remove from local state regardless of database result
-      setClients(prev => prev.filter(c => c.id !== clientId))
-      
-      // Close detail modal if we're viewing the deleted client
-      if (selectedClient?.id === clientId) {
-        setSelectedClient(null)
-      }
-    } catch (error) {
-      console.log('Error deleting from database, removing locally')
-      setClients(prev => prev.filter(c => c.id !== clientId))
-      if (selectedClient?.id === clientId) {
-        setSelectedClient(null)
-      }
-    }
-  }
+    ])
+  }, [])
 
   // Utility functions
   const calculateAge = (dateOfBirth: string) => {
@@ -188,707 +105,813 @@ export default function Home() {
     const birthDate = new Date(dateOfBirth)
     let age = today.getFullYear() - birthDate.getFullYear()
     const monthDiff = today.getMonth() - birthDate.getMonth()
-    
-    // Adjust age if birthday hasn't occurred this year
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--
     }
-    
     return age
   }
 
-  const formatCurrency = (amount: number | null) => {
-    if (!amount) return '$0'
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount)
   }
 
   const getStatusColor = (status: string) => {
     const colors = {
-      'new_lead': 'bg-slate-100 text-slate-800',
-      'qualified': 'bg-green-100 text-green-800',
-      'counseling': 'bg-amber-100 text-amber-800',
-      'application': 'bg-blue-100 text-blue-800',
-      'processing': 'bg-orange-100 text-orange-800',
-      'closed': 'bg-green-200 text-green-900'
+      lead: 'bg-gray-100 text-gray-800',
+      qualified: 'bg-green-100 text-green-800',
+      counseling: 'bg-blue-100 text-blue-800',
+      docs: 'bg-yellow-100 text-yellow-800',
+      underwriting: 'bg-purple-100 text-purple-800',
+      closing: 'bg-orange-100 text-orange-800',
+      funded: 'bg-emerald-100 text-emerald-800'
     }
-    return colors[status as keyof typeof colors] || 'bg-slate-100 text-slate-800'
+    return colors[status as keyof typeof colors] || colors.lead
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading Next Step CRM...</p>
-        </div>
-      </div>
-    )
+  // Calculate stats
+  const totalPipeline = clients.reduce((sum, client) => sum + client.desired_proceeds, 0)
+  const activeClients = clients.length
+  const newLeads = clients.filter(c => c.pipeline_status === 'lead').length
+  const qualified = clients.filter(c => c.pipeline_status === 'qualified').length
+
+  // Filter clients
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = searchTerm === '' || 
+      `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.phone.includes(searchTerm)
+    
+    const matchesStatus = statusFilter === 'all' || client.pipeline_status === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
+
+  const handleAddClient = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!newClient.first_name || !newClient.last_name || !newClient.email) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    // Age validation
+    const clientAge = calculateAge(newClient.date_of_birth)
+    const spouseAge = newClient.spouse_date_of_birth ? calculateAge(newClient.spouse_date_of_birth) : null
+    
+    if (clientAge < 62) {
+      alert('Primary client must be at least 62 years old for a reverse mortgage')
+      return
+    }
+    
+    if (spouseAge && spouseAge < 62) {
+      alert('Spouse must be at least 62 years old for a reverse mortgage')
+      return
+    }
+
+    try {
+      const clientToAdd: Client = {
+        id: Date.now().toString(),
+        ...newClient,
+        created_at: new Date().toISOString()
+      }
+
+      setClients([...clients, clientToAdd])
+      setShowAddModal(false)
+      setNewClient({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        date_of_birth: '',
+        spouse_name: '',
+        spouse_date_of_birth: '',
+        street_address: '',
+        city: '',
+        state: '',
+        zip_code: '',
+        property_type: 'single_family' as const,
+        home_value: 0,
+        desired_proceeds: 0,
+        loan_officer: '',
+        pipeline_status: 'lead' as const
+      })
+      
+      alert('Client added successfully!')
+    } catch (error) {
+      console.error('Error adding client:', error)
+      alert('Error adding client. Please try again.')
+    }
   }
+
+  const handleDeleteClient = (clientId: string) => {
+    setClients(clients.filter(client => client.id !== clientId))
+    setShowDeleteConfirm(null)
+    alert('Client deleted successfully!')
+  }
+
+  const loanOfficers = [
+    'Sarah Mitchell',
+    'James Parker', 
+    'Emily Rodriguez',
+    'Michael Chen',
+    'Lisa Thompson',
+    'David Wilson',
+    'Amanda Foster',
+    'Robert Kim'
+  ]
+
+  // Floating elements for background animation
+  const FloatingElement = ({ delay = 0, duration = 20, size = 100, opacity = 0.1 }) => (
+    <div 
+      className="absolute rounded-full bg-gradient-to-r from-emerald-400 to-blue-500 animate-float"
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        opacity,
+        animationDelay: `${delay}s`,
+        animationDuration: `${duration}s`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+      }}
+    />
+  )
 
   return (
-    <div className="min-h-screen" style={{
-      background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 20%, #059669 40%, #10b981 60%, #0ea5e9 80%, #1d4ed8 100%)',
-      backgroundSize: '400% 400%',
-      animation: 'gradientShift 15s ease infinite'
-    }}>
-      <style jsx>{`
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-      `}</style>
-
-      {/* Floating Background Elements */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-emerald-50 to-blue-100 relative overflow-hidden">
+      {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-white/5 rounded-full animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-green-400/10 rounded-full" style={{animation: 'float 6s ease-in-out infinite'}}></div>
-        <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-blue-400/10 rounded-full" style={{animation: 'float 8s ease-in-out infinite delay-2s'}}></div>
-        <div className="absolute bottom-20 right-1/3 w-28 h-28 bg-white/5 rounded-full animate-pulse"></div>
+        <FloatingElement delay={0} duration={25} size={120} opacity={0.08} />
+        <FloatingElement delay={5} duration={30} size={80} opacity={0.06} />
+        <FloatingElement delay={10} duration={35} size={150} opacity={0.04} />
+        <FloatingElement delay={15} duration={28} size={90} opacity={0.07} />
+        <FloatingElement delay={20} duration={32} size={110} opacity={0.05} />
       </div>
 
-      {/* Header */}
-      <div className="bg-white/10 backdrop-blur-md shadow-2xl border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-4">
-                {/* Enhanced City First Logo */}
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300" style={{animation: 'pulse 3s ease-in-out infinite'}}>
-                  <HomeIcon className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold text-white drop-shadow-lg">
-                    Next Step
-                  </h1>
-                  <p className="text-blue-100 font-semibold text-lg">City First FHA Retirement CRM</p>
-                </div>
+      {/* Main Content */}
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-12">
+          <div className="mb-6 lg:mb-0">
+            <div className="flex items-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-2xl flex items-center justify-center mr-4 shadow-lg animate-pulse">
+                <Calculator className="w-8 h-8 text-white" />
               </div>
-            </div>
-            <div className="flex items-center space-x-6">
-              <button 
-                onClick={() => setShowAddForm(true)}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-2xl hover:shadow-green-500/25 hover:scale-110 transition-all duration-300 transform hover:-translate-y-1"
-                style={{animation: 'pulse 2s ease-in-out infinite'}}
-              >
-                <Plus className="w-6 h-6 mr-3" />
-                Add New Client
-              </button>
-              <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-xl border border-white/30 shadow-xl">
-                <div className="text-white font-semibold">
-                  Welcome, <span className="text-green-200">demo@cityfirst.com</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/70 w-6 h-6" />
-            <input
-              type="text"
-              placeholder="Search clients..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl focus:ring-4 focus:ring-green-400/50 focus:border-white/50 shadow-xl text-white placeholder-white/70 text-lg font-medium hover:bg-white/25 transition-all duration-300"
-            />
-          </div>
-
-          <div className="flex items-center bg-white/20 backdrop-blur-md px-6 py-4 rounded-xl border border-white/30 shadow-xl">
-            <Filter className="w-5 h-5 mr-3 text-white/80" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 focus:outline-none text-white font-semibold text-lg"
-            >
-              <option value="all" className="text-gray-800">All Status</option>
-              <option value="new_lead" className="text-gray-800">New Lead</option>
-              <option value="qualified" className="text-gray-800">Qualified</option>  
-              <option value="counseling" className="text-gray-800">Counseling</option>
-              <option value="application" className="text-gray-800">Application</option>
-              <option value="processing" className="text-gray-800">Processing</option>
-              <option value="closed" className="text-gray-800">Closed</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Stats Cards - ENHANCED Total Pipeline */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* FEATURED Total Pipeline - Extra Prominent */}
-          <div className="md:col-span-2 bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-green-400/50 transform hover:scale-105">
-            <div className="flex items-center justify-center">
-              <div className="p-6 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 2s ease-in-out infinite'}}>
-                <DollarSign className="w-12 h-12 text-white" />
-              </div>
-              <div className="ml-8 text-center">
-                <p className="text-2xl font-bold text-white/90 mb-2">💰 Total Pipeline</p>
-                <p className="text-5xl font-black text-white drop-shadow-lg">
-                  {formatCurrency(
-                    clients.reduce((sum, client) => sum + (client.desired_proceeds || 0), 0)
-                  )}
-                </p>
-                <p className="text-green-200 font-semibold mt-1">Revenue Potential</p>
+              <div>
+                <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                  Next Step CRM
+                </h1>
+                <p className="text-gray-600 text-lg">City First FHA Retirement Solutions</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-blue-400/50 transform hover:scale-105">
-            <div className="flex items-center">
-              <div className="p-5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 2.5s ease-in-out infinite'}}>
-                <Calendar className="w-8 h-8 text-white" />
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center animate-pulse"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add New Client
+          </button>
+        </div>
+
+        {/* Stats Cards - Enhanced Total Pipeline */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8 mb-12">
+          {/* FEATURED - Total Pipeline Card - Extra Large */}
+          <div className="md:col-span-2 lg:col-span-2 bg-gradient-to-br from-emerald-500 to-blue-600 p-8 rounded-2xl shadow-2xl text-white relative overflow-hidden animate-pulse border-4 border-white">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-blue-500/20 animate-pulse"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <DollarSign className="w-12 h-12 text-emerald-100" />
+                <span className="text-emerald-100 text-lg font-semibold">💰</span>
               </div>
-              <div className="ml-6">
-                <p className="text-lg font-bold text-white/90 mb-1">Active Clients</p>
-                <p className="text-4xl font-black text-white drop-shadow-lg">{filteredClients.length}</p>
-              </div>
+              <h3 className="text-2xl font-bold text-emerald-100 mb-2">Total Pipeline</h3>
+              <p className="text-6xl font-bold mb-2">{formatCurrency(totalPipeline)}</p>
+              <p className="text-emerald-100 text-xl">Active Revenue Potential</p>
             </div>
           </div>
 
-          <div className="bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-orange-400/50 transform hover:scale-105">
-            <div className="flex items-center">
-              <div className="p-5 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 3s ease-in-out infinite'}}>
-                <Phone className="w-8 h-8 text-white" />
-              </div>
-              <div className="ml-6">
-                <p className="text-lg font-bold text-white/90 mb-1">New Leads</p>
-                <p className="text-4xl font-black text-white drop-shadow-lg">
-                  {clients.filter(c => c.pipeline_status === 'new_lead').length}
-                </p>
-              </div>
+          <div className="bg-white/70 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <User className="w-8 h-8 text-blue-600" />
+              <span className="text-blue-600 text-2xl">👥</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Active Clients</h3>
+            <p className="text-4xl font-bold text-blue-600">{activeClients}</p>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <Phone className="w-8 h-8 text-orange-600" />
+              <span className="text-orange-600 text-2xl">📞</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">New Leads</h3>
+            <p className="text-4xl font-bold text-orange-600">{newLeads}</p>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <Calculator className="w-8 h-8 text-green-600" />
+              <span className="text-green-600 text-2xl">✅</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Qualified</h3>
+            <p className="text-4xl font-bold text-green-600">{qualified}</p>
+          </div>
+        </div>
+
+        {/* Search and Filter Bar */}
+        <div className="bg-white/70 backdrop-blur-md rounded-xl p-6 mb-8 shadow-lg border border-white/50">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search clients by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white/90 backdrop-blur-sm"
+              />
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="pl-10 pr-8 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white/90 backdrop-blur-sm appearance-none min-w-48"
+              >
+                <option value="all">All Statuses</option>
+                <option value="lead">Lead</option>
+                <option value="qualified">Qualified</option>
+                <option value="counseling">Counseling</option>
+                <option value="docs">Documents</option>
+                <option value="underwriting">Underwriting</option>
+                <option value="closing">Closing</option>
+                <option value="funded">Funded</option>
+              </select>
             </div>
           </div>
         </div>
 
-        {/* Client Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredClients.map(client => {
-            const age = calculateAge(client.date_of_birth)
-            const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
-            
-            return (
-              <div key={client.id} className="bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl hover:shadow-white/10 hover:-translate-y-4 transition-all duration-500 ease-in-out border-l-4 border-green-400 hover:border-green-300 p-8 hover:bg-white/25 border border-white/30 transform hover:scale-105 hover:rotate-1">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white drop-shadow-lg hover:text-green-200 transition-all duration-300">
-                      {client.first_name} {client.last_name}
-                    </h3>
-                    <p className="text-white/80 font-semibold text-lg">Age {age}</p>
-                  </div>
-                  <span className={`px-5 py-3 rounded-xl text-sm font-bold ${getStatusColor(client.pipeline_status)} shadow-xl hover:shadow-2xl transition-all duration-300 border border-white/30 transform hover:scale-110`}>
-                    {client.pipeline_status.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6 mb-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center text-white/90">
-                      <Phone className="w-5 h-5 mr-3 text-green-300" />
-                      <span className="font-medium">{client.phone}</span>
+        {/* Client Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+          {filteredClients.map((client) => (
+            <div
+              key={client.id}
+              className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/50 hover:shadow-2xl hover:scale-105 hover:rotate-1 transition-all duration-500 group"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-800 group-hover:text-emerald-600 transition-colors">
+                    {client.first_name} {client.last_name}
+                  </h3>
+                  <div className="text-sm text-gray-600 mt-2">
+                    <div className="flex items-center">
+                      <Home className="w-4 h-4 mr-1" />
+                      {client.city}, {client.state}
                     </div>
-                    <div className="flex items-center text-white/90">
-                      <Mail className="w-5 h-5 mr-3 text-blue-300" />
-                      <span className="font-medium">{client.email || 'No email'}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center text-white/90">
-                      <DollarSign className="w-5 h-5 mr-3 text-green-300" />
-                      <span className="font-medium">Home: {formatCurrency(client.home_value)}</span>
-                    </div>
-                    <div className="flex items-center text-white/90">
-                      <DollarSign className="w-5 h-5 mr-3 text-emerald-300" />
-                      <span className="font-medium">Desired: {formatCurrency(client.desired_proceeds)}</span>
+                    <div className="mt-1">
+                      {client.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} • {formatCurrency(client.home_value)}
                     </div>
                   </div>
                 </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(client.pipeline_status)}`}>
+                  {client.pipeline_status.charAt(0).toUpperCase() + client.pipeline_status.slice(1)}
+                </span>
+              </div>
 
-                {client.is_married && client.spouse_first_name && (
-                  <div className="mb-6 p-4 bg-blue-400/20 backdrop-blur-sm rounded-xl border border-blue-300/30">
-                    <span className="text-blue-100 font-semibold">
-                      👫 Married to {client.spouse_first_name} {client.spouse_last_name} (Age {spouseAge})
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center pt-6 border-t border-white/20">
-                  <div className="text-white/80 font-medium">
-                    <div>Source: <span className="text-green-200 font-bold">{client.lead_source || 'Unknown'}</span></div>
-                  </div>
-                  <div className="flex space-x-3">
-                    <button 
-                      onClick={() => setSelectedClient(client)}
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-5 py-3 rounded-xl font-bold shadow-2xl hover:shadow-blue-500/25 hover:scale-110 transition-all duration-300 flex items-center transform hover:-translate-y-1"
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteClient(client.id)}
-                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-5 py-3 rounded-xl font-bold shadow-2xl hover:shadow-red-500/25 hover:scale-110 transition-all duration-300 flex items-center transform hover:-translate-y-1"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Delete
-                    </button>
-                  </div>
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center text-gray-600">
+                  <Mail className="w-4 h-4 mr-3 text-emerald-500" />
+                  <span className="text-sm">{client.email}</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Phone className="w-4 h-4 mr-3 text-emerald-500" />
+                  <span className="text-sm">{client.phone}</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Calendar className="w-4 h-4 mr-3 text-emerald-500" />
+                  <span className="text-sm">Age: {calculateAge(client.date_of_birth)}</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <DollarSign className="w-4 h-4 mr-3 text-emerald-500" />
+                  <span className="text-sm">Desired: {formatCurrency(client.desired_proceeds)}</span>
                 </div>
               </div>
-            )
-          })}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedClient(client)
+                    setShowDetailModal(true)
+                  }}
+                  className="flex-1 bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors flex items-center justify-center group-hover:scale-105 transform transition-transform duration-300"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(client.id)}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center group-hover:scale-105 transform transition-transform duration-300"
+                >
+                  <X className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
+        {/* Empty State */}
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-white/60 text-lg">No clients found</div>
-            <p className="text-white/40 mt-2">Add your first client to get started!</p>
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User className="w-12 h-12 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">No clients found</h3>
+            <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
           </div>
         )}
       </div>
 
-      {/* Client Detail Modal */}
-      {selectedClient && (
-        <ClientDetailModal 
-          client={selectedClient} 
-          onClose={() => setSelectedClient(null)} 
-        />
-      )}
-
-      {/* Add Client Form */}
-      {showAddForm && (
-        <AddClientForm 
-          onClose={() => setShowAddForm(false)} 
-          onSave={handleSaveClient} 
-        />
-      )}
-    </div>
-  )
-}
-
-// Client Detail Modal Component
-function ClientDetailModal({ client, onClose }: { client: Client, onClose: () => void }) {
-  const age = new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()
-  const spouseAge = client.spouse_date_of_birth ? 
-    new Date().getFullYear() - new Date(client.spouse_date_of_birth).getFullYear() : null
-
-  const formatCurrency = (amount: number | null) => {
-    if (!amount) return '$0'
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/30">
-        <div className="p-8">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                {client.first_name} {client.last_name}
-              </h2>
-              <p className="text-gray-600 text-lg">Age {age} • {client.pipeline_status.replace('_', ' ').toUpperCase()}</p>
+      {/* Add Client Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-800">Add New Client</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-500 hover:text-gray-700 p-2"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6 text-gray-500" />
-            </button>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="space-y-4">
-              <div className="flex items-center p-4 bg-blue-50 rounded-xl">
-                <Phone className="w-5 h-5 mr-3 text-blue-600" />
-                <span className="font-medium text-gray-700">{client.phone}</span>
+            <div onSubmit={handleAddClient} className="space-y-8">
+              {/* Personal Information */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="lg:col-span-2">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <User className="w-5 h-5 mr-2 text-emerald-600" />
+                    Personal Information
+                  </h4>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newClient.first_name}
+                    onChange={(e) => setNewClient({...newClient, first_name: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newClient.last_name}
+                    onChange={(e) => setNewClient({...newClient, last_name: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    placeholder="(555) 123-4567"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date of Birth *
+                  </label>
+                  <input
+                    type="date"
+                    value={newClient.date_of_birth}
+                    onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Spouse Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newClient.spouse_name}
+                    onChange={(e) => setNewClient({...newClient, spouse_name: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Spouse Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    value={newClient.spouse_date_of_birth}
+                    onChange={(e) => setNewClient({...newClient, spouse_date_of_birth: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  />
+                </div>
               </div>
-              
-              <div className="flex items-center p-4 bg-green-50 rounded-xl">
-                <Mail className="w-5 h-5 mr-3 text-green-600" />
-                <span className="font-medium text-gray-700">{client.email || 'No email provided'}</span>
+
+              {/* Property Address Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div className="lg:col-span-2">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Home className="w-5 h-5 mr-2 text-emerald-600" />
+                    Property Information
+                  </h4>
+                </div>
+                
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Street Address *
+                  </label>
+                  <input
+                    type="text"
+                    value={newClient.street_address}
+                    onChange={(e) => setNewClient({...newClient, street_address: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    placeholder="1234 Main Street"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    value={newClient.city}
+                    onChange={(e) => setNewClient({...newClient, city: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    placeholder="Washington"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    State *
+                  </label>
+                  <select
+                    value={newClient.state}
+                    onChange={(e) => setNewClient({...newClient, state: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    required
+                  >
+                    <option value="">Select State</option>
+                    <option value="VA">Virginia</option>
+                    <option value="MD">Maryland</option>
+                    <option value="DC">Washington DC</option>
+                    <option value="WV">West Virginia</option>
+                    <option value="PA">Pennsylvania</option>
+                    <option value="DE">Delaware</option>
+                    <option value="NC">North Carolina</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ZIP Code *
+                  </label>
+                  <input
+                    type="text"
+                    value={newClient.zip_code}
+                    onChange={(e) => setNewClient({...newClient, zip_code: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    placeholder="20001"
+                    maxLength={5}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Property Type *
+                  </label>
+                  <select
+                    value={newClient.property_type}
+                    onChange={(e) => setNewClient({...newClient, property_type: e.target.value as any})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    required
+                  >
+                    <option value="single_family">Single Family Home</option>
+                    <option value="condo">Condominium</option>
+                    <option value="townhome">Townhome</option>
+                    <option value="manufactured">Manufactured Home</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Financial Information */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div className="lg:col-span-2">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <DollarSign className="w-5 h-5 mr-2 text-emerald-600" />
+                    Financial Details
+                  </h4>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Home Value *
+                  </label>
+                  <input
+                    type="number"
+                    value={newClient.home_value || ''}
+                    onChange={(e) => setNewClient({...newClient, home_value: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    min="0"
+                    step="1000"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Desired Proceeds *
+                  </label>
+                  <input
+                    type="number"
+                    value={newClient.desired_proceeds || ''}
+                    onChange={(e) => setNewClient({...newClient, desired_proceeds: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    min="0"
+                    step="1000"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Loan Officer *
+                  </label>
+                  <select
+                    value={newClient.loan_officer}
+                    onChange={(e) => setNewClient({...newClient, loan_officer: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    required
+                  >
+                    <option value="">Select Loan Officer</option>
+                    {loanOfficers.map(officer => (
+                      <option key={officer} value={officer}>{officer}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pipeline Status *
+                  </label>
+                  <select
+                    value={newClient.pipeline_status}
+                    onChange={(e) => setNewClient({...newClient, pipeline_status: e.target.value as any})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                    required
+                  >
+                    <option value="lead">Lead</option>
+                    <option value="qualified">Qualified</option>
+                    <option value="counseling">Counseling</option>
+                    <option value="docs">Documents</option>
+                    <option value="underwriting">Underwriting</option>
+                    <option value="closing">Closing</option>
+                    <option value="funded">Funded</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddClient}
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center"
+                >
+                  <Save className="w-5 h-5 mr-2" />
+                  Add Client
+                </button>
               </div>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center p-4 bg-emerald-50 rounded-xl">
-                <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
-                <span className="font-medium text-gray-700">Home Value: {formatCurrency(client.home_value)}</span>
-              </div>
-              
-              <div className="flex items-center p-4 bg-purple-50 rounded-xl">
-                <DollarSign className="w-5 h-5 mr-3 text-purple-600" />
-                <span className="font-medium text-gray-700">Desired: {formatCurrency(client.desired_proceeds)}</span>
-              </div>
-            </div>
-          </div>
-
-          {client.is_married && client.spouse_first_name && (
-            <div className="mb-6 p-6 bg-blue-50 rounded-xl border border-blue-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">👫 Spouse Information</h3>
-              <p className="text-gray-700">
-                <strong>{client.spouse_first_name} {client.spouse_last_name}</strong> (Age {spouseAge})
-              </p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-4 bg-gray-50 rounded-xl">
-              <h4 className="font-semibold text-gray-800 mb-2">Lead Source</h4>
-              <p className="text-gray-600">{client.lead_source || 'Unknown'}</p>
-            </div>
-            
-            <div className="p-4 bg-gray-50 rounded-xl">
-              <h4 className="font-semibold text-gray-800 mb-2">Mortgage Balance</h4>
-              <p className="text-gray-600">{formatCurrency(client.mortgage_balance)}</p>
-            </div>
-          </div>
-
-          <div className="mt-8 flex justify-end">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Close
-            </button>
           </div>
         </div>
-      </div>
-    </div>
-  )
-}
+      )}
 
-// Add Client Form Component
-function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (data: any) => void }) {
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    phone: '',
-    email: '',
-    date_of_birth: '',
-    is_married: false,
-    spouse_first_name: '',
-    spouse_last_name: '',
-    spouse_date_of_birth: '',
-    home_value: '',
-    mortgage_balance: '',
-    desired_proceeds: '',
-    lead_source: '',
-    pipeline_status: 'new_lead',
-    assigned_loan_officer_id: ''
-  })
-
-  const [errors, setErrors] = useState<{[key: string]: string}>({})
-
-  const loanOfficers = [
-    { id: 'jeremiah_sherer', name: 'Jeremiah Sherer' },
-    { id: 'christian_ford', name: 'Christian Ford' },
-    { id: 'jon_ford', name: 'Jon Ford' },
-    { id: 'ahmed_samura', name: 'Ahmed Samura' },
-    { id: 'ryan_sterling', name: 'Ryan Sterling' },
-    { id: 'spencer_kline', name: 'Spencer Kline' }
-  ]
-
-  const leadSources = [
-    'Forward Referral',
-    'Realtor Referral', 
-    'Mailer',
-    'Website',
-    'Phone Call',
-    'Walk-in',
-    'Social Media',
-    'Other'
-  ]
-
-  const validateForm = () => {
-    const newErrors: {[key: string]: string} = {}
-
-    if (!formData.first_name.trim()) newErrors.first_name = 'First name is required'
-    if (!formData.last_name.trim()) newErrors.last_name = 'Last name is required'
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
-    if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required'
-
-    // Age validation (must be 62+)
-    if (formData.date_of_birth) {
-      const age = new Date().getFullYear() - new Date(formData.date_of_birth).getFullYear()
-      if (age < 62) {
-        newErrors.date_of_birth = 'Client must be 62 or older for reverse mortgage'
-      }
-    }
-
-    // Spouse validation if married
-    if (formData.is_married) {
-      if (!formData.spouse_first_name.trim()) newErrors.spouse_first_name = 'Spouse first name is required'
-      if (!formData.spouse_last_name.trim()) newErrors.spouse_last_name = 'Spouse last name is required'
-      if (!formData.spouse_date_of_birth) newErrors.spouse_date_of_birth = 'Spouse date of birth is required'
-      
-      if (formData.spouse_date_of_birth) {
-        const spouseAge = new Date().getFullYear() - new Date(formData.spouse_date_of_birth).getFullYear()
-        if (spouseAge < 62) {
-          newErrors.spouse_date_of_birth = 'Spouse must also be 62 or older'
-        }
-      }
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
-
-    const clientData = {
-      ...formData,
-      home_value: formData.home_value ? parseInt(formData.home_value) : null,
-      mortgage_balance: formData.mortgage_balance ? parseInt(formData.mortgage_balance) : null,
-      desired_proceeds: formData.desired_proceeds ? parseInt(formData.desired_proceeds) : null,
-      email: formData.email || null,
-      spouse_first_name: formData.is_married ? formData.spouse_first_name : null,
-      spouse_last_name: formData.is_married ? formData.spouse_last_name : null,
-      spouse_date_of_birth: formData.is_married ? formData.spouse_date_of_birth : null,
-    }
-
-    onSave(clientData)
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/30">
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Add New Client</h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6 text-gray-500" />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Personal Information */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                <input
-                  type="text"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.first_name ? 'border-red-500' : 'border-gray-300'}`}
-                />
-                {errors.first_name && <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                <input
-                  type="text"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.last_name ? 'border-red-500' : 'border-gray-300'}`}
-                />
-                {errors.last_name && <p className="text-red-500 text-sm mt-1">{errors.last_name}</p>}
-              </div>
+      {/* Client Detail Modal */}
+      {showDetailModal && selectedClient && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-800">
+                {selectedClient.first_name} {selectedClient.last_name}
+              </h2>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="text-gray-500 hover:text-gray-700 p-2"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
 
-            {/* Contact Information */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
-                />
-                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Date of Birth */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
-              <input
-                type="date"
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
-                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.date_of_birth ? 'border-red-500' : 'border-gray-300'}`}
-              />
-              {errors.date_of_birth && <p className="text-red-500 text-sm mt-1">{errors.date_of_birth}</p>}
-            </div>
-
-            {/* Marital Status */}
-            <div>
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={formData.is_married}
-                  onChange={(e) => setFormData({...formData, is_married: e.target.checked})}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Married</span>
-              </label>
-            </div>
-
-            {/* Spouse Information */}
-            {formData.is_married && (
-              <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Spouse Information</h3>
-                
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Spouse First Name *</label>
-                    <input
-                      type="text"
-                      value={formData.spouse_first_name}
-                      onChange={(e) => setFormData({...formData, spouse_first_name: e.target.value})}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.spouse_first_name ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                    {errors.spouse_first_name && <p className="text-red-500 text-sm mt-1">{errors.spouse_first_name}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Spouse Last Name *</label>
-                    <input
-                      type="text"
-                      value={formData.spouse_last_name}
-                      onChange={(e) => setFormData({...formData, spouse_last_name: e.target.value})}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.spouse_last_name ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                    {errors.spouse_last_name && <p className="text-red-500 text-sm mt-1">{errors.spouse_last_name}</p>}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <User className="w-5 h-5 mr-2 text-emerald-600" />
+                    Personal Information
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <Mail className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">{selectedClient.email}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <Phone className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">{selectedClient.phone}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <Calendar className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">Age: {calculateAge(selectedClient.date_of_birth)}</span>
+                    </div>
+                    {selectedClient.spouse_name && (
+                      <>
+                        <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                          <User className="w-5 h-5 mr-3 text-emerald-600" />
+                          <span className="font-medium text-gray-700">Spouse: {selectedClient.spouse_name}</span>
+                        </div>
+                        {selectedClient.spouse_date_of_birth && (
+                          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                            <Calendar className="w-5 h-5 mr-3 text-emerald-600" />
+                            <span className="font-medium text-gray-700">Spouse Age: {calculateAge(selectedClient.spouse_date_of_birth)}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Spouse Date of Birth *</label>
-                  <input
-                    type="date"
-                    value={formData.spouse_date_of_birth}
-                    onChange={(e) => setFormData({...formData, spouse_date_of_birth: e.target.value})}
-                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.spouse_date_of_birth ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {errors.spouse_date_of_birth && <p className="text-red-500 text-sm mt-1">{errors.spouse_date_of_birth}</p>}
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Home className="w-5 h-5 mr-2 text-emerald-600" />
+                    Property Details
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+                      <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                      <div>
+                        <span className="font-medium text-gray-700">Property: </span>
+                        <span className="text-gray-600">
+                          {selectedClient.street_address}, {selectedClient.city}, {selectedClient.state} {selectedClient.zip_code}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+                      <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+                      <DollarSign className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">Home Value: {formatCurrency(selectedClient.home_value)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Financial Information */}
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Home Value</label>
-                <input
-                  type="number"
-                  value={formData.home_value}
-                  onChange={(e) => setFormData({...formData, home_value: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="450000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mortgage Balance</label>
-                <input
-                  type="number"
-                  value={formData.mortgage_balance}
-                  onChange={(e) => setFormData({...formData, mortgage_balance: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="125000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Desired Proceeds</label>
-                <input
-                  type="number"
-                  value={formData.desired_proceeds}
-                  onChange={(e) => setFormData({...formData, desired_proceeds: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="200000"
-                />
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <DollarSign className="w-5 h-5 mr-2 text-emerald-600" />
+                    Loan Information
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <DollarSign className="w-5 h-5 mr-3 text-blue-600" />
+                      <span className="font-medium text-gray-700">Desired Proceeds: {formatCurrency(selectedClient.desired_proceeds)}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <User className="w-5 h-5 mr-3 text-blue-600" />
+                      <span className="font-medium text-gray-700">Loan Officer: {selectedClient.loan_officer}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedClient.pipeline_status)}`}>
+                        Status: {selectedClient.pipeline_status.charAt(0).toUpperCase() + selectedClient.pipeline_status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <Calendar className="w-5 h-5 mr-3 text-blue-600" />
+                      <span className="font-medium text-gray-700">
+                        Added: {new Date(selectedClient.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Lead Information */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lead Source</label>
-                <select
-                  value={formData.lead_source}
-                  onChange={(e) => setFormData({...formData, lead_source: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select lead source...</option>
-                  {leadSources.map(source => (
-                    <option key={source} value={source}>{source}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Loan Officer</label>
-                <select
-                  value={formData.assigned_loan_officer_id}
-                  onChange={(e) => setFormData({...formData, assigned_loan_officer_id: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select loan officer...</option>
-                  {loanOfficers.map(officer => (
-                    <option key={officer.id} value={officer.id}>{officer.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex justify-end space-x-4 pt-6">
+            <div className="flex gap-4 pt-8 border-t mt-8">
               <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:scale-105 transition-all duration-200 font-semibold"
+                onClick={() => setShowDetailModal(false)}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                Close
               </button>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:scale-105 transition-all duration-200 font-semibold"
-              >
-                Save Client
+              <button className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center">
+                <Edit2 className="w-5 h-5 mr-2" />
+                Edit Client
               </button>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <X className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Delete Client</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this client? This action cannot be undone.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteClient(showDeleteConfirm)}
+                  className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom CSS for animations */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          33% { transform: translateY(-30px) rotate(120deg); }
+          66% { transform: translateY(15px) rotate(240deg); }
+        }
+        .animate-float {
+          animation: float 20s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   )
 }
