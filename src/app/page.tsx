@@ -221,7 +221,7 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => setShowAddForm(true)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl animate-pulse hover:animate-none"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Add New Client
@@ -268,14 +268,14 @@ export default function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
+              <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 rounded-lg shadow-md">
                 <DollarSign className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Pipeline</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
                   {formatCurrency(
                     clients.reduce((sum, client) => sum + (client.desired_proceeds || 0), 0)
                   )}
@@ -284,40 +284,40 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
+              <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg shadow-md">
                 <Calendar className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Active Clients</p>
-                <p className="text-2xl font-bold text-gray-900">{filteredClients.length}</p>
+                <p className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">{filteredClients.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
             <div className="flex items-center">
-              <div className="p-2 bg-amber-100 rounded-lg">
+              <div className="p-3 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg shadow-md">
                 <Phone className="w-6 h-6 text-amber-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">New Leads</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
                   {clients.filter(c => c.pipeline_status === 'new_lead').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
+              <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-200 rounded-lg shadow-md">
                 <Home className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Qualified</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                   {clients.filter(c => c.pipeline_status === 'qualified').length}
                 </p>
               </div>
@@ -332,15 +332,15 @@ export default function Dashboard() {
             const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
             
             return (
-              <div key={client.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
+              <div key={client.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-in-out border-l-4 border-green-500 hover:border-green-400 backdrop-blur-sm">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-semibold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                    <h3 className="text-xl font-semibold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent hover:from-green-500 hover:to-blue-500 transition-all duration-300">
                       {client.first_name} {client.last_name}
                     </h3>
                     <p className="text-gray-600">Age {age}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(client.pipeline_status)}`}>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(client.pipeline_status)} shadow-sm hover:shadow-md transition-shadow duration-200`}>
                     {client.pipeline_status.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
@@ -384,7 +384,7 @@ export default function Dashboard() {
                   <div className="flex space-x-2">
                     <button 
                       onClick={() => setSelectedClient(client)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center text-sm"
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center text-sm shadow-md hover:shadow-lg"
                     >
                       <Eye className="w-4 h-4 mr-1" />
                       View
@@ -497,7 +497,8 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (clie
     home_value: '',
     mortgage_balance: '',
     desired_proceeds: '',
-    lead_source: ''
+    lead_source: '',
+    assigned_loan_officer_id: ''
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -740,19 +741,37 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (clie
           </div>
 
           {/* Lead Information */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Lead Source</label>
-            <select
-              value={formData.lead_source}
-              onChange={(e) => setFormData({...formData, lead_source: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select source</option>
-              <option value="Forward Referral">Forward Referral</option>
-              <option value="Referral">Referral</option>
-              <option value="Mailer">Mailer</option>
-              <option value="Cold Call">Cold Call</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Lead Source</label>
+              <select
+                value={formData.lead_source}
+                onChange={(e) => setFormData({...formData, lead_source: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              >
+                <option value="">Select source</option>
+                <option value="Forward Referral">Forward Referral</option>
+                <option value="Referral">Referral</option>
+                <option value="Mailer">Mailer</option>
+                <option value="Cold Call">Cold Call</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Assign to Loan Officer</label>
+              <select
+                value={formData.assigned_loan_officer_id}
+                onChange={(e) => setFormData({...formData, assigned_loan_officer_id: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              >
+                <option value="">Select loan officer</option>
+                <option value="jeremiah_sherer">Jeremiah Sherer</option>
+                <option value="christian_ford">Christian Ford</option>
+                <option value="jon_ford">Jon Ford</option>
+                <option value="ahmed_samura">Ahmed Samura</option>
+                <option value="ryan_sterling">Ryan Sterling</option>
+                <option value="spencer_kline">Spencer Kline</option>
+              </select>
+            </div>
           </div>
 
           {/* Qualification Status */}
