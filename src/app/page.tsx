@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Search, Plus, Phone, Mail, Home, DollarSign, Calendar, Filter, Eye, User } from 'lucide-react'
+import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Eye, User } from 'lucide-react'
 
 // Client interface
 interface Client {
@@ -171,7 +171,7 @@ export default function Home() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <Home className="w-6 h-6 text-white" />
+                <HomeIcon className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Next Step</h1>
@@ -270,7 +270,7 @@ export default function Home() {
           <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
             <div className="flex items-center">
               <div className="p-3 bg-emerald-100 rounded-lg flex-shrink-0">
-                <Home className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
+                <HomeIcon className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
               </div>
               <div className="ml-3 lg:ml-4 min-w-0 flex-1">
                 <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">Qualified</p>
@@ -435,7 +435,7 @@ function ClientDetailModal({ client, onClose }: { client: Client, onClose: () =>
 
             <div className="space-y-4">
               <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
-                <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
                 <span className="font-medium text-gray-700">Home Value: {formatCurrency(client.home_value)}</span>
               </div>
               
