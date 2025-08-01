@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Plus, Phone, Mail, Home, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
+import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
 
 // Client interface with address fields and notes
 interface Client {
@@ -517,7 +517,7 @@ export default function NextStepCRM() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   <div className="lg:col-span-2">
                     <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <User className="w-5 h-5 mr-2 text-emerald-600" />
+                      <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
                       Personal Information
                     </h4>
                   </div>
@@ -615,7 +615,7 @@ export default function NextStepCRM() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   <div className="lg:col-span-2">
                     <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <Home className="w-5 h-5 mr-2 text-emerald-600" />
+                      <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
                       Property Information
                     </h4>
                   </div>
@@ -1182,12 +1182,12 @@ export default function NextStepCRM() {
                 {/* Property Details Section - ALWAYS SHOW */}
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <Home className="w-5 h-5 mr-2 text-emerald-600" />
+                    <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
                     Property Details
                   </h4>
                   <div className="bg-emerald-50 rounded-lg p-4 space-y-3">
                     <div className="flex items-center">
-                      <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
                       <div>
                         <span className="font-medium text-gray-700">Property: </span>
                         <span className="text-gray-600">
@@ -1206,7 +1206,7 @@ export default function NextStepCRM() {
                       </div>
                     </div>
                     <div className="flex items-center p-3 bg-white rounded-lg">
-                      <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
                       <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Not specified'}</span>
                     </div>
                   </div>
@@ -1220,7 +1220,7 @@ export default function NextStepCRM() {
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
-                      <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
                       <div>
                         <span className="font-medium text-gray-700">Property: </span>
                         <span className="text-gray-600">{formatCurrency(selectedClient.home_value)}</span>
