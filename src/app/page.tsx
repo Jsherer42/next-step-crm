@@ -224,15 +224,15 @@ export default function Home() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
+          <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
             <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <DollarSign className="w-5 h-5 lg:w-6 lg:h-6 text-green-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 mb-1">Total Pipeline</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">Total Pipeline</p>
+                <p className="text-lg lg:text-2xl font-bold text-gray-900 truncate">
                   {formatCurrency(
                     clients.reduce((sum, client) => sum + (client.desired_proceeds || 0), 0)
                   )}
@@ -241,40 +241,40 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
             <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <Calendar className="w-5 h-5 lg:w-6 lg:h-6 text-blue-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 mb-1">Active Clients</p>
-                <p className="text-2xl font-bold text-gray-900">{filteredClients.length}</p>
+              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">Active Clients</p>
+                <p className="text-lg lg:text-2xl font-bold text-gray-900">{filteredClients.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
             <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <Phone className="w-6 h-6 text-orange-600" />
+              <div className="p-3 bg-orange-100 rounded-lg flex-shrink-0">
+                <Phone className="w-5 h-5 lg:w-6 lg:h-6 text-orange-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 mb-1">New Leads</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">New Leads</p>
+                <p className="text-lg lg:text-2xl font-bold text-gray-900">
                   {clients.filter(c => c.pipeline_status === 'new_lead').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md border border-gray-200 min-w-0">
             <div className="flex items-center">
-              <div className="p-3 bg-emerald-100 rounded-lg">
-                <Home className="w-6 h-6 text-emerald-600" />
+              <div className="p-3 bg-emerald-100 rounded-lg flex-shrink-0">
+                <Home className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 mb-1">Qualified</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                <p className="text-xs lg:text-sm font-medium text-gray-600 mb-1 truncate">Qualified</p>
+                <p className="text-lg lg:text-2xl font-bold text-gray-900">
                   {clients.filter(c => c.pipeline_status === 'qualified').length}
                 </p>
               </div>
