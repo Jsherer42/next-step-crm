@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
+import { Search, Plus, Phone, Mail, Home, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
 
-// Client interface with address fields
+// Client interface
 interface Client {
   id: string
   first_name: string
@@ -13,11 +13,6 @@ interface Client {
   date_of_birth: string
   spouse_name?: string
   spouse_date_of_birth?: string
-  street_address: string
-  city: string
-  state: string
-  zip_code: string
-  property_type: 'single_family' | 'condo' | 'townhome' | 'manufactured' | 'other'
   home_value: number
   desired_proceeds: number
   loan_officer: string
@@ -42,18 +37,13 @@ export default function NextStepCRM() {
     date_of_birth: '',
     spouse_name: '',
     spouse_date_of_birth: '',
-    street_address: '',
-    city: '',
-    state: '',
-    zip_code: '',
-    property_type: 'single_family' as const,
     home_value: 0,
     desired_proceeds: 0,
     loan_officer: '',
     pipeline_status: 'lead' as const
   })
 
-  // Initialize with demo data including addresses
+  // Initialize with demo data
   useEffect(() => {
     setClients([
       {
@@ -65,15 +55,10 @@ export default function NextStepCRM() {
         date_of_birth: '1961-03-15',
         spouse_name: 'Linda Johnson',
         spouse_date_of_birth: '1963-07-22',
-        street_address: '1247 Maple Street',
-        city: 'Arlington',
-        state: 'VA',
-        zip_code: '22201',
-        property_type: 'single_family',
         home_value: 450000,
         desired_proceeds: 200000,
         loan_officer: 'Sarah Mitchell',
-        pipeline_status: 'qualified',
+        pipeline_status: 'qualified' as const,
         created_at: new Date().toISOString()
       },
       {
@@ -85,26 +70,15 @@ export default function NextStepCRM() {
         date_of_birth: '1959-08-22',
         spouse_name: 'William Williams',
         spouse_date_of_birth: '1957-12-10',
-        street_address: '892 Oak Avenue',
-        city: 'Bethesda',
-        state: 'MD',
-        zip_code: '20814',
-        property_type: 'condo',
         home_value: 620000,
         desired_proceeds: 150000,
         loan_officer: 'James Parker',
-        pipeline_status: 'counseling',
+        pipeline_status: 'counseling' as const,
         created_at: new Date().toISOString()
       }
     ])
   }, [])
 
-  // Utility function to create Zillow URL
-  const getZillowUrl = (address: string, city: string, state: string, zip: string) => {
-    const fullAddress = `${address}, ${city}, ${state} ${zip}`
-    const encodedAddress = encodeURIComponent(fullAddress)
-    return `https://www.zillow.com/homes/${encodedAddress}_rb/`
-  }
   // Utility functions
   const calculateAge = (dateOfBirth: string) => {
     const today = new Date()
@@ -380,24 +354,7 @@ export default function NextStepCRM() {
                     {client.first_name} {client.last_name}
                   </h3>
                   <div className="text-sm text-gray-600 mt-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <HomeIcon className="w-4 h-4 mr-1" />
-                        <span>{client.city}, {client.state}</span>
-                      </div>
-                      {client.street_address && (
-                        <button
-                          onClick={() => window.open(getZillowUrl(client.street_address, client.city, client.state, client.zip_code), '_blank')}
-                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center"
-                          title="View on Zillow"
-                        >
-                          🏠 Zillow
-                        </button>
-                      )}
-                    </div>
-                    <div className="mt-1">
-                      {client.property_type && client.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} • {formatCurrency(client.home_value)}
-                    </div>
+                    {formatCurrency(client.home_value)} home value
                   </div>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(client.pipeline_status)}`}>
@@ -574,98 +531,6 @@ export default function NextStepCRM() {
                 </div>
               </div>
 
-              {/* Property Address Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="lg:col-span-2">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
-                    Property Information
-                  </h4>
-                </div>
-                
-                <div className="lg:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Street Address *
-                  </label>
-                  <input
-                    type="text"
-                    value={newClient.street_address}
-                    onChange={(e) => setNewClient({...newClient, street_address: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                    placeholder="1234 Main Street"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    value={newClient.city}
-                    onChange={(e) => setNewClient({...newClient, city: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                    placeholder="Washington"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State *
-                  </label>
-                  <select
-                    value={newClient.state}
-                    onChange={(e) => setNewClient({...newClient, state: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                    required
-                  >
-                    <option value="">Select State</option>
-                    <option value="VA">Virginia</option>
-                    <option value="MD">Maryland</option>
-                    <option value="DC">Washington DC</option>
-                    <option value="WV">West Virginia</option>
-                    <option value="PA">Pennsylvania</option>
-                    <option value="DE">Delaware</option>
-                    <option value="NC">North Carolina</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ZIP Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={newClient.zip_code}
-                    onChange={(e) => setNewClient({...newClient, zip_code: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                    placeholder="20001"
-                    maxLength={5}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Property Type *
-                  </label>
-                  <select
-                    value={newClient.property_type}
-                    onChange={(e) => setNewClient({...newClient, property_type: e.target.value as any})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                    required
-                  >
-                    <option value="single_family">Single Family Home</option>
-                    <option value="condo">Condominium</option>
-                    <option value="townhome">Townhome</option>
-                    <option value="manufactured">Manufactured Home</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
-
               {/* Financial Information */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="lg:col-span-2">
@@ -818,44 +683,6 @@ export default function NextStepCRM() {
                 </div>
               </div>
 
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
-                    Property Details
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                      <div className="flex items-center">
-                        <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
-                        <div>
-                          <span className="font-medium text-gray-700">Property: </span>
-                          <span className="text-gray-600">
-                            {selectedClient.street_address}, {selectedClient.city}, {selectedClient.state} {selectedClient.zip_code}
-                          </span>
-                        </div>
-                      </div>
-                      {selectedClient.street_address && (
-                        <button
-                          onClick={() => window.open(getZillowUrl(selectedClient.street_address, selectedClient.city, selectedClient.state, selectedClient.zip_code), '_blank')}
-                          className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors flex items-center ml-2"
-                          title="View on Zillow"
-                        >
-                          🏠 Zillow
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
-                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
-                      <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type && selectedClient.property_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                    </div>
-                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
-                      <DollarSign className="w-5 h-5 mr-3 text-emerald-600" />
-                      <span className="font-medium text-gray-700">Home Value: {formatCurrency(selectedClient.home_value)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-6">
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -863,6 +690,10 @@ export default function NextStepCRM() {
                     Financial Information
                   </h4>
                   <div className="space-y-3">
+                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+                      <Home className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">Home Value: {formatCurrency(selectedClient.home_value)}</span>
+                    </div>
                     <div className="flex items-center p-3 bg-blue-50 rounded-lg">
                       <DollarSign className="w-5 h-5 mr-3 text-blue-600" />
                       <span className="font-medium text-gray-700">Desired Proceeds: {formatCurrency(selectedClient.desired_proceeds)}</span>
@@ -884,6 +715,7 @@ export default function NextStepCRM() {
                     </div>
                   </div>
                 </div>
+              </div>
             </div>
 
             <div className="flex gap-4 pt-8 border-t mt-8">
