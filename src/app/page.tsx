@@ -157,7 +157,35 @@ export default function Dashboard() {
     return matchesSearch && matchesStatus
   })
 
-  const handleSaveClient = async (clientData: any) => {
+  const handleDeleteClient = async (clientId: string) => {
+    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      // Try to delete from database
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId)
+
+      if (error) {
+        console.log('Deleting from demo data')
+      }
+
+      // Remove from local state regardless
+      setClients(prev => prev.filter(client => client.id !== clientId))
+
+      // If a client was selected and we deleted it, close the modal
+      if (selectedClient && selectedClient.id === clientId) {
+        setSelectedClient(null)
+      }
+    } catch (error) {
+      console.error('Error deleting client:', error)
+      // Still remove from local state
+      setClients(prev => prev.filter(client => client.id !== clientId))
+    }
+  }
     try {
       // Try to save to database, but fallback to local state
       const { data, error } = await supabase
@@ -423,10 +451,17 @@ export default function Dashboard() {
                   <div className="flex space-x-3">
                     <button 
                       onClick={() => setSelectedClient(client)}
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-2xl hover:shadow-blue-500/25 hover:scale-110 transition-all duration-300 flex items-center transform hover:-translate-y-1"
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-5 py-3 rounded-xl font-bold shadow-2xl hover:shadow-blue-500/25 hover:scale-110 transition-all duration-300 flex items-center transform hover:-translate-y-1"
                     >
-                      <Eye className="w-5 h-5 mr-2" />
+                      <Eye className="w-4 h-4 mr-2" />
                       View
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteClient(client.id)}
+                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-5 py-3 rounded-xl font-bold shadow-2xl hover:shadow-red-500/25 hover:scale-110 transition-all duration-300 flex items-center transform hover:-translate-y-1"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Delete
                     </button>
                   </div>
                 </div>
