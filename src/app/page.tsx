@@ -208,37 +208,64 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen" style={{
-      background: 'linear-gradient(135deg, #e0f2fe 0%, #f8fafc 25%, #f0fdfa 50%, #f8fafc 75%, #e8f5e8 100%)'
+      background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 20%, #059669 40%, #10b981 60%, #0ea5e9 80%, #1d4ed8 100%)',
+      backgroundSize: '400% 400%',
+      animation: 'gradientShift 15s ease infinite'
     }}>
+      <style jsx>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+      `}</style>
+
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-white/5 rounded-full animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-green-400/10 rounded-full" style={{animation: 'float 6s ease-in-out infinite'}}></div>
+        <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-blue-400/10 rounded-full" style={{animation: 'float 8s ease-in-out infinite delay-2s'}}></div>
+        <div className="absolute bottom-20 right-1/3 w-28 h-28 bg-white/5 rounded-full animate-pulse"></div>
+      </div>
+
       {/* Header */}
-      <div className="bg-gradient-to-r from-white/95 to-white/90 backdrop-blur-sm shadow-lg border-b border-gray-200/50">
+      <div className="bg-white/10 backdrop-blur-md shadow-2xl border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                {/* City First Logo Placeholder - Replace with actual logo */}
-                <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <Home className="w-6 h-6 text-white" />
+              <div className="flex items-center space-x-4">
+                {/* Enhanced City First Logo */}
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300" style={{animation: 'pulse 3s ease-in-out infinite'}}>
+                  <Home className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-green-500 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold text-white drop-shadow-lg">
                     Next Step
                   </h1>
-                  <p className="text-gray-600 font-medium">City First FHA Retirement CRM</p>
+                  <p className="text-blue-100 font-semibold text-lg">City First FHA Retirement CRM</p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <button 
                 onClick={() => setShowAddForm(true)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 hover:scale-105 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl animate-pulse hover:animate-none"
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-2xl hover:shadow-green-500/25 hover:scale-110 transition-all duration-300 transform hover:-translate-y-1"
+                style={{animation: 'pulse 2s ease-in-out infinite'}}
               >
-                <Plus className="w-5 h-5 mr-2" />
+                <Plus className="w-6 h-6 mr-3" />
                 Add New Client
               </button>
-              <div className="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-lg border border-gray-200/50 shadow-sm">
-                <div className="text-sm text-gray-600">
-                  Welcome, <span className="font-semibold text-gray-800">{user?.email}</span>
+              <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-xl border border-white/30 shadow-xl">
+                <div className="text-white font-semibold">
+                  Welcome, <span className="text-green-200">{user?.email}</span>
                 </div>
               </div>
             </div>
@@ -247,47 +274,47 @@ export default function Dashboard() {
       </div>
 
       {/* Controls */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/70 w-6 h-6" />
             <input
               type="text"
               placeholder="Search clients..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md transition-all duration-200"
+              className="w-full pl-12 pr-4 py-4 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl focus:ring-4 focus:ring-green-400/50 focus:border-white/50 shadow-xl text-white placeholder-white/70 text-lg font-medium hover:bg-white/25 transition-all duration-300"
             />
           </div>
 
-          <div className="flex items-center bg-white/80 backdrop-blur-sm px-3 py-3 rounded-lg border border-gray-200/50 shadow-sm">
-            <Filter className="w-4 h-4 mr-2 text-gray-500" />
+          <div className="flex items-center bg-white/20 backdrop-blur-md px-6 py-4 rounded-xl border border-white/30 shadow-xl">
+            <Filter className="w-5 h-5 mr-3 text-white/80" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 focus:outline-none text-gray-700"
+              className="bg-transparent border-none focus:ring-0 focus:outline-none text-white font-semibold text-lg"
             >
-              <option value="all">All Status</option>
-              <option value="new_lead">New Lead</option>
-              <option value="qualified">Qualified</option>
-              <option value="counseling">Counseling</option>
-              <option value="application">Application</option>
-              <option value="processing">Processing</option>
-              <option value="closed">Closed</option>
+              <option value="all" className="text-gray-800">All Status</option>
+              <option value="new_lead" className="text-gray-800">New Lead</option>
+              <option value="qualified" className="text-gray-800">Qualified</option>
+              <option value="counseling" className="text-gray-800">Counseling</option>
+              <option value="application" className="text-gray-800">Application</option>
+              <option value="processing" className="text-gray-800">Processing</option>
+              <option value="closed" className="text-gray-800">Closed</option>
             </select>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/50 hover:border-green-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          <div className="bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-green-400/50 transform hover:scale-105">
             <div className="flex items-center">
-              <div className="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg">
-                <DollarSign className="w-7 h-7 text-white" />
+              <div className="p-5 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 2s ease-in-out infinite'}}>
+                <DollarSign className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Pipeline</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <div className="ml-6">
+                <p className="text-lg font-bold text-white/90 mb-1">Total Pipeline</p>
+                <p className="text-4xl font-black text-white drop-shadow-lg">
                   {formatCurrency(
                     clients.reduce((sum, client) => sum + (client.desired_proceeds || 0), 0)
                   )}
@@ -296,40 +323,40 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/50 hover:border-blue-200">
+          <div className="bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-blue-400/50 transform hover:scale-105">
             <div className="flex items-center">
-              <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
-                <Calendar className="w-7 h-7 text-white" />
+              <div className="p-5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 2.5s ease-in-out infinite'}}>
+                <Calendar className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Clients</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">{filteredClients.length}</p>
+              <div className="ml-6">
+                <p className="text-lg font-bold text-white/90 mb-1">Active Clients</p>
+                <p className="text-4xl font-black text-white drop-shadow-lg">{filteredClients.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/50 hover:border-amber-200">
+          <div className="bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-orange-400/50 transform hover:scale-105">
             <div className="flex items-center">
-              <div className="p-4 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
-                <Phone className="w-7 h-7 text-white" />
+              <div className="p-5 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 3s ease-in-out infinite'}}>
+                <Phone className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">New Leads</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+              <div className="ml-6">
+                <p className="text-lg font-bold text-white/90 mb-1">New Leads</p>
+                <p className="text-4xl font-black text-white drop-shadow-lg">
                   {clients.filter(c => c.pipeline_status === 'new_lead').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-white/50 hover:border-emerald-200">
+          <div className="bg-white/15 backdrop-blur-md p-8 rounded-2xl shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 hover:-translate-y-3 border border-white/20 hover:border-emerald-400/50 transform hover:scale-105">
             <div className="flex items-center">
-              <div className="p-4 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg">
-                <Home className="w-7 h-7 text-white" />
+              <div className="p-5 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl shadow-2xl" style={{animation: 'pulse 3.5s ease-in-out infinite'}}>
+                <Home className="w-8 h-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Qualified</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+              <div className="ml-6">
+                <p className="text-lg font-bold text-white/90 mb-1">Qualified</p>
+                <p className="text-4xl font-black text-white drop-shadow-lg">
                   {clients.filter(c => c.pipeline_status === 'qualified').length}
                 </p>
               </div>
@@ -344,61 +371,61 @@ export default function Dashboard() {
             const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
             
             return (
-              <div key={client.id} className="bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-in-out border-l-4 border-green-500 hover:border-green-400 p-6 hover:bg-gradient-to-br hover:from-white/98 hover:to-white/90 border border-white/50">
-                <div className="flex justify-between items-start mb-4">
+              <div key={client.id} className="bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl hover:shadow-white/10 hover:-translate-y-4 transition-all duration-500 ease-in-out border-l-4 border-green-400 hover:border-green-300 p-8 hover:bg-white/25 border border-white/30 transform hover:scale-105 hover:rotate-1">
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h3 className="text-xl font-semibold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent hover:from-green-500 hover:to-blue-500 transition-all duration-300">
+                    <h3 className="text-2xl font-bold text-white drop-shadow-lg hover:text-green-200 transition-all duration-300">
                       {client.first_name} {client.last_name}
                     </h3>
-                    <p className="text-gray-600 font-medium">Age {age}</p>
+                    <p className="text-white/80 font-semibold text-lg">Age {age}</p>
                   </div>
-                  <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(client.pipeline_status)} shadow-md hover:shadow-lg transition-all duration-200 border border-white/50`}>
+                  <span className={`px-5 py-3 rounded-xl text-sm font-bold ${getStatusColor(client.pipeline_status)} shadow-xl hover:shadow-2xl transition-all duration-300 border border-white/30 transform hover:scale-110`}>
                     {client.pipeline_status.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center text-gray-600">
-                      <Phone className="w-4 h-4 mr-2" />
-                      <span className="text-sm">{client.phone}</span>
+                <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center text-white/90">
+                      <Phone className="w-5 h-5 mr-3 text-green-300" />
+                      <span className="font-medium">{client.phone}</span>
                     </div>
-                    <div className="flex items-center text-gray-600">
-                      <Mail className="w-4 h-4 mr-2" />
-                      <span className="text-sm">{client.email || 'No email'}</span>
+                    <div className="flex items-center text-white/90">
+                      <Mail className="w-5 h-5 mr-3 text-blue-300" />
+                      <span className="font-medium">{client.email || 'No email'}</span>
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <div className="flex items-center text-gray-600">
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      <span className="text-sm">Home: {formatCurrency(client.home_value)}</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center text-white/90">
+                      <DollarSign className="w-5 h-5 mr-3 text-green-300" />
+                      <span className="font-medium">Home: {formatCurrency(client.home_value)}</span>
                     </div>
-                    <div className="flex items-center text-gray-600">
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      <span className="text-sm">Desired: {formatCurrency(client.desired_proceeds)}</span>
+                    <div className="flex items-center text-white/90">
+                      <DollarSign className="w-5 h-5 mr-3 text-emerald-300" />
+                      <span className="font-medium">Desired: {formatCurrency(client.desired_proceeds)}</span>
                     </div>
                   </div>
                 </div>
 
                 {client.is_married && client.spouse_first_name && (
-                  <div className="mb-4 p-2 bg-blue-50 rounded">
-                    <span className="text-sm text-blue-800">
+                  <div className="mb-6 p-4 bg-blue-400/20 backdrop-blur-sm rounded-xl border border-blue-300/30">
+                    <span className="text-blue-100 font-semibold">
                       👫 Married to {client.spouse_first_name} {client.spouse_last_name} (Age {spouseAge})
                     </span>
                   </div>
                 )}
 
-                <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                  <div className="text-sm text-gray-500">
-                    <div>Source: {client.lead_source || 'Unknown'}</div>
+                <div className="flex justify-between items-center pt-6 border-t border-white/20">
+                  <div className="text-white/80 font-medium">
+                    <div>Source: <span className="text-green-200 font-bold">{client.lead_source || 'Unknown'}</span></div>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-3">
                     <button 
                       onClick={() => setSelectedClient(client)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center text-sm shadow-md hover:shadow-lg"
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-2xl hover:shadow-blue-500/25 hover:scale-110 transition-all duration-300 flex items-center transform hover:-translate-y-1"
                     >
-                      <Eye className="w-4 h-4 mr-1" />
+                      <Eye className="w-5 h-5 mr-2" />
                       View
                     </button>
                   </div>
