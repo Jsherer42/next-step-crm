@@ -43,7 +43,6 @@ export default function Dashboard() {
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      // For now, we'll create a demo mode - in production this would redirect to login
       setUser({ email: 'demo@cityfirst.com' })
     } else {
       setUser(user)
@@ -52,7 +51,6 @@ export default function Dashboard() {
 
   const getClients = async () => {
     try {
-      // Try to get from database, but fallback to demo data
       const { data, error } = await supabase
         .from('clients')
         .select('*')
@@ -60,7 +58,6 @@ export default function Dashboard() {
 
       if (error) {
         console.log('Using demo data - database not connected yet')
-        // Demo data for testing
         setClients([
           {
             id: '1',
@@ -107,9 +104,70 @@ export default function Dashboard() {
       setClients(data || [])
     } catch (error) {
       console.error('Error:', error)
-      setClients([]) // Empty state
+      setClients([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteClient = async (clientId: string) => {
+    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId)
+
+      if (error) {
+        console.log('Deleting from demo data')
+      }
+
+      setClients(prev => prev.filter(client => client.id !== clientId))
+
+      if (selectedClient && selectedClient.id === clientId) {
+        setSelectedClient(null)
+      }
+    } catch (error) {
+      console.error('Error deleting client:', error)
+      setClients(prev => prev.filter(client => client.id !== clientId))
+    }
+  }
+
+  const handleSaveClient = async (clientData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([{
+          ...clientData,
+          created_by_id: user?.id
+        }])
+        .select()
+
+      if (error) {
+        console.log('Adding to demo data')
+        const newClient = {
+          ...clientData,
+          id: Date.now().toString(),
+          created_at: new Date().toISOString()
+        }
+        setClients(prev => [newClient, ...prev])
+        return
+      }
+
+      if (data) {
+        setClients(prev => [data[0], ...prev])
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      const newClient = {
+        ...clientData,
+        id: Date.now().toString(),
+        created_at: new Date().toISOString()
+      }
+      setClients(prev => [newClient, ...prev])
     }
   }
 
@@ -156,109 +214,6 @@ export default function Dashboard() {
     
     return matchesSearch && matchesStatus
   })
-
-  const handleSaveClient = async (clientData: any) => {
-    try {
-      // Try to save to database, but fallback to local state
-      const { data, error } = await supabase
-        .from('clients')
-        .insert([{
-          ...clientData,
-          created_by_id: user?.id
-        }])
-        .select()
-
-      if (error) {
-        console.log('Adding to demo data')
-        // Add to local state for demo
-        const newClient = {
-          ...clientData,
-          id: Date.now().toString(),
-          created_at: new Date().toISOString()
-        }
-        setClients(prev => [newClient, ...prev])
-        return
-      }
-
-      if (data) {
-        setClients(prev => [data[0], ...prev])
-      }
-  const handleDeleteClient = async (clientId: string) => {
-    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-      return
-    }
-
-    try {
-      // Try to delete from database
-      const { error } = await supabase
-        .from('clients')
-        .delete()
-        .eq('id', clientId)
-
-      if (error) {
-        console.log('Deleting from demo data')
-      }
-
-      // Remove from local state regardless
-      setClients(prev => prev.filter(client => client.id !== clientId))
-
-      // If a client was selected and we deleted it, close the modal
-      if (selectedClient && selectedClient.id === clientId) {
-        setSelectedClient(null)
-      }
-    } catch (error) {
-      console.error('Error deleting client:', error)
-      // Still remove from local state
-      setClients(prev => prev.filter(client => client.id !== clientId))
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading Next Step CRM...</p>
-        </div>
-      </div>
-    )
-  }
-    try {
-      // Try to save to database, but fallback to local state
-      const { data, error } = await supabase
-        .from('clients')
-        .insert([{
-          ...clientData,
-          created_by_id: user?.id
-        }])
-        .select()
-
-      if (error) {
-        console.log('Adding to demo data')
-        // Add to local state for demo
-        const newClient = {
-          ...clientData,
-          id: Date.now().toString(),
-          created_at: new Date().toISOString()
-        }
-        setClients(prev => [newClient, ...prev])
-        return
-      }
-
-      if (data) {
-        setClients(prev => [data[0], ...prev])
-      }
-    } catch (error) {
-      console.error('Error:', error)
-      // Fallback to local state
-      const newClient = {
-        ...clientData,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString()
-      }
-      setClients(prev => [newClient, ...prev])
-    }
-  }
 
   if (loading) {
     return (
@@ -307,7 +262,6 @@ export default function Dashboard() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-4">
-                {/* Enhanced City First Logo */}
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300" style={{animation: 'pulse 3s ease-in-out infinite'}}>
                   <Home className="w-8 h-8 text-white" />
                 </div>
@@ -509,8 +463,8 @@ export default function Dashboard() {
 
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-lg">No clients found</div>
-            <p className="text-gray-500 mt-2">Add your first client to get started!</p>
+            <div className="text-white/70 text-lg">No clients found</div>
+            <p className="text-white/50 mt-2">Add your first client to get started!</p>
           </div>
         )}
       </div>
@@ -898,14 +852,14 @@ function AddClientForm({ onClose, onSave }: { onClose: () => void, onSave: (clie
           <div className="flex justify-end space-x-4 pt-6 border-t">
             <button
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:scale-105 transition-all duration-200"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center disabled:opacity-50"
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center disabled:opacity-50 shadow-lg hover:shadow-xl"
             >
               {isSubmitting ? (
                 <>
