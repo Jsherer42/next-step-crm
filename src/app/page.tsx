@@ -30,7 +30,60 @@ interface Client {
 }
 
 export default function NextStepCRM() {
-  // Simple PLF values for quick calculation
+  // Enhanced PLF calculation with all programs
+  const calculateProgramComparison = (client: Client) => {
+    const age = getYoungestAge(client)
+    const homeValue = client.home_value
+    
+    const programs = [
+      {
+        name: 'HECM',
+        description: 'Government Program',
+        plf: age >= 70 ? 0.338 : age >= 65 ? 0.313 : 0.285,
+        interestRate: 3.5,
+        upb: 0,
+        features: ['Government backed', 'Mortgage insurance', 'Lower PLF but stable']
+      },
+      {
+        name: 'Equity Plus',
+        description: 'Standard Proprietary',
+        plf: age >= 70 ? 0.396 : age >= 65 ? 0.372 : 0.338,
+        interestRate: 0,
+        upb: 0,
+        features: ['Higher loan amounts', 'No mortgage insurance', 'Proprietary product']
+      },
+      {
+        name: 'Equity Plus Peak',
+        description: 'Enhanced Proprietary',
+        plf: age >= 70 ? 0.447 : age >= 65 ? 0.423 : 0.391,
+        interestRate: 0,
+        upb: 0,
+        features: ['Highest loan amounts', 'Premium product', 'Best for high-value homes']
+      },
+      {
+        name: 'Equity Plus LOC',
+        description: 'Line of Credit',
+        plf: age >= 70 ? 0.396 : age >= 65 ? 0.372 : 0.338,
+        interestRate: 0,
+        upb: 0,
+        features: ['Flexible access', 'Growth potential', 'Line of credit structure']
+      }
+    ]
+    
+    // Calculate UPB for each program
+    programs.forEach(program => {
+      program.upb = homeValue * program.plf
+    })
+    
+    // Find the best option (highest UPB)
+    const bestProgram = programs.reduce((best, current) => 
+      current.upb > best.upb ? current : best
+    )
+    
+    return { programs, bestProgram, age, homeValue }
+  }
+
+  // Simple PLF calculation for individual use
   const calculateUPB = (homeValue: number, age: number, programType: string = 'HECM') => {
     let plf = 0.285 // Default HECM at age 62
     
@@ -46,7 +99,6 @@ export default function NextStepCRM() {
     
     return homeValue * plf
   }
-
   const getYoungestAge = (client: Client) => {
     const clientAge = calculateAge(client.date_of_birth)
     const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
@@ -109,6 +161,7 @@ export default function NextStepCRM() {
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [showAddClient, setShowAddClient] = useState(false)
   const [showAddSpouse, setShowAddSpouse] = useState<string | null>(null)
+  const [showProgramComparison, setShowProgramComparison] = useState<Client | null>(null)
   const [spouseForm, setSpouseForm] = useState({
     spouse_name: '',
     spouse_date_of_birth: '',
@@ -561,6 +614,13 @@ export default function NextStepCRM() {
                       View
                     </button>
                     <button
+                      onClick={() => setShowProgramComparison(client)}
+                      className="flex-1 flex items-center justify-center px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors duration-200"
+                    >
+                      <Calculator className="w-4 h-4 mr-1" />
+                      Compare
+                    </button>
+                    <button
                       onClick={() => handleEditClient(client)}
                       className="flex-1 flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors duration-200"
                     >
@@ -592,6 +652,127 @@ export default function NextStepCRM() {
           </div>
         )}
       </div>
+
+      {/* Program Comparison Modal */}
+      {showProgramComparison && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Program Comparison - {showProgramComparison.first_name} {showProgramComparison.last_name}
+                </h2>
+                <p className="text-gray-600">Age: {getYoungestAge(showProgramComparison)} | Home Value: {formatCurrency(showProgramComparison.home_value)}</p>
+              </div>
+              <button
+                onClick={() => setShowProgramComparison(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {calculateProgramComparison(showProgramComparison).programs.map((program, index) => {
+                const isBest = program.name === calculateProgramComparison(showProgramComparison).bestProgram.name
+                return (
+                  <div 
+                    key={program.name}
+                    className={`p-6 rounded-xl border-2 transition-all duration-300 ${
+                      isBest 
+                        ? 'border-green-500 bg-green-50 shadow-lg transform scale-105' 
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    {isBest && (
+                      <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold mb-4 text-center">
+                        🏆 BEST OPTION
+                      </div>
+                    )}
+                    
+                    <div className="text-center mb-4">
+                      <h3 className="text-xl font-bold text-gray-800 mb-1">{program.name}</h3>
+                      <p className="text-gray-600 text-sm">{program.description}</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-sm text-gray-600 mb-1">Principal Limit Factor</div>
+                        <div className="text-2xl font-bold text-blue-600">{(program.plf * 100).toFixed(1)}%</div>
+                      </div>
+
+                      <div className="text-center p-4 bg-emerald-50 rounded-lg">
+                        <div className="text-sm text-gray-600 mb-1">Calculated UPB</div>
+                        <div className="text-2xl font-bold text-emerald-600">{formatCurrency(program.upb)}</div>
+                      </div>
+
+                      {program.interestRate > 0 && (
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-sm text-gray-600 mb-1">Interest Rate</div>
+                          <div className="text-lg font-semibold text-blue-600">{program.interestRate}%</div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold text-gray-700 mb-2">Key Features:</div>
+                        {program.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-center text-sm text-gray-600">
+                            <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                            {feature}
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const updatedClient = {
+                            ...showProgramComparison,
+                            program_type: program.name,
+                            interest_rate: program.name === 'HECM' ? 3.5 : 0
+                          }
+                          setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
+                          setShowProgramComparison(null)
+                        }}
+                        className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
+                          isBest 
+                            ? 'bg-green-500 hover:bg-green-600 text-white' 
+                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                        }`}
+                      >
+                        {program.name === showProgramComparison.program_type ? 'Current Selection' : 'Select This Program'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="mt-8 p-6 bg-blue-50 rounded-xl">
+              <h4 className="text-lg font-semibold text-gray-800 mb-3">💡 Recommendation Summary</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Best Option:</span> 
+                  <span className="text-green-600 font-bold ml-1">
+                    {calculateProgramComparison(showProgramComparison).bestProgram.name}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">Max UPB:</span> 
+                  <span className="text-emerald-600 font-bold ml-1">
+                    {formatCurrency(calculateProgramComparison(showProgramComparison).bestProgram.upb)}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">Client Age:</span> 
+                  <span className="text-blue-600 font-bold ml-1">
+                    {getYoungestAge(showProgramComparison)} years
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Client Detail Modal */}
       {selectedClient && (
@@ -898,8 +1079,11 @@ export default function NextStepCRM() {
                     <input
                       type="date"
                       required
-                      value={newClient.date_of_birth}
-                      onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})}
+                      value={newClient.date_of_birth || ''}
+                      onChange={(e) => {
+                        console.log('Date changed:', e.target.value)
+                        setNewClient({...newClient, date_of_birth: e.target.value})
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
@@ -932,8 +1116,11 @@ export default function NextStepCRM() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
                     <input
                       type="text"
-                      value={newClient.street_address}
-                      onChange={(e) => setNewClient({...newClient, street_address: e.target.value})}
+                      value={newClient.street_address || ''}
+                      onChange={(e) => {
+                        console.log('Address changed:', e.target.value)
+                        setNewClient({...newClient, street_address: e.target.value})
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       placeholder="123 Main Street"
                     />
@@ -943,8 +1130,11 @@ export default function NextStepCRM() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
                     <input
                       type="text"
-                      value={newClient.city}
-                      onChange={(e) => setNewClient({...newClient, city: e.target.value})}
+                      value={newClient.city || ''}
+                      onChange={(e) => {
+                        console.log('City changed:', e.target.value)
+                        setNewClient({...newClient, city: e.target.value})
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
@@ -953,8 +1143,11 @@ export default function NextStepCRM() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
                     <input
                       type="text"
-                      value={newClient.state}
-                      onChange={(e) => setNewClient({...newClient, state: e.target.value})}
+                      value={newClient.state || ''}
+                      onChange={(e) => {
+                        console.log('State changed:', e.target.value)
+                        setNewClient({...newClient, state: e.target.value})
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       placeholder="MD"
                     />
