@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
 
-// Client interface with address fields, notes, and spouse info
+// Client interface with PLF calculation fields
 interface Client {
   id: string
   first_name: string
@@ -63,10 +63,88 @@ export default function NextStepCRM() {
     home_value: 0,
     desired_proceeds: 0,
     program_type: 'HECM',
-    interest_rate: 3.0,
+    interest_rate: 3.5,
     loan_officer: '',
     pipeline_status: 'lead' as const
   })
+
+  // PLF Tables based on your actual data
+  const EQUITY_PLUS_PLF = {
+    55: { "Equity Plus": 0.338, "Equity Plus Peak": 0.391, "Equity Plus LOC": 0.338 },
+    56: { "Equity Plus": 0.341, "Equity Plus Peak": 0.393, "Equity Plus LOC": 0.341 },
+    57: { "Equity Plus": 0.343, "Equity Plus Peak": 0.395, "Equity Plus LOC": 0.343 },
+    58: { "Equity Plus": 0.346, "Equity Plus Peak": 0.397, "Equity Plus LOC": 0.346 },
+    59: { "Equity Plus": 0.349, "Equity Plus Peak": 0.401, "Equity Plus LOC": 0.349 },
+    60: { "Equity Plus": 0.353, "Equity Plus Peak": 0.404, "Equity Plus LOC": 0.353 },
+    61: { "Equity Plus": 0.356, "Equity Plus Peak": 0.407, "Equity Plus LOC": 0.356 },
+    62: { "Equity Plus": 0.360, "Equity Plus Peak": 0.410, "Equity Plus LOC": 0.360 },
+    63: { "Equity Plus": 0.364, "Equity Plus Peak": 0.414, "Equity Plus LOC": 0.364 },
+    64: { "Equity Plus": 0.368, "Equity Plus Peak": 0.417, "Equity Plus LOC": 0.368 },
+    65: { "Equity Plus": 0.372, "Equity Plus Peak": 0.421, "Equity Plus LOC": 0.372 },
+    66: { "Equity Plus": 0.376, "Equity Plus Peak": 0.425, "Equity Plus LOC": 0.376 },
+    67: { "Equity Plus": 0.381, "Equity Plus Peak": 0.429, "Equity Plus LOC": 0.381 },
+    68: { "Equity Plus": 0.385, "Equity Plus Peak": 0.434, "Equity Plus LOC": 0.385 },
+    69: { "Equity Plus": 0.390, "Equity Plus Peak": 0.438, "Equity Plus LOC": 0.390 },
+    70: { "Equity Plus": 0.395, "Equity Plus Peak": 0.443, "Equity Plus LOC": 0.395 },
+    71: { "Equity Plus": 0.400, "Equity Plus Peak": 0.448, "Equity Plus LOC": 0.400 },
+    72: { "Equity Plus": 0.405, "Equity Plus Peak": 0.453, "Equity Plus LOC": 0.405 },
+    73: { "Equity Plus": 0.411, "Equity Plus Peak": 0.458, "Equity Plus LOC": 0.411 },
+    74: { "Equity Plus": 0.416, "Equity Plus Peak": 0.464, "Equity Plus LOC": 0.416 },
+    75: { "Equity Plus": 0.422, "Equity Plus Peak": 0.470, "Equity Plus LOC": 0.422 },
+    76: { "Equity Plus": 0.428, "Equity Plus Peak": 0.476, "Equity Plus LOC": 0.428 },
+    77: { "Equity Plus": 0.434, "Equity Plus Peak": 0.482, "Equity Plus LOC": 0.434 },
+    78: { "Equity Plus": 0.441, "Equity Plus Peak": 0.489, "Equity Plus LOC": 0.441 },
+    79: { "Equity Plus": 0.447, "Equity Plus Peak": 0.495, "Equity Plus LOC": 0.447 },
+    80: { "Equity Plus": 0.454, "Equity Plus Peak": 0.502, "Equity Plus LOC": 0.454 }
+  };
+
+  // HECM PLF data based on your tables
+  const HECM_PLF = {
+    62: { 3.0: 0.326, 3.125: 0.326, 3.25: 0.318, 3.375: 0.308, 3.5: 0.297, 3.625: 0.288, 3.75: 0.278, 3.875: 0.269 },
+    63: { 3.0: 0.332, 3.125: 0.332, 3.25: 0.324, 3.375: 0.314, 3.5: 0.304, 3.625: 0.294, 3.75: 0.285, 3.875: 0.276 },
+    64: { 3.0: 0.339, 3.125: 0.339, 3.25: 0.331, 3.375: 0.321, 3.5: 0.311, 3.625: 0.301, 3.75: 0.292, 3.875: 0.283 },
+    65: { 3.0: 0.345, 3.125: 0.345, 3.25: 0.337, 3.375: 0.327, 3.5: 0.318, 3.625: 0.308, 3.75: 0.299, 3.875: 0.290 },
+    66: { 3.0: 0.352, 3.125: 0.352, 3.25: 0.344, 3.375: 0.334, 3.5: 0.325, 3.625: 0.315, 3.75: 0.306, 3.875: 0.297 },
+    67: { 3.0: 0.359, 3.125: 0.359, 3.25: 0.351, 3.375: 0.341, 3.5: 0.332, 3.625: 0.322, 3.75: 0.313, 3.875: 0.304 },
+    68: { 3.0: 0.366, 3.125: 0.366, 3.25: 0.358, 3.375: 0.348, 3.5: 0.339, 3.625: 0.329, 3.75: 0.320, 3.875: 0.311 },
+    69: { 3.0: 0.373, 3.125: 0.373, 3.25: 0.365, 3.375: 0.355, 3.5: 0.346, 3.625: 0.336, 3.75: 0.327, 3.875: 0.318 },
+    70: { 3.0: 0.380, 3.125: 0.380, 3.25: 0.372, 3.375: 0.362, 3.5: 0.353, 3.625: 0.343, 3.75: 0.334, 3.875: 0.325 },
+    71: { 3.0: 0.388, 3.125: 0.388, 3.25: 0.380, 3.375: 0.370, 3.5: 0.361, 3.625: 0.351, 3.75: 0.342, 3.875: 0.333 },
+    72: { 3.0: 0.395, 3.125: 0.395, 3.25: 0.387, 3.375: 0.377, 3.5: 0.368, 3.625: 0.358, 3.75: 0.349, 3.875: 0.340 },
+    73: { 3.0: 0.403, 3.125: 0.403, 3.25: 0.395, 3.375: 0.385, 3.5: 0.376, 3.625: 0.366, 3.75: 0.357, 3.875: 0.348 },
+    74: { 3.0: 0.411, 3.125: 0.411, 3.25: 0.403, 3.375: 0.393, 3.5: 0.384, 3.625: 0.374, 3.75: 0.365, 3.875: 0.356 },
+    75: { 3.0: 0.419, 3.125: 0.419, 3.25: 0.411, 3.375: 0.401, 3.5: 0.392, 3.625: 0.382, 3.75: 0.373, 3.875: 0.364 },
+    76: { 3.0: 0.427, 3.125: 0.427, 3.25: 0.419, 3.375: 0.409, 3.5: 0.400, 3.625: 0.390, 3.75: 0.381, 3.875: 0.372 },
+    77: { 3.0: 0.436, 3.125: 0.436, 3.25: 0.428, 3.375: 0.418, 3.5: 0.409, 3.625: 0.399, 3.75: 0.390, 3.875: 0.381 },
+    78: { 3.0: 0.445, 3.125: 0.445, 3.25: 0.437, 3.375: 0.427, 3.5: 0.418, 3.625: 0.408, 3.75: 0.399, 3.875: 0.390 },
+    79: { 3.0: 0.454, 3.125: 0.454, 3.25: 0.446, 3.375: 0.436, 3.5: 0.427, 3.625: 0.417, 3.75: 0.408, 3.875: 0.399 },
+    80: { 3.0: 0.463, 3.125: 0.463, 3.25: 0.455, 3.375: 0.445, 3.5: 0.436, 3.625: 0.426, 3.75: 0.417, 3.875: 0.408 }
+  };
+
+  // Calculate PLF based on age, program, and interest rate
+  const calculatePLF = (age: number, program: string, interestRate: number = 3.5) => {
+    if (["Equity Plus", "Equity Plus Peak", "Equity Plus LOC"].includes(program)) {
+      const ageData = EQUITY_PLUS_PLF[age as keyof typeof EQUITY_PLUS_PLF];
+      return ageData ? ageData[program as keyof typeof ageData] : 0;
+    } else if (program === "HECM") {
+      const ageData = HECM_PLF[age as keyof typeof HECM_PLF];
+      return ageData ? (ageData[interestRate as keyof typeof ageData] || ageData[3.5]) : 0;
+    }
+    return 0;
+  };
+
+  // Calculate UPB (Unpaid Principal Balance)
+  const calculateUPB = (homeValue: number, age: number, program: string, interestRate: number = 3.5) => {
+    const plf = calculatePLF(age, program, interestRate);
+    return Math.round(homeValue * plf);
+  };
+
+  // Get youngest client age (client or spouse)
+  const getYoungestAge = (client: Client) => {
+    const clientAge = client.date_of_birth ? calculateAge(client.date_of_birth) : 99;
+    const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : 99;
+    return Math.min(clientAge, spouseAge);
+  };
 
   // Initialize with demo data including addresses and notes
   useEffect(() => {
@@ -178,6 +256,8 @@ export default function NextStepCRM() {
       property_type: client.property_type || 'single_family',
       home_value: client.home_value,
       desired_proceeds: client.desired_proceeds,
+      program_type: client.program_type || 'HECM',
+      interest_rate: client.interest_rate || 3.5,
       loan_officer: client.loan_officer,
       pipeline_status: client.pipeline_status
     })
@@ -243,6 +323,8 @@ export default function NextStepCRM() {
         property_type: 'single_family',
         home_value: 0,
         desired_proceeds: 0,
+        program_type: 'HECM',
+        interest_rate: 3.5,
         loan_officer: '',
         pipeline_status: 'lead' as const
       })
@@ -252,72 +334,6 @@ export default function NextStepCRM() {
       alert('Please fill in all required fields')
     }
   }
-
-  // PLF Tables based on your actual data
-  const EQUITY_PLUS_PLF = {
-    55: { "Equity Plus": 0.338, "Equity Plus Peak": 0.391, "Equity Plus LOC": 0.338 },
-    56: { "Equity Plus": 0.341, "Equity Plus Peak": 0.393, "Equity Plus LOC": 0.341 },
-    57: { "Equity Plus": 0.343, "Equity Plus Peak": 0.395, "Equity Plus LOC": 0.343 },
-    58: { "Equity Plus": 0.346, "Equity Plus Peak": 0.397, "Equity Plus LOC": 0.346 },
-    59: { "Equity Plus": 0.349, "Equity Plus Peak": 0.401, "Equity Plus LOC": 0.349 },
-    60: { "Equity Plus": 0.353, "Equity Plus Peak": 0.404, "Equity Plus LOC": 0.353 },
-    61: { "Equity Plus": 0.356, "Equity Plus Peak": 0.407, "Equity Plus LOC": 0.356 },
-    62: { "Equity Plus": 0.360, "Equity Plus Peak": 0.410, "Equity Plus LOC": 0.360 },
-    63: { "Equity Plus": 0.364, "Equity Plus Peak": 0.414, "Equity Plus LOC": 0.364 },
-    64: { "Equity Plus": 0.368, "Equity Plus Peak": 0.417, "Equity Plus LOC": 0.368 },
-    65: { "Equity Plus": 0.372, "Equity Plus Peak": 0.421, "Equity Plus LOC": 0.372 },
-    66: { "Equity Plus": 0.376, "Equity Plus Peak": 0.425, "Equity Plus LOC": 0.376 },
-    67: { "Equity Plus": 0.381, "Equity Plus Peak": 0.429, "Equity Plus LOC": 0.381 },
-    68: { "Equity Plus": 0.385, "Equity Plus Peak": 0.434, "Equity Plus LOC": 0.385 },
-    69: { "Equity Plus": 0.390, "Equity Plus Peak": 0.438, "Equity Plus LOC": 0.390 },
-    70: { "Equity Plus": 0.395, "Equity Plus Peak": 0.443, "Equity Plus LOC": 0.395 },
-    71: { "Equity Plus": 0.400, "Equity Plus Peak": 0.448, "Equity Plus LOC": 0.400 },
-    72: { "Equity Plus": 0.405, "Equity Plus Peak": 0.453, "Equity Plus LOC": 0.405 },
-    73: { "Equity Plus": 0.411, "Equity Plus Peak": 0.458, "Equity Plus LOC": 0.411 },
-    74: { "Equity Plus": 0.416, "Equity Plus Peak": 0.464, "Equity Plus LOC": 0.416 },
-    75: { "Equity Plus": 0.422, "Equity Plus Peak": 0.470, "Equity Plus LOC": 0.422 },
-    76: { "Equity Plus": 0.428, "Equity Plus Peak": 0.476, "Equity Plus LOC": 0.428 },
-    77: { "Equity Plus": 0.434, "Equity Plus Peak": 0.482, "Equity Plus LOC": 0.434 },
-    78: { "Equity Plus": 0.441, "Equity Plus Peak": 0.489, "Equity Plus LOC": 0.441 },
-    79: { "Equity Plus": 0.447, "Equity Plus Peak": 0.495, "Equity Plus LOC": 0.447 },
-    80: { "Equity Plus": 0.454, "Equity Plus Peak": 0.502, "Equity Plus LOC": 0.454 }
-  };
-
-  // Sample HECM PLF data (simplified - you can expand this)
-  const HECM_PLF = {
-    62: { 3.0: 0.326, 3.125: 0.326, 3.25: 0.318, 3.375: 0.308, 3.5: 0.297, 3.625: 0.288, 3.75: 0.278, 3.875: 0.269 },
-    63: { 3.0: 0.332, 3.125: 0.332, 3.25: 0.324, 3.375: 0.314, 3.5: 0.304, 3.625: 0.294, 3.75: 0.285, 3.875: 0.276 },
-    64: { 3.0: 0.339, 3.125: 0.339, 3.25: 0.331, 3.375: 0.321, 3.5: 0.311, 3.625: 0.301, 3.75: 0.292, 3.875: 0.283 },
-    65: { 3.0: 0.345, 3.125: 0.345, 3.25: 0.337, 3.375: 0.327, 3.5: 0.318, 3.625: 0.308, 3.75: 0.299, 3.875: 0.290 },
-    70: { 3.0: 0.372, 3.125: 0.372, 3.25: 0.364, 3.375: 0.355, 3.5: 0.346, 3.625: 0.337, 3.75: 0.328, 3.875: 0.319 },
-    75: { 3.0: 0.403, 3.125: 0.403, 3.25: 0.395, 3.375: 0.387, 3.5: 0.378, 3.625: 0.370, 3.75: 0.361, 3.875: 0.353 },
-    80: { 3.0: 0.438, 3.125: 0.438, 3.25: 0.431, 3.375: 0.423, 3.5: 0.415, 3.625: 0.407, 3.75: 0.399, 3.875: 0.391 }
-  };
-
-  // Calculate PLF based on age, program, and interest rate
-  const calculatePLF = (age: number, program: string, interestRate: number = 3.5) => {
-    if (["Equity Plus", "Equity Plus Peak", "Equity Plus LOC"].includes(program)) {
-      const ageData = EQUITY_PLUS_PLF[age as keyof typeof EQUITY_PLUS_PLF];
-      return ageData ? ageData[program as keyof typeof ageData] : 0;
-    } else if (program === "HECM") {
-      const ageData = HECM_PLF[age as keyof typeof HECM_PLF];
-      return ageData ? (ageData[interestRate as keyof typeof ageData] || ageData[3.5]) : 0;
-    }
-    return 0;
-  };
-
-  // Calculate UPB (Unpaid Principal Balance)
-  const calculateUPB = (homeValue: number, age: number, program: string, interestRate: number = 3.5) => {
-    const plf = calculatePLF(age, program, interestRate);
-    return Math.round(homeValue * plf);
-  };
-
-  // Get youngest client age (client or spouse)
-  const getYoungestAge = (client: Client) => {
-    const clientAge = client.date_of_birth ? calculateAge(client.date_of_birth) : 99;
-    const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : 99;
-    return Math.min(clientAge, spouseAge);
-  };
 
   // Utility function to create Zillow URL
   const getZillowUrl = (address: string, city: string, state: string, zip: string) => {
@@ -414,7 +430,7 @@ export default function NextStepCRM() {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-1">{formatCurrency(totalPipeline)}</div>
-              <div className="text-blue-100">Total Pipeline</div>
+              <div className="text-blue-100">Total UPB Pipeline</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-1">{clients.filter(c => c.pipeline_status === 'processing').length}</div>
@@ -797,6 +813,378 @@ export default function NextStepCRM() {
                     <input
                       type="text"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.street_address || ''}
+                      onChange={(e) => setEditForm({...editForm, street_address: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.city || ''}
+                      onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      State
+                    </label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.state || ''}
+                      onChange={(e) => setEditForm({...editForm, state: e.target.value})}
+                    >
+                      <option value="">Select State</option>
+                      <option value="VA">Virginia</option>
+                      <option value="MD">Maryland</option>
+                      <option value="DC">Washington DC</option>
+                      <option value="WV">West Virginia</option>
+                      <option value="PA">Pennsylvania</option>
+                      <option value="DE">Delaware</option>
+                      <option value="NC">North Carolina</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ZIP Code
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.zip_code || ''}
+                      onChange={(e) => setEditForm({...editForm, zip_code: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Property Type
+                    </label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.property_type || ''}
+                      onChange={(e) => setEditForm({...editForm, property_type: e.target.value})}
+                    >
+                      <option value="single_family">Single Family</option>
+                      <option value="condo">Condominium</option>
+                      <option value="townhome">Townhome</option>
+                      <option value="manufactured">Manufactured Home</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Program Type *
+                    </label>
+                    <select
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.program_type || ''}
+                      onChange={(e) => setEditForm({...editForm, program_type: e.target.value})}
+                    >
+                      <option value="">Select Program</option>
+                      <option value="HECM">HECM</option>
+                      <option value="Equity Plus">Equity Plus</option>
+                      <option value="Equity Plus Peak">Equity Plus Peak</option>
+                      <option value="Equity Plus LOC">Equity Plus LOC</option>
+                    </select>
+                  </div>
+
+                  {editForm.program_type === 'HECM' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Interest Rate
+                      </label>
+                      <select
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        value={editForm.interest_rate || 3.5}
+                        onChange={(e) => setEditForm({...editForm, interest_rate: Number(e.target.value)})}
+                      >
+                        <option value={3.0}>3.0%</option>
+                        <option value={3.125}>3.125%</option>
+                        <option value={3.25}>3.25%</option>
+                        <option value={3.375}>3.375%</option>
+                        <option value={3.5}>3.5%</option>
+                        <option value={3.625}>3.625%</option>
+                        <option value={3.75}>3.75%</option>
+                        <option value={3.875}>3.875%</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Financial Information */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <div className="lg:col-span-2">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <DollarSign className="w-5 h-5 mr-2 text-emerald-600" />
+                      Financial Details
+                    </h4>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Home Value
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.home_value || 0}
+                      onChange={(e) => setEditForm({...editForm, home_value: Number(e.target.value)})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Desired Proceeds
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.desired_proceeds || 0}
+                      onChange={(e) => setEditForm({...editForm, desired_proceeds: Number(e.target.value)})}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Team Member *
+                    </label>
+                    <select
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.loan_officer || ''}
+                      onChange={(e) => setEditForm({...editForm, loan_officer: e.target.value})}
+                    >
+                      <option value="">Select Team Member</option>
+                      {teamMembers.map(member => (
+                        <option key={member} value={member}>{member}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Pipeline Status
+                    </label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={editForm.pipeline_status || ''}
+                      onChange={(e) => setEditForm({...editForm, pipeline_status: e.target.value as any})}
+                    >
+                      <option value="lead">Lead</option>
+                      <option value="qualified">Qualified</option>
+                      <option value="counseling">Counseling</option>
+                      <option value="processing">Processing</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {setEditingClient(null); setEditForm({})}}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-semibold"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Client Detail Modal */}
+        {selectedClient && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Client Details</h2>
+                <button
+                  onClick={() => setSelectedClient(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">{selectedClient.first_name} {selectedClient.last_name}</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <Phone className="w-5 h-5 mr-3 text-blue-600" />
+                      <span className="font-medium text-gray-700">{selectedClient.phone}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <Mail className="w-5 h-5 mr-3 text-blue-600" />
+                      <span className="font-medium text-gray-700">{selectedClient.email}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <Calendar className="w-5 h-5 mr-3 text-blue-600" />
+                      <span className="font-medium text-gray-700">Age: {calculateAge(selectedClient.date_of_birth)}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <User className="w-5 h-5 mr-3 text-blue-600" />
+                      <span className="font-medium text-gray-700">Team Member: {selectedClient.loan_officer}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Property Details Section */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
+                    Property Details
+                  </h4>
+                  <div className="bg-emerald-50 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center">
+                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
+                      <div>
+                        <span className="font-medium text-gray-700">Property: </span>
+                        <span className="text-gray-600">
+                          {selectedClient.street_address || 'No street address'}, {selectedClient.city || 'No city'}, {selectedClient.state || 'No state'} {selectedClient.zip_code || ''}
+                        </span>
+                        {selectedClient.street_address && selectedClient.city && selectedClient.state && selectedClient.zip_code && (
+                          <a
+                            href={getZillowUrl(selectedClient.street_address, selectedClient.city, selectedClient.state, selectedClient.zip_code)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-3 inline-flex items-center px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-full transition-colors"
+                          >
+                            🏠 View on Zillow
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center p-3 bg-white rounded-lg">
+                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Not specified'}</span>
+                    </div>
+                    <div className="flex items-center p-3 bg-white rounded-lg">
+                      <Calculator className="w-5 h-5 mr-3 text-emerald-600" />
+                      <span className="font-medium text-gray-700">Program: {selectedClient.program_type || 'HECM'} 
+                        {selectedClient.program_type === 'HECM' && selectedClient.interest_rate && ` @ ${selectedClient.interest_rate}%`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financial Info */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <DollarSign className="w-5 h-5 mr-2 text-emerald-600" />
+                    Financial Information
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
+                      <div>
+                        <span className="font-medium text-gray-700">Home Value: </span>
+                        <span className="text-gray-600">{formatCurrency(selectedClient.home_value)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
+                      <Calculator className="w-5 h-5 mr-3 text-emerald-600" />
+                      <div>
+                        <span className="font-medium text-gray-700">Calculated UPB: </span>
+                        <span className="text-gray-600">{formatCurrency(calculateUPB(selectedClient.home_value, getYoungestAge(selectedClient), selectedClient.program_type || 'HECM', selectedClient.interest_rate || 3.5))}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <User className="w-5 h-5 mr-3 text-blue-600" />
+                      <div>
+                        <span className="font-medium text-gray-700">Youngest Age: </span>
+                        <span className="text-gray-600">{getYoungestAge(selectedClient)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
+                      <Calculator className="w-5 h-5 mr-3 text-blue-600" />
+                      <div>
+                        <span className="font-medium text-gray-700">PLF: </span>
+                        <span className="text-gray-600">{(calculatePLF(getYoungestAge(selectedClient), selectedClient.program_type || 'HECM', selectedClient.interest_rate || 3.5) * 100).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sales Notes Section */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Edit2 className="w-5 h-5 mr-2 text-emerald-600" />
+                    Sales Notes
+                  </h4>
+                  <div className="space-y-3 mb-4">
+                    {selectedClient.notes?.map((note, index) => (
+                      <div key={index} className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
+                        <p className="text-gray-700 text-sm">{note}</p>
+                      </div>
+                    )) || <p className="text-gray-500 italic">No notes yet</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add a note..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddNote()}
+                    />
+                    <button
+                      onClick={handleAddNote}
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"
+                    >
+                      <Save className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Confirm Delete</h3>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this client? This action cannot be undone.</p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteClient(showDeleteConfirm)}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       value={newClient.street_address}
                       onChange={(e) => setNewClient({...newClient, street_address: e.target.value})}
                     />
@@ -1120,313 +1508,4 @@ export default function NextStepCRM() {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.street_address || ''}
-                      onChange={(e) => setEditForm({...editForm, street_address: e.target.value})}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.city || ''}
-                      onChange={(e) => setEditForm({...editForm, city: e.target.value})}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      State
-                    </label>
-                    <select
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.state || ''}
-                      onChange={(e) => setEditForm({...editForm, state: e.target.value})}
-                    >
-                      <option value="">Select State</option>
-                      <option value="VA">Virginia</option>
-                      <option value="MD">Maryland</option>
-                      <option value="DC">Washington DC</option>
-                      <option value="WV">West Virginia</option>
-                      <option value="PA">Pennsylvania</option>
-                      <option value="DE">Delaware</option>
-                      <option value="NC">North Carolina</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ZIP Code
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.zip_code || ''}
-                      onChange={(e) => setEditForm({...editForm, zip_code: e.target.value})}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Property Type
-                    </label>
-                    <select
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.property_type || ''}
-                      onChange={(e) => setEditForm({...editForm, property_type: e.target.value})}
-                    >
-                      <option value="single_family">Single Family</option>
-                      <option value="condo">Condominium</option>
-                      <option value="townhome">Townhome</option>
-                      <option value="manufactured">Manufactured Home</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Financial Information */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                  <div className="lg:col-span-2">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <DollarSign className="w-5 h-5 mr-2 text-emerald-600" />
-                      Financial Details
-                    </h4>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Home Value
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.home_value || 0}
-                      onChange={(e) => setEditForm({...editForm, home_value: Number(e.target.value)})}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Desired Proceeds
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.desired_proceeds || 0}
-                      onChange={(e) => setEditForm({...editForm, desired_proceeds: Number(e.target.value)})}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Team Member *
-                    </label>
-                    <select
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.loan_officer || ''}
-                      onChange={(e) => setEditForm({...editForm, loan_officer: e.target.value})}
-                    >
-                      <option value="">Select Team Member</option>
-                      {teamMembers.map(member => (
-                        <option key={member} value={member}>{member}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Pipeline Status
-                    </label>
-                    <select
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={editForm.pipeline_status || ''}
-                      onChange={(e) => setEditForm({...editForm, pipeline_status: e.target.value as any})}
-                    >
-                      <option value="lead">Lead</option>
-                      <option value="qualified">Qualified</option>
-                      <option value="counseling">Counseling</option>
-                      <option value="processing">Processing</option>
-                      <option value="closed">Closed</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-4">
-                  <button
-                    type="button"
-                    onClick={() => {setEditingClient(null); setEditForm({})}}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-semibold"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Client Detail Modal */}
-        {selectedClient && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Client Details</h2>
-                <button
-                  onClick={() => setSelectedClient(null)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                {/* Basic Info */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">{selectedClient.first_name} {selectedClient.last_name}</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
-                      <Phone className="w-5 h-5 mr-3 text-blue-600" />
-                      <span className="font-medium text-gray-700">{selectedClient.phone}</span>
-                    </div>
-                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
-                      <Mail className="w-5 h-5 mr-3 text-blue-600" />
-                      <span className="font-medium text-gray-700">{selectedClient.email}</span>
-                    </div>
-                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
-                      <Calendar className="w-5 h-5 mr-3 text-blue-600" />
-                      <span className="font-medium text-gray-700">Age: {calculateAge(selectedClient.date_of_birth)}</span>
-                    </div>
-                    <div className="flex items-center p-3 bg-blue-50 rounded-lg">
-                      <User className="w-5 h-5 mr-3 text-blue-600" />
-                      <span className="font-medium text-gray-700">Team Member: {selectedClient.loan_officer}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Property Details Section */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
-                    Property Details
-                  </h4>
-                  <div className="bg-emerald-50 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center">
-                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
-                      <div>
-                        <span className="font-medium text-gray-700">Property: </span>
-                        <span className="text-gray-600">
-                          {selectedClient.street_address || 'No street address'}, {selectedClient.city || 'No city'}, {selectedClient.state || 'No state'} {selectedClient.zip_code || ''}
-                        </span>
-                        {selectedClient.street_address && selectedClient.city && selectedClient.state && selectedClient.zip_code && (
-                          <a
-                            href={getZillowUrl(selectedClient.street_address, selectedClient.city, selectedClient.state, selectedClient.zip_code)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-3 inline-flex items-center px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-full transition-colors"
-                          >
-                            🏠 View on Zillow
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center p-3 bg-white rounded-lg">
-                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
-                      <span className="font-medium text-gray-700">Property Type: {selectedClient.property_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Not specified'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Financial Info */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <DollarSign className="w-5 h-5 mr-2 text-emerald-600" />
-                    Financial Information
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
-                      <HomeIcon className="w-5 h-5 mr-3 text-emerald-600" />
-                      <div>
-                        <span className="font-medium text-gray-700">Property: </span>
-                        <span className="text-gray-600">{formatCurrency(selectedClient.home_value)}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center p-3 bg-emerald-50 rounded-lg">
-                      <DollarSign className="w-5 h-5 mr-3 text-emerald-600" />
-                      <span className="font-medium text-gray-700">Desired: {formatCurrency(selectedClient.desired_proceeds)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sales Notes Section */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <Edit2 className="w-5 h-5 mr-2 text-emerald-600" />
-                    Sales Notes
-                  </h4>
-                  <div className="space-y-3 mb-4">
-                    {selectedClient.notes?.map((note, index) => (
-                      <div key={index} className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
-                        <p className="text-gray-700 text-sm">{note}</p>
-                      </div>
-                    )) || <p className="text-gray-500 italic">No notes yet</p>}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Add a note..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleAddNote()}
-                    />
-                    <button
-                      onClick={handleAddNote}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"
-                    >
-                      <Save className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Confirm Delete</h3>
-              <p className="text-gray-600 mb-6">Are you sure you want to delete this client? This action cannot be undone.</p>
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={() => setShowDeleteConfirm(null)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleDeleteClient(showDeleteConfirm)}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+                      className="w-full px-4 py-3 border border
