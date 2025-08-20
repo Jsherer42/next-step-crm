@@ -831,7 +831,7 @@ export default function NextStepCRM() {
       {/* Add Client Modal */}
       {showAddClient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800">Add New Client</h2>
               <button
@@ -842,66 +842,268 @@ export default function NextStepCRM() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-6">
+              {/* Personal Information */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={newClient.first_name}
-                  onChange={(e) => setNewClient({...newClient, first_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={newClient.last_name}
-                  onChange={(e) => setNewClient({...newClient, last_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <User className="w-5 h-5 mr-2 text-emerald-600" />
+                  Personal Information
+                </h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newClient.first_name}
+                      onChange={(e) => setNewClient({...newClient, first_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newClient.last_name}
+                      onChange={(e) => setNewClient({...newClient, last_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={newClient.email}
+                      onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={newClient.phone}
+                      onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
+                    <input
+                      type="date"
+                      required
+                      value={newClient.date_of_birth}
+                      onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Loan Officer</label>
+                    <select
+                      value={newClient.loan_officer}
+                      onChange={(e) => setNewClient({...newClient, loan_officer: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="">Select Loan Officer</option>
+                      <option value="Christian Ford">Christian Ford</option>
+                      <option value="Ahmed Samura">Ahmed Samura</option>
+                      <option value="Jennifer Martinez">Jennifer Martinez</option>
+                      <option value="David Chen">David Chen</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
+              {/* Property Information */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
-                <input
-                  type="number"
-                  required
-                  value={newClient.home_value || ''}
-                  onChange={(e) => setNewClient({...newClient, home_value: Number(e.target.value)})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <HomeIcon className="w-5 h-5 mr-2 text-emerald-600" />
+                  Property Information
+                </h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+                    <input
+                      type="text"
+                      value={newClient.street_address}
+                      onChange={(e) => setNewClient({...newClient, street_address: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="123 Main Street"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <input
+                      type="text"
+                      value={newClient.city}
+                      onChange={(e) => setNewClient({...newClient, city: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                    <input
+                      type="text"
+                      value={newClient.state}
+                      onChange={(e) => setNewClient({...newClient, state: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="MD"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
+                    <input
+                      type="text"
+                      value={newClient.zip_code}
+                      onChange={(e) => setNewClient({...newClient, zip_code: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+                    <select
+                      value={newClient.property_type}
+                      onChange={(e) => setNewClient({...newClient, property_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="single_family">Single Family</option>
+                      <option value="condo">Condo</option>
+                      <option value="townhouse">Townhouse</option>
+                      <option value="manufactured">Manufactured</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
+                    <input
+                      type="number"
+                      required
+                      value={newClient.home_value || ''}
+                      onChange={(e) => setNewClient({...newClient, home_value: Number(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="450000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Desired Proceeds</label>
+                    <input
+                      type="number"
+                      value={newClient.desired_proceeds || ''}
+                      onChange={(e) => setNewClient({...newClient, desired_proceeds: Number(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="200000"
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* Program Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
-                <select
-                  value={newClient.program_type || 'HECM'}
-                  onChange={(e) => setNewClient({...newClient, program_type: e.target.value})}
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <Calculator className="w-5 h-5 mr-2 text-emerald-600" />
+                  Program Selection
+                </h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Program Type *</label>
+                    <select
+                      value={newClient.program_type || 'HECM'}
+                      onChange={(e) => setNewClient({...newClient, program_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="HECM">HECM (Government Program)</option>
+                      <option value="Equity Plus">Equity Plus (Standard Proprietary)</option>
+                      <option value="Equity Plus Peak">Equity Plus Peak (Enhanced Proprietary)</option>
+                      <option value="Equity Plus LOC">Equity Plus LOC (Line of Credit)</option>
+                    </select>
+                  </div>
+
+                  {newClient.program_type === 'HECM' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Interest Rate</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={newClient.interest_rate || 3.5}
+                        onChange={(e) => setNewClient({...newClient, interest_rate: Number(e.target.value)})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        placeholder="3.5"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
+                    <select
+                      value={newClient.pipeline_status}
+                      onChange={(e) => setNewClient({...newClient, pipeline_status: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="new_lead">New Lead</option>
+                      <option value="qualified">Qualified</option>
+                      <option value="counseling">Counseling</option>
+                      <option value="application">Application</option>
+                      <option value="processing">Processing</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Lead Source</label>
+                    <select
+                      value={newClient.lead_source}
+                      onChange={(e) => setNewClient({...newClient, lead_source: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="">Select Lead Source</option>
+                      <option value="website">Website</option>
+                      <option value="referral">Referral</option>
+                      <option value="cold_call">Cold Call</option>
+                      <option value="social_media">Social Media</option>
+                      <option value="direct_mail">Direct Mail</option>
+                      <option value="seminar">Seminar</option>
+                      <option value="walk_in">Walk In</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Initial Notes</h3>
+                <textarea
+                  value={newClient.notes}
+                  onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
+                  rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                >
-                  <option value="HECM">HECM</option>
-                  <option value="Equity Plus">Equity Plus</option>
-                  <option value="Equity Plus Peak">Equity Plus Peak</option>
-                  <option value="Equity Plus LOC">Equity Plus LOC</option>
-                </select>
+                  placeholder="Enter any initial notes about the client, their situation, or preferences..."
+                />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-6 pt-6 border-t">
               <button
                 onClick={() => setShowAddClient(false)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddClient}
-                disabled={!newClient.first_name || !newClient.last_name || !newClient.home_value}
-                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!newClient.first_name || !newClient.last_name || !newClient.phone || !newClient.date_of_birth || !newClient.home_value}
+                className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Add Client
               </button>
