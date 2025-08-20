@@ -23,7 +23,6 @@ interface Client {
   desired_proceeds: number
   program_type?: string
   interest_rate?: number
-  calculated_upb?: number
   loan_officer: string
   pipeline_status: string
   lead_source?: string
@@ -31,6 +30,19 @@ interface Client {
 }
 
 export default function NextStepCRM() {
+  // PLF Tables for calculating real loan amounts
+  const HECM_PLF = {
+    55: 0.254, 56: 0.258, 57: 0.262, 58: 0.267, 59: 0.271, 60: 0.276,
+    61: 0.280, 62: 0.285, 63: 0.304, 64: 0.308, 65: 0.313, 66: 0.318,
+    67: 0.323, 68: 0.328, 69: 0.333, 70: 0.338
+  }
+
+  const EQUITY_PLUS_PLF = {
+    55: { "Equity Plus": 0.338, "Equity Plus Peak": 0.391, "Equity Plus LOC": 0.338 },
+    62: { "Equity Plus": 0.360, "Equity Plus Peak": 0.411, "Equity Plus LOC": 0.360 },
+    66: { "Equity Plus": 0.377, "Equity Plus Peak": 0.428, "Equity Plus LOC": 0.377 }
+  }
+
   const [clients, setClients] = useState<Client[]>([
     {
       id: '1',
@@ -49,6 +61,8 @@ export default function NextStepCRM() {
       property_type: 'single_family',
       home_value: 450000,
       desired_proceeds: 200000,
+      program_type: 'HECM',
+      interest_rate: 3.5,
       loan_officer: 'Christian Ford',
       pipeline_status: 'qualified',
       lead_source: 'referral',
@@ -68,6 +82,7 @@ export default function NextStepCRM() {
       property_type: 'condo',
       home_value: 620000,
       desired_proceeds: 150000,
+      program_type: 'Equity Plus Peak',
       loan_officer: 'Ahmed Samura',
       pipeline_status: 'new_lead',
       lead_source: 'website',
@@ -105,6 +120,8 @@ export default function NextStepCRM() {
     property_type: 'single_family',
     home_value: 0,
     desired_proceeds: 0,
+    program_type: 'HECM',
+    interest_rate: 3.5,
     loan_officer: '',
     pipeline_status: 'new_lead',
     lead_source: '',
@@ -131,6 +148,34 @@ export default function NextStepCRM() {
       maximumFractionDigits: 0,
     }).format(amount)
   }
+
+  // PLF calculation functions
+  const getYoungestAge = (client: Client) => {
+    const clientAge = calculateAge(client.date_of_birth)
+    const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
+    return spouseAge ? Math.min(clientAge, spouseAge) : clientAge
+  }
+
+  const calculatePLF = (age: number, programType: string = 'HECM') => {
+    if (programType === 'HECM') {
+      return HECM_PLF[age as keyof typeof HECM_PLF] || 0.25
+    } else {
+      const program = programType as keyof typeof EQUITY_PLUS_PLF[55]
+      return EQUITY_PLUS_PLF[age as keyof typeof EQUITY_PLUS_PLF]?.[program] || 0.35
+    }
+  }
+
+  const calculateUPB = (homeValue: number, age: number, programType: string = 'HECM') => {
+    const plf = calculatePLF(age, programType)
+    return homeValue * plf
+  }
+
+  // Calculate REAL pipeline using UPB instead of desired proceeds
+  const totalPipeline = clients.reduce((sum, client) => {
+    const age = getYoungestAge(client)
+    const upb = calculateUPB(client.home_value, age, client.program_type || 'HECM')
+    return sum + upb
+  }, 0)
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -185,6 +230,8 @@ export default function NextStepCRM() {
       property_type: 'single_family',
       home_value: 0,
       desired_proceeds: 0,
+      program_type: 'HECM',
+      interest_rate: 3.5,
       loan_officer: '',
       pipeline_status: 'new_lead',
       lead_source: '',
@@ -364,11 +411,9 @@ export default function NextStepCRM() {
                 <DollarSign className="w-8 h-8 text-white" />
               </div>
               <div className="ml-6">
-                <p className="text-lg font-bold text-white/90 mb-1">Total Pipeline</p>
+                <p className="text-lg font-bold text-white/90 mb-1">Total UPB Pipeline</p>
                 <p className="text-4xl font-black text-white drop-shadow-lg">
-                  {formatCurrency(
-                    clients.reduce((sum, client) => sum + (client.desired_proceeds || 0), 0)
-                  )}
+                  {formatCurrency(totalPipeline)}
                 </p>
               </div>
             </div>
@@ -435,25 +480,35 @@ export default function NextStepCRM() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-white bg-opacity-40 rounded-lg p-3">
-                    <div className="text-xs text-gray-600 mb-1">Home Value</div>
-                    <div className="font-bold text-gray-800">{formatCurrency(client.home_value)}</div>
+                <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center text-white/90">
+                      <Phone className="w-5 h-5 mr-3 text-green-300" />
+                      <span className="font-medium">{client.phone}</span>
+                    </div>
+                    <div className="flex items-center text-white/90">
+                      <Mail className="w-5 h-5 mr-3 text-blue-300" />
+                      <span className="font-medium">{client.email || 'No email'}</span>
+                    </div>
                   </div>
-                  <div className="bg-white bg-opacity-40 rounded-lg p-3">
-                    <div className="text-xs text-gray-600 mb-1">Desired Proceeds</div>
-                    <div className="font-bold text-gray-800">{formatCurrency(client.desired_proceeds)}</div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center text-white/90">
+                      <DollarSign className="w-5 h-5 mr-3 text-green-300" />
+                      <span className="font-medium">Home: {formatCurrency(client.home_value)}</span>
+                    </div>
+                    <div className="flex items-center text-white/90">
+                      <DollarSign className="w-5 h-5 mr-3 text-emerald-300" />
+                      <span className="font-medium">Desired: {formatCurrency(client.desired_proceeds)}</span>
+                    </div>
                   </div>
                 </div>
 
                 {client.street_address && (
-                  <div className="bg-white bg-opacity-30 rounded-lg p-3 mb-4">
+                  <div className="mb-4 p-3 bg-emerald-500/20 backdrop-blur-sm rounded-lg border border-emerald-400/30">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs text-gray-600 mb-1">Property Address</div>
-                        <div className="font-medium text-gray-800 text-sm">
-                          {client.street_address}
-                        </div>
+                        <div className="text-emerald-100 font-semibold text-sm">{client.street_address}</div>
                         <div className="flex items-center">
                           <HomeIcon className="w-4 h-4 mr-1" />
                           <span>
@@ -502,17 +557,6 @@ export default function NextStepCRM() {
                     Add Spouse
                   </button>
                 )}
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-white/90">
-                    <Phone className="w-5 h-5 mr-3 text-green-300" />
-                    <span className="font-medium">{client.phone}</span>
-                  </div>
-                  <div className="flex items-center text-white/90">
-                    <Mail className="w-5 h-5 mr-3 text-blue-300" />
-                    <span className="font-medium">{client.email || 'No email'}</span>
-                  </div>
-                </div>
 
                 <div className="flex justify-between items-center pt-6 border-t border-white/20">
                   <div className="text-white/80 font-medium">
@@ -598,8 +642,8 @@ export default function NextStepCRM() {
                   <div className="space-y-3">
                     <div><span className="font-medium">Home Value:</span> {formatCurrency(selectedClient.home_value)}</div>
                     <div><span className="font-medium">Desired Proceeds:</span> {formatCurrency(selectedClient.desired_proceeds)}</div>
+                    <div><span className="font-medium">Calculated UPB:</span> {formatCurrency(calculateUPB(selectedClient.home_value, getYoungestAge(selectedClient), selectedClient.program_type || 'HECM'))}</div>
                     <div><span className="font-medium">Address:</span> {selectedClient.street_address || 'Not provided'}</div>
-                    <div><span className="font-medium">City:</span> {selectedClient.city || 'Not provided'}</div>
                   </div>
                 </div>
               </div>
