@@ -30,17 +30,27 @@ interface Client {
 }
 
 export default function NextStepCRM() {
-  // PLF Tables for calculating real loan amounts
-  const HECM_PLF = {
-    55: 0.254, 56: 0.258, 57: 0.262, 58: 0.267, 59: 0.271, 60: 0.276,
-    61: 0.280, 62: 0.285, 63: 0.304, 64: 0.308, 65: 0.313, 66: 0.318,
-    67: 0.323, 68: 0.328, 69: 0.333, 70: 0.338
+  // Simple PLF values for quick calculation
+  const calculateUPB = (homeValue: number, age: number, programType: string = 'HECM') => {
+    let plf = 0.285 // Default HECM at age 62
+    
+    if (programType === 'HECM') {
+      plf = age >= 70 ? 0.338 : age >= 65 ? 0.313 : 0.285
+    } else if (programType === 'Equity Plus Peak') {
+      plf = age >= 70 ? 0.447 : age >= 65 ? 0.423 : 0.391
+    } else if (programType === 'Equity Plus') {
+      plf = age >= 70 ? 0.396 : age >= 65 ? 0.372 : 0.338
+    } else if (programType === 'Equity Plus LOC') {
+      plf = age >= 70 ? 0.396 : age >= 65 ? 0.372 : 0.338
+    }
+    
+    return homeValue * plf
   }
 
-  const EQUITY_PLUS_PLF = {
-    55: { "Equity Plus": 0.338, "Equity Plus Peak": 0.391, "Equity Plus LOC": 0.338 },
-    62: { "Equity Plus": 0.360, "Equity Plus Peak": 0.411, "Equity Plus LOC": 0.360 },
-    66: { "Equity Plus": 0.377, "Equity Plus Peak": 0.428, "Equity Plus LOC": 0.377 }
+  const getYoungestAge = (client: Client) => {
+    const clientAge = calculateAge(client.date_of_birth)
+    const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
+    return spouseAge ? Math.min(clientAge, spouseAge) : clientAge
   }
 
   const [clients, setClients] = useState<Client[]>([
@@ -83,6 +93,7 @@ export default function NextStepCRM() {
       home_value: 620000,
       desired_proceeds: 150000,
       program_type: 'Equity Plus Peak',
+      interest_rate: 0,
       loan_officer: 'Ahmed Samura',
       pipeline_status: 'new_lead',
       lead_source: 'website',
@@ -149,34 +160,6 @@ export default function NextStepCRM() {
     }).format(amount)
   }
 
-  // PLF calculation functions
-  const getYoungestAge = (client: Client) => {
-    const clientAge = calculateAge(client.date_of_birth)
-    const spouseAge = client.spouse_date_of_birth ? calculateAge(client.spouse_date_of_birth) : null
-    return spouseAge ? Math.min(clientAge, spouseAge) : clientAge
-  }
-
-  const calculatePLF = (age: number, programType: string = 'HECM') => {
-    if (programType === 'HECM') {
-      return HECM_PLF[age as keyof typeof HECM_PLF] || 0.25
-    } else {
-      const program = programType as keyof typeof EQUITY_PLUS_PLF[55]
-      return EQUITY_PLUS_PLF[age as keyof typeof EQUITY_PLUS_PLF]?.[program] || 0.35
-    }
-  }
-
-  const calculateUPB = (homeValue: number, age: number, programType: string = 'HECM') => {
-    const plf = calculatePLF(age, programType)
-    return homeValue * plf
-  }
-
-  // Calculate REAL pipeline using UPB instead of desired proceeds
-  const totalPipeline = clients.reduce((sum, client) => {
-    const age = getYoungestAge(client)
-    const upb = calculateUPB(client.home_value, age, client.program_type || 'HECM')
-    return sum + upb
-  }, 0)
-
   const getStatusColor = (status: string) => {
     const colors = {
       new_lead: 'bg-orange-500/80 text-white',
@@ -194,6 +177,13 @@ export default function NextStepCRM() {
     const encodedAddress = encodeURIComponent(fullAddress)
     return `https://www.zillow.com/homes/${encodedAddress}_rb/`
   }
+
+  // Calculate REAL pipeline using UPB instead of desired proceeds
+  const totalPipeline = clients.reduce((sum, client) => {
+    const age = getYoungestAge(client)
+    const upb = calculateUPB(client.home_value, age, client.program_type || 'HECM')
+    return sum + upb
+  }, 0)
 
   // Filtered clients
   const filteredClients = clients.filter(client => {
@@ -498,8 +488,8 @@ export default function NextStepCRM() {
                       <span className="font-medium">Home: {formatCurrency(client.home_value)}</span>
                     </div>
                     <div className="flex items-center text-white/90">
-                      <DollarSign className="w-5 h-5 mr-3 text-emerald-300" />
-                      <span className="font-medium">Desired: {formatCurrency(client.desired_proceeds)}</span>
+                      <Calculator className="w-5 h-5 mr-3 text-emerald-300" />
+                      <span className="font-medium">UPB: {formatCurrency(calculateUPB(client.home_value, getYoungestAge(client), client.program_type || 'HECM'))}</span>
                     </div>
                   </div>
                 </div>
@@ -641,7 +631,7 @@ export default function NextStepCRM() {
                   </h4>
                   <div className="space-y-3">
                     <div><span className="font-medium">Home Value:</span> {formatCurrency(selectedClient.home_value)}</div>
-                    <div><span className="font-medium">Desired Proceeds:</span> {formatCurrency(selectedClient.desired_proceeds)}</div>
+                    <div><span className="font-medium">Program Type:</span> {selectedClient.program_type || 'HECM'}</div>
                     <div><span className="font-medium">Calculated UPB:</span> {formatCurrency(calculateUPB(selectedClient.home_value, getYoungestAge(selectedClient), selectedClient.program_type || 'HECM'))}</div>
                     <div><span className="font-medium">Address:</span> {selectedClient.street_address || 'Not provided'}</div>
                   </div>
@@ -796,26 +786,6 @@ export default function NextStepCRM() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={editingClient.email}
-                  onChange={(e) => setEditingClient({...editingClient, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  value={editingClient.phone}
-                  onChange={(e) => setEditingClient({...editingClient, phone: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
                 <input
                   type="number"
@@ -826,13 +796,17 @@ export default function NextStepCRM() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Desired Proceeds</label>
-                <input
-                  type="number"
-                  value={editingClient.desired_proceeds}
-                  onChange={(e) => setEditingClient({...editingClient, desired_proceeds: Number(e.target.value)})}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
+                <select
+                  value={editingClient.program_type || 'HECM'}
+                  onChange={(e) => setEditingClient({...editingClient, program_type: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
+                >
+                  <option value="HECM">HECM</option>
+                  <option value="Equity Plus">Equity Plus</option>
+                  <option value="Equity Plus Peak">Equity Plus Peak</option>
+                  <option value="Equity Plus LOC">Equity Plus LOC</option>
+                </select>
               </div>
             </div>
 
@@ -892,38 +866,6 @@ export default function NextStepCRM() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
-                <input
-                  type="tel"
-                  required
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
-                <input
-                  type="date"
-                  required
-                  value={newClient.date_of_birth}
-                  onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
                 <input
                   type="number"
@@ -932,6 +874,20 @@ export default function NextStepCRM() {
                   onChange={(e) => setNewClient({...newClient, home_value: Number(e.target.value)})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
+                <select
+                  value={newClient.program_type || 'HECM'}
+                  onChange={(e) => setNewClient({...newClient, program_type: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                  <option value="HECM">HECM</option>
+                  <option value="Equity Plus">Equity Plus</option>
+                  <option value="Equity Plus Peak">Equity Plus Peak</option>
+                  <option value="Equity Plus LOC">Equity Plus LOC</option>
+                </select>
               </div>
             </div>
 
@@ -944,7 +900,7 @@ export default function NextStepCRM() {
               </button>
               <button
                 onClick={handleAddClient}
-                disabled={!newClient.first_name || !newClient.last_name || !newClient.phone || !newClient.date_of_birth}
+                disabled={!newClient.first_name || !newClient.last_name || !newClient.home_value}
                 className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Add Client
