@@ -21,6 +21,9 @@ interface Client {
   property_type?: string
   home_value: number
   desired_proceeds: number
+  program_type?: string
+  interest_rate?: number
+  calculated_upb?: number
   loan_officer: string
   pipeline_status: string
   lead_source?: string
