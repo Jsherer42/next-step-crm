@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calendar, Filter, Edit2, Eye, X, Save, Calculator, User } from 'lucide-react'
 
 // Client interface
@@ -32,54 +32,13 @@ interface Client {
 }
 
 export default function NextStepCRM() {
-  // Simple state - NO automatic demo clients
+  // Simple state
   const [clients, setClients] = useState<Client[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [showAddClient, setShowAddClient] = useState(false)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
-  const [newNote, setNewNote] = useState('')
-  const [editingClient, setEditingClient] = useState<Client | null>(null)
-  const [showProgramComparison, setShowProgramComparison] = useState<Client | null>(null)
-
-  // Secret Easter Egg State
-  const [clickCount, setClickCount] = useState(0)
-  const [showEasterEgg, setShowEasterEgg] = useState(false)
-  const [ripples, setRipples] = useState<Array<{id: number, x: number, y: number}>>([])
-
-  // Easter Egg Click Handler
-  const handleLogoClick = (e: React.MouseEvent) => {
-    const newClickCount = clickCount + 1
-    setClickCount(newClickCount)
-    
-    if (newClickCount >= 5) {
-      // Create ripple effect
-      const rect = e.currentTarget.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      
-      const newRipple = {
-        id: Date.now(),
-        x: x,
-        y: y
-      }
-      
-      setRipples(prev => [...prev, newRipple])
-      setShowEasterEgg(true)
-      setClickCount(0)
-      
-      // Remove ripple after animation
-      setTimeout(() => {
-        setRipples(prev => prev.filter(r => r.id !== newRipple.id))
-      }, 1000)
-      
-      // Hide easter egg after a few seconds
-      setTimeout(() => {
-        setShowEasterEgg(false)
-      }, 4000)
-    }
-  }
 
   const [newClient, setNewClient] = useState<Client>({
     id: '',
@@ -135,7 +94,7 @@ export default function NextStepCRM() {
       const updatedClients = [...clients, newClient]
       setClients(updatedClients)
       console.log('✅ New lead imported:', newClient.first_name, newClient.last_name)
-      alert(`✅ New lead added: ${newClient.first_name} ${newClient.last_name}`)
+      alert(`✅ New lead added: ${newClient.first_name} ${newClient.last_name} - During this session only`)
     } catch (error) {
       console.error('❌ Error processing GHL webhook:', error)
     }
@@ -199,7 +158,7 @@ export default function NextStepCRM() {
     ]
     
     setClients([...clients, ...demoClients])
-    alert('Demo clients added!')
+    alert('Demo clients added! (Session only - will disappear on refresh)')
   }
 
   // PLF calculation
@@ -300,6 +259,7 @@ export default function NextStepCRM() {
       })
       setShowAddClient(false)
       console.log('✅ New client added:', clientToAdd.first_name, clientToAdd.last_name)
+      alert('Client added! (Session only - will disappear on refresh)')
     }
   }
 
@@ -313,28 +273,27 @@ export default function NextStepCRM() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-green-500 to-teal-600">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-8 shadow-2xl">
+      <div className="bg-gradient-to-r from-blue-600 via-green-600 to-teal-600 text-white p-8 shadow-2xl">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             {/* Company Info */}
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
-                <div className="bg-white bg-opacity-20 p-3 rounded-xl">
+                <div className="bg-white bg-opacity-20 p-3 rounded-xl backdrop-blur-sm">
                   <HomeIcon className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black text-white">Next Step CRM - ATLAS RESET</h1>
+                  <h1 className="text-3xl font-black text-white drop-shadow-lg">Next Step CRM</h1>
                   <p className="text-blue-100 font-semibold">City First FHA Retirement</p>
                 </div>
               </div>
-              <div className="bg-white bg-opacity-20 rounded-xl p-4 backdrop-blur-sm">
+              <div className="bg-white bg-opacity-20 rounded-xl p-4 backdrop-blur-sm border border-white border-opacity-30">
                 <p className="text-lg font-bold text-white/90 mb-1">Total UPB Pipeline</p>
                 <p className="text-4xl font-black text-white drop-shadow-lg">
                   {formatCurrency(totalPipeline)}
                 </p>
                 <p className="text-sm text-blue-100 mt-2">
                   {clients.length} Active Clients • Real PLF Calculations
-                  <span className="opacity-30 ml-2 text-xs">v2.0</span>
                 </p>
               </div>
             </div>
@@ -378,39 +337,6 @@ export default function NextStepCRM() {
           </div>
         </div>
       </div>
-
-      {/* Secret Easter Egg Popup */}
-      {showEasterEgg && (
-        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
-          <div className="bg-gradient-to-r from-blue-600 via-green-600 to-teal-600 text-white p-8 rounded-2xl shadow-2xl border-4 border-white border-opacity-30 backdrop-blur-md animate-bounce">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">🌍⚡ The Next Step CRM Team ⚡🌍</h2>
-              <div className="space-y-2 text-lg">
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-blue-200">🏗️ Alex</span>
-                  <span className="text-white">•</span>
-                  <span className="text-green-200">💡 Maya</span>
-                  <span className="text-white">•</span>
-                  <span className="text-teal-200">🎨 Nova</span>
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-blue-300">📚 Echo</span>
-                  <span className="text-white">•</span>
-                  <span className="text-green-300">🧮 Sage</span>
-                  <span className="text-white">•</span>
-                  <span className="text-teal-300">🌍 Atlas</span>
-                </div>
-              </div>
-              <p className="text-sm text-blue-100 mt-4 italic">
-                "From hello my friend to professional CRM empire!"
-              </p>
-              <div className="mt-4 text-xs text-white opacity-70">
-                Built with ❤️ and lots of debugging 😅
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
@@ -589,12 +515,6 @@ export default function NextStepCRM() {
                       View
                     </button>
                     <button
-                      onClick={() => setEditingClient(client)}
-                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
                       onClick={() => setShowDeleteConfirm(client.id)}
                       className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
                     >
@@ -609,8 +529,8 @@ export default function NextStepCRM() {
 
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-lg mb-2">No clients found</div>
-            <div className="text-gray-500 mb-4">Click "Add Demo Clients" or "Test GHL Import" to get started!</div>
+            <div className="text-white text-lg mb-2">No clients found</div>
+            <div className="text-white/80 mb-4">Click "Add Demo Clients" or "Test GHL Import" to get started!</div>
             <div className="flex gap-4 justify-center">
               <button 
                 onClick={addDemoClients}
