@@ -490,7 +490,7 @@ export default function NextStepCRM() {
                   <HomeIcon className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black">Next Step CRM</h1>
+                  <h1 className="text-3xl font-black text-red-500">Next Step CRM</h1>
                   <p className="text-blue-100 font-semibold">City First FHA Retirement</p>
                 </div>
               </div>
@@ -602,8 +602,9 @@ export default function NextStepCRM() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       client.pipeline_status === 'Closed' ? 'bg-green-100 text-green-800' :
                       client.pipeline_status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
+                      client.pipeline_status === 'Application Submitted' ? 'bg-blue-100 text-blue-800' :
                       client.pipeline_status === 'GHL Import' ? 'bg-purple-100 text-purple-800' :
-                      'bg-blue-100 text-blue-800'
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {client.pipeline_status}
                     </span>
@@ -611,21 +612,21 @@ export default function NextStepCRM() {
 
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="w-4 h-4" />
+                      <Phone className="w-4 h-4 text-blue-500" />
                       <span className="text-sm">{client.phone}</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
-                      <Mail className="w-4 h-4" />
+                      <Mail className="w-4 h-4 text-green-500" />
                       <span className="text-sm">{client.email}</span>
                     </div>
                     {client.street_address && (
                       <div className="flex items-center gap-2 text-gray-600">
-                        <HomeIcon className="w-4 h-4" />
+                        <HomeIcon className="w-4 h-4 text-indigo-500" />
                         <a 
                           href={`https://www.zillow.com/homes/${encodeURIComponent(client.street_address + ' ' + client.city + ' ' + client.state)}_rb/`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                          className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                         >
                           {client.street_address}, {client.city}, {client.state}
                         </a>
@@ -634,23 +635,23 @@ export default function NextStepCRM() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="text-xs text-gray-600 mb-1">Home Value</div>
-                      <div className="font-bold text-gray-900">{formatCurrency(client.home_value || 0)}</div>
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1 font-medium">Home Value</div>
+                      <div className="font-bold text-gray-900 text-lg">{formatCurrency(client.home_value || 0)}</div>
                     </div>
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <div className="text-xs text-blue-600 mb-1 flex items-center gap-1">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-4 border border-blue-200">
+                      <div className="text-xs text-blue-600 mb-1 flex items-center gap-1 font-medium">
                         <Calculator className="w-3 h-3" />
                         Calculated UPB
                       </div>
-                      <div className="font-bold text-blue-900">{formatCurrency(upb)}</div>
+                      <div className="font-bold text-blue-900 text-lg">{formatCurrency(upb)}</div>
                     </div>
                   </div>
 
                   {client.program_type && (
-                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 mb-4">
-                      <div className="text-xs text-purple-600 mb-1">Program</div>
-                      <div className="font-semibold text-purple-900">{client.program_type}</div>
+                    <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 rounded-xl p-4 mb-4 border border-purple-200">
+                      <div className="text-xs text-purple-600 mb-1 font-medium">Program</div>
+                      <div className="font-semibold text-purple-900 text-sm">{client.program_type}</div>
                       {client.interest_rate && (
                         <div className="text-xs text-purple-700 mt-1">{client.interest_rate}% Interest Rate</div>
                       )}
@@ -660,27 +661,27 @@ export default function NextStepCRM() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedClient(client)}
-                      className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-colors"
+                      className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
                     >
                       <Eye className="w-4 h-4 mr-1" />
                       View
                     </button>
                     <button
                       onClick={() => setShowProgramComparison(client)}
-                      className="flex-1 flex items-center justify-center px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-semibold transition-colors"
+                      className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
                     >
                       <Calculator className="w-4 h-4 mr-1" />
                       Compare
                     </button>
                     <button
                       onClick={() => setEditingClient(client)}
-                      className="flex items-center justify-center px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition-colors"
+                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(client.id)}
-                      className="flex items-center justify-center px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors"
+                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
                     >
                       <X className="w-4 h-4" />
                     </button>
