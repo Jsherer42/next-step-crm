@@ -162,6 +162,57 @@ export default function NextStepCRM() {
   const [showAddClient, setShowAddClient] = useState(false)
   const [showAddSpouse, setShowAddSpouse] = useState<string | null>(null)
   const [showProgramComparison, setShowProgramComparison] = useState<Client | null>(null)
+
+  // GHL Webhook handler for importing leads
+  const handleGHLWebhook = async (webhookData: any) => {
+    try {
+      // Check if this is a "Next Step CRM" disposition
+      if (webhookData.contact?.custom_fields?.lead_disposition !== "Next Step CRM") {
+        return // Only import when disposition is "Next Step CRM"
+      }
+
+      // Check for duplicates (by phone number)
+      const existingClient = clients.find(client => 
+        client.phone === webhookData.contact?.phone
+      )
+      
+      if (existingClient) {
+        console.log('Lead already exists in CRM:', webhookData.contact?.phone)
+        return
+      }
+
+      // Create new client from GHL data
+      const newClientFromGHL: Client = {
+        id: Date.now().toString(),
+        first_name: webhookData.contact?.first_name || '',
+        last_name: webhookData.contact?.last_name || '',
+        email: webhookData.contact?.email || '',
+        phone: webhookData.contact?.phone || '',
+        date_of_birth: webhookData.contact?.date_of_birth || '',
+        street_address: webhookData.contact?.address1 || '',
+        city: webhookData.contact?.city || '',
+        state: webhookData.contact?.state || '',
+        zip_code: webhookData.contact?.postal_code || '',
+        property_type: 'single_family',
+        home_value: 0, // Will need to be updated manually
+        desired_proceeds: 0,
+        program_type: 'HECM',
+        interest_rate: 3.5,
+        loan_officer: '',
+        pipeline_status: 'new_lead',
+        lead_source: 'ghl_import',
+        notes: `Imported from GHL - Disposition: Next Step CRM\nImported: ${new Date().toLocaleString()}`
+      }
+
+      // Add to clients
+      setClients(prev => [...prev, newClientFromGHL])
+      
+      console.log('Successfully imported lead from GHL:', newClientFromGHL.first_name, newClientFromGHL.last_name)
+      
+    } catch (error) {
+      console.error('Error processing GHL webhook:', error)
+    }
+  }
   const [spouseForm, setSpouseForm] = useState({
     spouse_name: '',
     spouse_date_of_birth: '',
@@ -408,6 +459,26 @@ export default function NextStepCRM() {
               >
                 <Plus className="w-6 h-6 mr-3" />
                 Add New Client
+              </button>
+              
+              <button 
+                onClick={() => {
+                  // Test webhook with sample GHL data
+                  handleGHLWebhook({
+                    contact: {
+                      first_name: "Test",
+                      last_name: "Lead",
+                      email: "test@example.com", 
+                      phone: "(555) 999-0001",
+                      custom_fields: {
+                        lead_disposition: "Next Step CRM"
+                      }
+                    }
+                  })
+                }}
+                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-2xl hover:shadow-purple-500/25 hover:scale-110 transition-all duration-300 transform hover:-translate-y-1"
+              >
+                🔗 Test GHL Import
               </button>
             </div>
           </div>
