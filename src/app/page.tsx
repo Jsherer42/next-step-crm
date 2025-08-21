@@ -10,6 +10,9 @@ interface Client {
   email: string
   phone: string
   date_of_birth: string
+  spouse_first_name?: string
+  spouse_last_name?: string
+  spouse_date_of_birth?: string
   home_value?: number
   program_type?: string
   pipeline_status?: string
@@ -52,6 +55,9 @@ export default function NextStepCRM() {
     email: '',
     phone: '',
     date_of_birth: '',
+    spouse_first_name: '',
+    spouse_last_name: '',
+    spouse_date_of_birth: '',
     home_value: 0,
     program_type: 'HECM',
     pipeline_status: 'New Lead'
@@ -88,9 +94,29 @@ export default function NextStepCRM() {
     return Math.max(age, 55) // Minimum age 55 for reverse mortgages
   }
 
+  // Get youngest borrower age (critical for PLF calculations)
+  const getYoungestAge = (client: Client): number => {
+    const primaryAge = calculateAge(client.date_of_birth)
+    if (!client.spouse_date_of_birth) return primaryAge
+    
+    const spouseAge = calculateAge(client.spouse_date_of_birth)
+    return Math.min(primaryAge, spouseAge)
+  }
+
+  // Validate program eligibility based on age
+  const validateProgramEligibility = (age: number, programType: string): { eligible: boolean; message?: string } => {
+    if (programType === 'HECM' && age < 62) {
+      return { eligible: false, message: 'HECM requires minimum age 62' }
+    }
+    if (programType !== 'HECM' && age < 55) {
+      return { eligible: false, message: 'Proprietary programs require minimum age 55' }
+    }
+    return { eligible: true }
+  }
+
   // Enhanced PLF calculation with all programs
   const calculateProgramComparison = (client: Client) => {
-    const age = calculateAge(client.date_of_birth)
+    const age = getYoungestAge(client)
     const homeValue = client.home_value || 0
     const ageKey = Math.min(age, 95) as keyof typeof EQUITY_PLUS_PLF
     
@@ -150,6 +176,9 @@ export default function NextStepCRM() {
         email: '',
         phone: '',
         date_of_birth: '',
+        spouse_first_name: '',
+        spouse_last_name: '',
+        spouse_date_of_birth: '',
         home_value: 0,
         program_type: 'HECM',
         pipeline_status: 'New Lead'
@@ -195,7 +224,7 @@ export default function NextStepCRM() {
   }
 
   const totalPipeline = clients.reduce((sum, client) => {
-    const age = calculateAge(client.date_of_birth)
+    const age = getYoungestAge(client)
     return sum + calculateUPB(client.home_value || 0, client.program_type || 'HECM', age)
   }, 0)
 
@@ -290,8 +319,10 @@ export default function NextStepCRM() {
         {/* Client Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredClients.map((client) => {
-            const age = calculateAge(client.date_of_birth)
+            const age = getYoungestAge(client)
             const upb = calculateUPB(client.home_value || 0, client.program_type || 'HECM', age)
+            const eligibility = validateProgramEligibility(age, client.program_type || 'HECM')
+            
             return (
               <div key={client.id} className="bg-white rounded-2xl shadow-xl p-6 hover:shadow-2xl transition-all">
                 <div className="flex justify-between items-start mb-4">
@@ -299,9 +330,25 @@ export default function NextStepCRM() {
                     <h3 className="text-xl font-bold text-gray-900">
                       {client.first_name} {client.last_name}
                     </h3>
+                    {client.spouse_first_name && (
+                      <p className="text-sm text-gray-600">
+                        & {client.spouse_first_name} {client.spouse_last_name}
+                      </p>
+                    )}
                     <p className="text-gray-600 text-sm">{client.pipeline_status}</p>
                   </div>
+                  <div className="text-right">
+                    <div className="text-xs text-blue-600 font-medium">Youngest Borrower</div>
+                    <div className="text-lg font-bold text-blue-900">{age} years</div>
+                  </div>
                 </div>
+
+                {!eligibility.eligible && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <div className="text-red-700 text-sm font-medium">⚠️ Eligibility Issue</div>
+                    <div className="text-red-600 text-xs">{eligibility.message}</div>
+                  </div>
+                )}
 
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center gap-2 text-gray-600">
@@ -385,7 +432,7 @@ export default function NextStepCRM() {
                 <h2 className="text-2xl font-bold text-gray-800">
                   Program Comparison - {showProgramComparison.first_name} {showProgramComparison.last_name}
                 </h2>
-                <p className="text-gray-600">Age: {calculateAge(showProgramComparison.date_of_birth)} | Home Value: {formatCurrency(showProgramComparison.home_value || 0)}</p>
+                <p className="text-gray-600">Age: {getYoungestAge(showProgramComparison)} | Home Value: {formatCurrency(showProgramComparison.home_value || 0)}</p>
               </div>
               <button
                 onClick={() => setShowProgramComparison(null)}
@@ -475,7 +522,7 @@ export default function NextStepCRM() {
                 <div>
                   <span className="font-medium">Client Age:</span> 
                   <span className="text-blue-600 font-bold ml-1">
-                    {calculateAge(showProgramComparison.date_of_birth)} years
+                    {getYoungestAge(showProgramComparison)} years
                   </span>
                 </div>
               </div>
@@ -515,6 +562,53 @@ export default function NextStepCRM() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
+                <input
+                  type="date"
+                  value={newClient.date_of_birth}
+                  onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Spouse Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Spouse Information (Optional)</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
+                    <input
+                      type="text"
+                      value={newClient.spouse_first_name || ''}
+                      onChange={(e) => setNewClient({...newClient, spouse_first_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
+                    <input
+                      type="text"
+                      value={newClient.spouse_last_name || ''}
+                      onChange={(e) => setNewClient({...newClient, spouse_last_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
+                  <input
+                    type="date"
+                    value={newClient.spouse_date_of_birth || ''}
+                    onChange={(e) => setNewClient({...newClient, spouse_date_of_birth: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Youngest borrower age determines PLF calculation
+                  </p>
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
@@ -530,16 +624,6 @@ export default function NextStepCRM() {
                   type="tel"
                   value={newClient.phone}
                   onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-                <input
-                  type="date"
-                  value={newClient.date_of_birth}
-                  onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -566,6 +650,13 @@ export default function NextStepCRM() {
                   <option value="Equity Plus Peak">Equity Plus Peak</option>
                   <option value="Equity Plus LOC">Equity Plus LOC</option>
                 </select>
+                {newClient.date_of_birth && (() => {
+                  const age = getYoungestAge(newClient)
+                  const eligibility = validateProgramEligibility(age, newClient.program_type || 'HECM')
+                  return !eligibility.eligible ? (
+                    <p className="text-red-600 text-xs mt-1">⚠️ {eligibility.message}</p>
+                  ) : null
+                })()}
               </div>
             </div>
 
@@ -618,6 +709,53 @@ export default function NextStepCRM() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
+                <input
+                  type="date"
+                  value={editingClient.date_of_birth}
+                  onChange={(e) => setEditingClient({...editingClient, date_of_birth: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Spouse Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Spouse Information (Optional)</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
+                    <input
+                      type="text"
+                      value={editingClient.spouse_first_name || ''}
+                      onChange={(e) => setEditingClient({...editingClient, spouse_first_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
+                    <input
+                      type="text"
+                      value={editingClient.spouse_last_name || ''}
+                      onChange={(e) => setEditingClient({...editingClient, spouse_last_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
+                  <input
+                    type="date"
+                    value={editingClient.spouse_date_of_birth || ''}
+                    onChange={(e) => setEditingClient({...editingClient, spouse_date_of_birth: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Youngest borrower age determines PLF calculation
+                  </p>
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
@@ -633,16 +771,6 @@ export default function NextStepCRM() {
                   type="tel"
                   value={editingClient.phone}
                   onChange={(e) => setEditingClient({...editingClient, phone: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-                <input
-                  type="date"
-                  value={editingClient.date_of_birth}
-                  onChange={(e) => setEditingClient({...editingClient, date_of_birth: e.target.value})}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -669,6 +797,13 @@ export default function NextStepCRM() {
                   <option value="Equity Plus Peak">Equity Plus Peak</option>
                   <option value="Equity Plus LOC">Equity Plus LOC</option>
                 </select>
+                {(() => {
+                  const age = getYoungestAge(editingClient)
+                  const eligibility = validateProgramEligibility(age, editingClient.program_type || 'HECM')
+                  return !eligibility.eligible ? (
+                    <p className="text-red-600 text-xs mt-1">⚠️ {eligibility.message}</p>
+                  ) : null
+                })()}
               </div>
             </div>
 
@@ -695,13 +830,21 @@ export default function NextStepCRM() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 rounded-2xl p-8 max-w-2xl w-full">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">{selectedClient.first_name} {selectedClient.last_name}</h2>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">{selectedClient.first_name} {selectedClient.last_name}</h2>
+                {selectedClient.spouse_first_name && (
+                  <p className="text-lg text-gray-600">& {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}</p>
+                )}
+                <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Youngest Borrower: {getYoungestAge(selectedClient)} years
+                </div>
+              </div>
               <button onClick={() => setSelectedClient(null)}>
                 <X className="w-6 h-6 text-gray-500 hover:text-gray-700" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm text-gray-600">Email</div>
@@ -718,6 +861,26 @@ export default function NextStepCRM() {
                 <div>
                   <div className="text-sm text-gray-600">Program</div>
                   <div className="font-semibold text-gray-800">{selectedClient.program_type}</div>
+                </div>
+              </div>
+
+              {/* Borrower Ages Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Borrower Ages</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <div className="text-sm text-blue-600">Primary Borrower</div>
+                    <div className="font-bold text-blue-900">{calculateAge(selectedClient.date_of_birth)} years</div>
+                  </div>
+                  {selectedClient.spouse_date_of_birth && (
+                    <div className="bg-green-50 rounded-lg p-3">
+                      <div className="text-sm text-green-600">Spouse</div>
+                      <div className="font-bold text-green-900">{calculateAge(selectedClient.spouse_date_of_birth)} years</div>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 text-sm text-gray-600">
+                  💡 PLF calculation uses youngest borrower age: <span className="font-semibold">{getYoungestAge(selectedClient)} years</span>
                 </div>
               </div>
             </div>
