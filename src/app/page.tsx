@@ -19,10 +19,26 @@ interface Client {
   occupancy_status?: string
   program_type?: string
   pipeline_status?: string
+  pipeline_date?: string
+  days_in_stage?: number
   created_at?: string
 }
 
-// Industry PLF Tables - Real calculations
+// Pipeline stages with colors
+const PIPELINE_STAGES = [
+  { value: 'Proposal Out', label: 'Proposal Out/Pitched', color: 'bg-sky-100 border-sky-300 text-sky-800' },
+  { value: 'Counseling Scheduled', label: 'Counseling Scheduled', color: 'bg-blue-100 border-blue-300 text-blue-800' },
+  { value: 'Counseling In', label: 'Counseling In', color: 'bg-teal-100 border-teal-300 text-teal-800' },
+  { value: 'Docs Out', label: 'Docs Out', color: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
+  { value: 'Docs In', label: 'Docs In', color: 'bg-orange-100 border-orange-300 text-orange-800' },
+  { value: 'Submitted to Processing', label: 'Submitted to Processing', color: 'bg-purple-100 border-purple-300 text-purple-800' },
+  { value: 'Appraisal Ordered', label: 'Appraisal Ordered', color: 'bg-pink-100 border-pink-300 text-pink-800' },
+  { value: 'Appraisal In', label: 'Appraisal In', color: 'bg-fuchsia-100 border-fuchsia-300 text-fuchsia-800' },
+  { value: 'Submit to UW', label: 'Submit to UW', color: 'bg-red-100 border-red-300 text-red-800' },
+  { value: 'Conditional Approval', label: 'Conditional Approval', color: 'bg-lime-100 border-lime-300 text-lime-800' },
+  { value: 'CTC', label: 'CTC', color: 'bg-green-100 border-green-300 text-green-800' },
+  { value: 'Funded', label: 'Funded', color: 'bg-gray-100 border-gray-300 text-gray-800' }
+]
 const EQUITY_PLUS_PLF: Record<number, { "Equity Plus": number; "Equity Plus Peak": number; "Equity Plus LOC": number }> = {
   55: { "Equity Plus": 0.338, "Equity Plus Peak": 0.391, "Equity Plus LOC": 0.338 },
   56: { "Equity Plus": 0.342, "Equity Plus Peak": 0.395, "Equity Plus LOC": 0.342 },
@@ -66,7 +82,8 @@ export default function NextStepCRM() {
     current_mortgage_balance: 0,
     occupancy_status: 'Primary Residence',
     program_type: 'HECM',
-    pipeline_status: 'New Lead'
+    pipeline_status: 'Proposal Out',
+    pipeline_date: new Date().toISOString().split('T')[0]
   })
 
   // GUARANTEED SAVING - Load on start
@@ -194,7 +211,8 @@ export default function NextStepCRM() {
       const client = {
         ...newClient,
         id: Date.now().toString(),
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        pipeline_date: newClient.pipeline_date || new Date().toISOString().split('T')[0]
       }
       
       const updated = [...clients, client]
@@ -215,7 +233,8 @@ export default function NextStepCRM() {
         current_mortgage_balance: 0,
         occupancy_status: 'Primary Residence',
         program_type: 'HECM',
-        pipeline_status: 'New Lead'
+        pipeline_status: 'Proposal Out',
+        pipeline_date: new Date().toISOString().split('T')[0]
       })
       setShowAddClient(false)
       alert('Client saved successfully!')
@@ -305,8 +324,8 @@ export default function NextStepCRM() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Enhanced Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
@@ -328,10 +347,19 @@ export default function NextStepCRM() {
           <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white/80">New Leads</p>
-                <p className="text-3xl font-bold">{clients.filter(c => c.pipeline_status?.includes('Lead')).length}</p>
+                <p className="text-white/80">Active Pipeline</p>
+                <p className="text-3xl font-bold">{clients.filter(c => c.pipeline_status !== 'Funded').length}</p>
               </div>
               <Phone className="w-8 h-8 text-white/60" />
+            </div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/80">Funded This Month</p>
+                <p className="text-3xl font-bold">{clients.filter(c => c.pipeline_status === 'Funded').length}</p>
+              </div>
+              <Calculator className="w-8 h-8 text-white/60" />
             </div>
           </div>
         </div>
@@ -358,11 +386,29 @@ export default function NextStepCRM() {
             const netProceeds = calculateNetProceeds(upb, client.current_mortgage_balance || 0, client.program_type || 'HECM')
             const ageEligibility = validateProgramEligibility(age, client.program_type || 'HECM')
             const propertyEligibility = validatePropertyEligibility(client.property_type || 'Single Family Residence', client.occupancy_status || 'Primary Residence')
+            const daysInStage = calculateDaysInStage(client.pipeline_date)
+            const stageColor = getPipelineStageColor(client.pipeline_status)
             
             return (
-              <div key={client.id} className="bg-white rounded-2xl shadow-xl p-6 hover:shadow-2xl transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
+              <div key={client.id} className="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all overflow-hidden">
+                {/* Color-coded pipeline status header */}
+                <div className={`p-4 border-l-4 ${stageColor}`}>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-semibold text-sm">{getPipelineStageLabel(client.pipeline_status)}</div>
+                      <div className="text-xs opacity-75">
+                        {daysInStage} days in stage
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-medium">Youngest Borrower</div>
+                      <div className="text-lg font-bold">{age} years</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  <div className="mb-4">
                     <h3 className="text-xl font-bold text-gray-900">
                       {client.first_name} {client.last_name}
                     </h3>
@@ -371,88 +417,83 @@ export default function NextStepCRM() {
                         & {client.spouse_first_name} {client.spouse_last_name}
                       </p>
                     )}
-                    <p className="text-gray-600 text-sm">{client.pipeline_status}</p>
                     <p className="text-xs text-gray-500">{client.property_type} • {client.occupancy_status}</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs text-blue-600 font-medium">Youngest Borrower</div>
-                    <div className="text-lg font-bold text-blue-900">{age} years</div>
-                  </div>
-                </div>
 
-                {(!ageEligibility.eligible || !propertyEligibility.eligible) && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                    <div className="text-red-700 text-sm font-medium">⚠️ Eligibility Issues</div>
-                    {!ageEligibility.eligible && <div className="text-red-600 text-xs">{ageEligibility.message}</div>}
-                    {!propertyEligibility.eligible && <div className="text-red-600 text-xs">{propertyEligibility.message}</div>}
-                  </div>
-                )}
-
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Phone className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm">{client.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Mail className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">{client.email}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-600 mb-1">Home Value</div>
-                    <div className="font-bold text-gray-900">{formatCurrency(client.home_value || 0)}</div>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-3">
-                    <div className="text-xs text-blue-600 mb-1">Max UPB</div>
-                    <div className="font-bold text-blue-900">{formatCurrency(upb)}</div>
-                  </div>
-                </div>
-
-                {/* Enhanced Financial Display */}
-                <div className="bg-green-50 rounded-lg p-3 mb-4">
-                  <div className="text-xs text-green-600 mb-1">💰 Est. Net Proceeds</div>
-                  <div className="font-bold text-green-900 text-lg">{formatCurrency(netProceeds)}</div>
-                  {client.current_mortgage_balance && client.current_mortgage_balance > 0 && (
-                    <div className="text-xs text-gray-600 mt-1">
-                      After paying off ${formatCurrency(client.current_mortgage_balance)} mortgage
+                  {(!ageEligibility.eligible || !propertyEligibility.eligible) && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                      <div className="text-red-700 text-sm font-medium">⚠️ Eligibility Issues</div>
+                      {!ageEligibility.eligible && <div className="text-red-600 text-xs">{ageEligibility.message}</div>}
+                      {!propertyEligibility.eligible && <div className="text-red-600 text-xs">{propertyEligibility.message}</div>}
                     </div>
                   )}
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  <button
-                    onClick={() => setSelectedClient(client)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
-                  >
-                    <Eye className="w-4 h-4" />
-                    View
-                  </button>
-                  <button
-                    onClick={() => setShowProgramComparison(client)}
-                    className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    Compare
-                  </button>
-                </div>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm">{client.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Mail className="w-4 h-4 text-green-500" />
+                      <span className="text-sm">{client.email}</span>
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setEditingClient(client)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteClient(client.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
-                  >
-                    <X className="w-4 h-4" />
-                    Delete
-                  </button>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-600 mb-1">Home Value</div>
+                      <div className="font-bold text-gray-900">{formatCurrency(client.home_value || 0)}</div>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-3">
+                      <div className="text-xs text-blue-600 mb-1">Max UPB</div>
+                      <div className="font-bold text-blue-900">{formatCurrency(upb)}</div>
+                    </div>
+                  </div>
+
+                  {/* Enhanced Financial Display */}
+                  <div className="bg-green-50 rounded-lg p-3 mb-4">
+                    <div className="text-xs text-green-600 mb-1">💰 Est. Net Proceeds</div>
+                    <div className="font-bold text-green-900 text-lg">{formatCurrency(netProceeds)}</div>
+                    {client.current_mortgage_balance && client.current_mortgage_balance > 0 && (
+                      <div className="text-xs text-gray-600 mt-1">
+                        After paying off ${formatCurrency(client.current_mortgage_balance)} mortgage
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <button
+                      onClick={() => setSelectedClient(client)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View
+                    </button>
+                    <button
+                      onClick={() => setShowProgramComparison(client)}
+                      className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      Compare
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setEditingClient(client)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteClient(client.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
+                    >
+                      <X className="w-4 h-4" />
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             )
@@ -759,6 +800,37 @@ export default function NextStepCRM() {
                   ) : null
                 })()}
               </div>
+
+              {/* Pipeline Stage Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Pipeline Status</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Stage *</label>
+                    <select
+                      value={newClient.pipeline_status}
+                      onChange={(e) => setNewClient({...newClient, pipeline_status: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {PIPELINE_STAGES.map(stage => (
+                        <option key={stage.value} value={stage.value}>{stage.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stage Date</label>
+                    <input
+                      type="date"
+                      value={newClient.pipeline_date || ''}
+                      onChange={(e) => setNewClient({...newClient, pipeline_date: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      📊 Used to track days in current stage
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end gap-4 mt-8">
@@ -952,6 +1024,37 @@ export default function NextStepCRM() {
                   ) : null
                 })()}
               </div>
+
+              {/* Pipeline Stage Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Pipeline Status</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Stage *</label>
+                    <select
+                      value={editingClient.pipeline_status}
+                      onChange={(e) => setEditingClient({...editingClient, pipeline_status: e.target.value, pipeline_date: new Date().toISOString().split('T')[0]})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {PIPELINE_STAGES.map(stage => (
+                        <option key={stage.value} value={stage.value}>{stage.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stage Date</label>
+                    <input
+                      type="date"
+                      value={editingClient.pipeline_date || ''}
+                      onChange={(e) => setEditingClient({...editingClient, pipeline_date: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      📊 Auto-updates when stage changes
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end gap-4 mt-8">
@@ -992,6 +1095,25 @@ export default function NextStepCRM() {
             </div>
 
             <div className="space-y-6">
+              {/* Pipeline Status Section */}
+              <div className={`p-4 rounded-lg border-l-4 ${getPipelineStageColor(selectedClient.pipeline_status)}`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-semibold">Current Pipeline Stage</h3>
+                    <p className="text-lg font-bold">{getPipelineStageLabel(selectedClient.pipeline_status)}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm opacity-75">Days in Stage</div>
+                    <div className="text-2xl font-bold">{calculateDaysInStage(selectedClient.pipeline_date)}</div>
+                  </div>
+                </div>
+                {selectedClient.pipeline_date && (
+                  <p className="text-sm opacity-75 mt-2">
+                    Stage entered: {new Date(selectedClient.pipeline_date).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm text-gray-600">Email</div>
