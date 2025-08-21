@@ -40,6 +40,34 @@ export default function NextStepCRM() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
 
+  // Load clients from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('nextStepClients')
+        if (saved) {
+          const parsedClients = JSON.parse(saved)
+          setClients(parsedClients)
+          console.log('✅ Loaded', parsedClients.length, 'clients from storage')
+        }
+      } catch (error) {
+        console.error('Error loading clients:', error)
+      }
+    }
+  }, [])
+
+  // Save clients to localStorage whenever clients change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && clients.length >= 0) {
+      try {
+        localStorage.setItem('nextStepClients', JSON.stringify(clients))
+        console.log('💾 Saved', clients.length, 'clients to storage')
+      } catch (error) {
+        console.error('Error saving clients:', error)
+      }
+    }
+  }, [clients])
+
   const [newClient, setNewClient] = useState<Client>({
     id: '',
     first_name: '',
@@ -94,72 +122,14 @@ export default function NextStepCRM() {
       const updatedClients = [...clients, newClient]
       setClients(updatedClients)
       console.log('✅ New lead imported:', newClient.first_name, newClient.last_name)
-      alert(`✅ New lead added: ${newClient.first_name} ${newClient.last_name} - During this session only`)
+      alert(`✅ New lead added and saved: ${newClient.first_name} ${newClient.last_name}`)
     } catch (error) {
       console.error('❌ Error processing GHL webhook:', error)
     }
   }
 
-  // Add demo button function
-  const addDemoClients = () => {
-    const demoClients: Client[] = [
-      {
-        id: '1',
-        first_name: 'Robert',
-        last_name: 'Johnson',
-        email: 'robert.johnson@email.com',
-        phone: '(555) 123-4567',
-        date_of_birth: '1962-05-15',
-        spouse_name: 'Linda Johnson',
-        spouse_date_of_birth: '1965-08-22',
-        spouse_is_nbs: false,
-        street_address: '123 Main Street',
-        city: 'Springfield',
-        state: 'IL',
-        zip_code: '62701',
-        home_value: 450000,
-        desired_proceeds: 200000,
-        loan_officer: 'Christian',
-        pipeline_status: 'New Lead',
-        lead_source: 'Website',
-        notes: 'Initial consultation completed. Very interested in HECM program.',
-        program_type: 'HECM',
-        interest_rate: 6.5,
-        property_type: 'Single Family',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        first_name: 'Margaret',
-        last_name: 'Chen',
-        email: 'margaret.chen@email.com',
-        phone: '(555) 987-6543',
-        date_of_birth: '1958-12-03',
-        spouse_name: '',
-        spouse_date_of_birth: '',
-        spouse_is_nbs: false,
-        street_address: '456 Oak Avenue',
-        city: 'Madison',
-        state: 'WI',
-        zip_code: '53703',
-        home_value: 620000,
-        desired_proceeds: 350000,
-        loan_officer: 'Ahmed',
-        pipeline_status: 'Application Submitted',
-        lead_source: 'Referral',
-        notes: 'High-value property. Considering Equity Plus Peak for maximum proceeds.',
-        program_type: 'Equity Plus Peak',
-        interest_rate: 7.2,
-        property_type: 'Single Family',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ]
-    
-    setClients([...clients, ...demoClients])
-    alert('Demo clients added! (Session only - will disappear on refresh)')
-  }
+  // Remove demo clients function - not needed
+  // JJ doesn't need demo clients, only real persistent clients
 
   // PLF calculation
   const calculateUPB = (homeValue: number, age: number, programType: string = 'HECM') => {
