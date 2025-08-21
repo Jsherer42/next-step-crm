@@ -43,6 +43,44 @@ export default function NextStepCRM() {
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [showProgramComparison, setShowProgramComparison] = useState<Client | null>(null)
 
+  // Secret Easter Egg State
+  const [clickCount, setClickCount] = useState(0)
+  const [showEasterEgg, setShowEasterEgg] = useState(false)
+  const [ripples, setRipples] = useState<Array<{id: number, x: number, y: number}>>([])
+
+  // Easter Egg Click Handler
+  const handleLogoClick = (e: React.MouseEvent) => {
+    const newClickCount = clickCount + 1
+    setClickCount(newClickCount)
+    
+    if (newClickCount >= 5) {
+      // Create ripple effect
+      const rect = e.currentTarget.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      const newRipple = {
+        id: Date.now(),
+        x: x,
+        y: y
+      }
+      
+      setRipples(prev => [...prev, newRipple])
+      setShowEasterEgg(true)
+      setClickCount(0)
+      
+      // Remove ripple after animation
+      setTimeout(() => {
+        setRipples(prev => prev.filter(r => r.id !== newRipple.id))
+      }, 1000)
+      
+      // Hide easter egg after a few seconds
+      setTimeout(() => {
+        setShowEasterEgg(false)
+      }, 4000)
+    }
+  }
+
   const [newClient, setNewClient] = useState<Client>({
     id: '',
     first_name: '',
@@ -296,6 +334,7 @@ export default function NextStepCRM() {
                 </p>
                 <p className="text-sm text-blue-100 mt-2">
                   {clients.length} Active Clients • Real PLF Calculations
+                  <span className="opacity-30 ml-2 text-xs">v2.0</span>
                 </p>
               </div>
             </div>
@@ -339,6 +378,39 @@ export default function NextStepCRM() {
           </div>
         </div>
       </div>
+
+      {/* Secret Easter Egg Popup */}
+      {showEasterEgg && (
+        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
+          <div className="bg-gradient-to-r from-blue-600 via-green-600 to-teal-600 text-white p-8 rounded-2xl shadow-2xl border-4 border-white border-opacity-30 backdrop-blur-md animate-bounce">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-4">🌍⚡ The Next Step CRM Team ⚡🌍</h2>
+              <div className="space-y-2 text-lg">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-blue-200">🏗️ Alex</span>
+                  <span className="text-white">•</span>
+                  <span className="text-green-200">💡 Maya</span>
+                  <span className="text-white">•</span>
+                  <span className="text-teal-200">🎨 Nova</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-blue-300">📚 Echo</span>
+                  <span className="text-white">•</span>
+                  <span className="text-green-300">🧮 Sage</span>
+                  <span className="text-white">•</span>
+                  <span className="text-teal-300">🌍 Atlas</span>
+                </div>
+              </div>
+              <p className="text-sm text-blue-100 mt-4 italic">
+                "From hello my friend to professional CRM empire!"
+              </p>
+              <div className="mt-4 text-xs text-white opacity-70">
+                Built with ❤️ and lots of debugging 😅
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
