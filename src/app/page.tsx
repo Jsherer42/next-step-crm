@@ -31,7 +31,72 @@ interface Client {
   updated_at?: string
 }
 
+// Global storage for clients - survives component re-renders
+let globalClientStorage: Client[] = []
+
 export default function NextStepCRM() {
+  // Initialize with demo clients if storage is empty
+  const initializeClients = (): Client[] => {
+    if (globalClientStorage.length === 0) {
+      globalClientStorage = [
+        {
+          id: '1',
+          first_name: 'Robert',
+          last_name: 'Johnson',
+          email: 'robert.johnson@email.com',
+          phone: '(555) 123-4567',
+          date_of_birth: '1962-05-15',
+          spouse_name: 'Linda Johnson',
+          spouse_date_of_birth: '1965-08-22',
+          spouse_is_nbs: false,
+          street_address: '123 Main Street',
+          city: 'Springfield',
+          state: 'IL',
+          zip_code: '62701',
+          home_value: 450000,
+          desired_proceeds: 200000,
+          loan_officer: 'Christian',
+          pipeline_status: 'New Lead',
+          lead_source: 'Website',
+          notes: 'Initial consultation completed. Very interested in HECM program.',
+          program_type: 'HECM',
+          interest_rate: 6.5,
+          property_type: 'Single Family',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          first_name: 'Margaret',
+          last_name: 'Chen',
+          email: 'margaret.chen@email.com',
+          phone: '(555) 987-6543',
+          date_of_birth: '1958-12-03',
+          spouse_name: '',
+          spouse_date_of_birth: '',
+          spouse_is_nbs: false,
+          street_address: '456 Oak Avenue',
+          city: 'Madison',
+          state: 'WI',
+          zip_code: '53703',
+          home_value: 620000,
+          desired_proceeds: 350000,
+          loan_officer: 'Ahmed',
+          pipeline_status: 'Application Submitted',
+          lead_source: 'Referral',
+          notes: 'High-value property. Considering Equity Plus Peak for maximum proceeds.',
+          program_type: 'Equity Plus Peak',
+          interest_rate: 7.2,
+          property_type: 'Single Family',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]
+      console.log('🏠 Initialized demo clients in global storage')
+    }
+    return [...globalClientStorage]
+  }
+
   // State management
   const [clients, setClients] = useState<Client[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -43,103 +108,18 @@ export default function NextStepCRM() {
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [showProgramComparison, setShowProgramComparison] = useState<Client | null>(null)
 
-  // Local Storage Functions - Browser Only
-  const saveClientsToStorage = (clientData: Client[]) => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('nextStepClients', JSON.stringify(clientData))
-        console.log('✅ Clients saved to localStorage:', clientData.length)
-      } catch (error) {
-        console.error('❌ Error saving to localStorage:', error)
-      }
-    }
-  }
-
-  const loadClientsFromStorage = (): Client[] => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('nextStepClients')
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          console.log('✅ Clients loaded from localStorage:', parsed.length)
-          return parsed
-        }
-      } catch (error) {
-        console.error('❌ Error loading from localStorage:', error)
-      }
-    }
-    
-    // Return default demo clients if nothing in storage
-    return [
-      {
-        id: '1',
-        first_name: 'Robert',
-        last_name: 'Johnson',
-        email: 'robert.johnson@email.com',
-        phone: '(555) 123-4567',
-        date_of_birth: '1962-05-15',
-        spouse_name: 'Linda Johnson',
-        spouse_date_of_birth: '1965-08-22',
-        spouse_is_nbs: false,
-        street_address: '123 Main Street',
-        city: 'Springfield',
-        state: 'IL',
-        zip_code: '62701',
-        home_value: 450000,
-        desired_proceeds: 200000,
-        loan_officer: 'Christian',
-        pipeline_status: 'New Lead',
-        lead_source: 'Website',
-        notes: 'Initial consultation completed. Very interested in HECM program.',
-        program_type: 'HECM',
-        interest_rate: 6.5,
-        property_type: 'Single Family',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        first_name: 'Margaret',
-        last_name: 'Chen',
-        email: 'margaret.chen@email.com',
-        phone: '(555) 987-6543',
-        date_of_birth: '1958-12-03',
-        spouse_name: '',
-        spouse_date_of_birth: '',
-        spouse_is_nbs: false,
-        street_address: '456 Oak Avenue',
-        city: 'Madison',
-        state: 'WI',
-        zip_code: '53703',
-        home_value: 620000,
-        desired_proceeds: 350000,
-        loan_officer: 'Ahmed',
-        pipeline_status: 'Application Submitted',
-        lead_source: 'Referral',
-        notes: 'High-value property. Considering Equity Plus Peak for maximum proceeds.',
-        program_type: 'Equity Plus Peak',
-        interest_rate: 7.2,
-        property_type: 'Single Family',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ]
-  }
-
-  // Load clients on component mount - only in browser
+  // Load clients from global storage on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const loadedClients = loadClientsFromStorage()
-      setClients(loadedClients)
-      console.log('🔄 Component mounted, loaded clients:', loadedClients.length)
-    }
+    const initialClients = initializeClients()
+    setClients(initialClients)
+    console.log('✅ Loaded clients from global storage:', initialClients.length)
   }, [])
 
-  // Save clients whenever clients array changes - only in browser
+  // Update global storage whenever clients change
   useEffect(() => {
-    if (typeof window !== 'undefined' && clients.length > 0) {
-      saveClientsToStorage(clients)
-      console.log('💾 Saving clients to storage:', clients.length)
+    if (clients.length > 0) {
+      globalClientStorage = [...clients]
+      console.log('💾 Updated global storage with', clients.length, 'clients')
     }
   }, [clients])
 
@@ -205,9 +185,11 @@ export default function NextStepCRM() {
         if (!existingClient) {
           const updatedClients = [...clients, newClient]
           setClients(updatedClients)
-          console.log('✅ New lead imported from GHL:', newClient)
+          console.log('✅ New lead imported from GHL:', newClient.first_name, newClient.last_name)
+          alert(`✅ New lead added: ${newClient.first_name} ${newClient.last_name}`)
         } else {
           console.log('⚠️ Duplicate lead detected, skipping import')
+          alert('⚠️ Duplicate lead detected - not importing')
         }
       }
     } catch (error) {
@@ -215,14 +197,14 @@ export default function NextStepCRM() {
     }
   }
 
-  // Test manual save/load functions
-  const testSaveLoad = () => {
-    console.log('🧪 Testing save/load manually...')
-    console.log('Current clients:', clients.length)
-    saveClientsToStorage(clients)
-    const loaded = loadClientsFromStorage()
-    console.log('Loaded clients:', loaded.length)
-    alert(`Saved ${clients.length} clients, loaded ${loaded.length} clients`)
+  // Test persistence function
+  const testPersistence = () => {
+    const currentCount = clients.length
+    console.log('🧪 Testing persistence...')
+    console.log('Current clients in state:', currentCount)
+    console.log('Current clients in global storage:', globalClientStorage.length)
+    
+    alert(`Persistence Test:\nClients in state: ${currentCount}\nClients in global storage: ${globalClientStorage.length}\n\nNow refresh the page to test if data persists!`)
   }
 
   // PLF Tables based on your actual data files
@@ -388,7 +370,7 @@ export default function NextStepCRM() {
         property_type: 'Single Family'
       })
       setShowAddClient(false)
-      console.log('✅ New client added and saved to localStorage')
+      console.log('✅ New client added:', clientToAdd.first_name, clientToAdd.last_name)
     }
   }
 
@@ -396,7 +378,7 @@ export default function NextStepCRM() {
     const updatedClients = clients.filter(client => client.id !== id)
     setClients(updatedClients)
     setShowDeleteConfirm(null)
-    console.log('✅ Client deleted and localStorage updated')
+    console.log('✅ Client deleted')
   }
 
   const updateClient = (updatedClient: Client) => {
@@ -407,7 +389,7 @@ export default function NextStepCRM() {
     )
     setClients(updatedClients)
     setEditingClient(null)
-    console.log('✅ Client updated and saved to localStorage')
+    console.log('✅ Client updated:', updatedClient.first_name, updatedClient.last_name)
   }
 
   const addNote = (clientId: string) => {
@@ -423,7 +405,7 @@ export default function NextStepCRM() {
       )
       setClients(updatedClients)
       setNewNote('')
-      console.log('✅ Note added and saved to localStorage')
+      console.log('✅ Note added to client')
     }
   }
 
@@ -468,10 +450,30 @@ export default function NextStepCRM() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
               <button 
-                onClick={testGHLImport}
+                onClick={() => {
+                  const testData = {
+                    disposition: "Next Step CRM",
+                    firstName: "Test",
+                    lastName: "Lead",
+                    email: "testlead@email.com",
+                    phone: "(555) 999-8888",
+                    homeValue: 500000,
+                    address: "789 Test Street",
+                    city: "Test City",
+                    state: "TX",
+                    zipCode: "12345"
+                  }
+                  handleGHLWebhook(testData)
+                }}
                 className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl transition-all transform hover:scale-105 flex items-center gap-2"
               >
                 🔗 Test GHL Import
+              </button>
+              <button 
+                onClick={testPersistence}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl transition-all transform hover:scale-105 flex items-center gap-2"
+              >
+                🧪 Test Persistence
               </button>
               <button 
                 onClick={() => setShowAddClient(true)}
