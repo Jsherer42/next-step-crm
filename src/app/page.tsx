@@ -236,6 +236,7 @@ export default function NextStepCRM() {
   const calculateProgramComparison = (client: Client) => {
     const age = getYoungestAge(client)
     const homeValue = client.home_value || 0
+    const ageKey = Math.min(age, 95) as keyof typeof EQUITY_PLUS_PLF
     
     const programs = [
       {
@@ -248,22 +249,22 @@ export default function NextStepCRM() {
       {
         name: 'Equity Plus',
         description: 'Standard Proprietary Program',
-        plf: EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus"] || 0.338,
-        upb: homeValue * (EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus"] || 0.338),
+        plf: EQUITY_PLUS_PLF[ageKey]?.["Equity Plus"] || 0.338,
+        upb: homeValue * (EQUITY_PLUS_PLF[ageKey]?.["Equity Plus"] || 0.338),
         features: ['Higher Loan Limits', 'No Mortgage Insurance', 'Faster Processing', 'Flexible Terms']
       },
       {
         name: 'Equity Plus Peak',
         description: 'Enhanced Proprietary Program',
-        plf: EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus Peak"] || 0.391,
-        upb: homeValue * (EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus Peak"] || 0.391),
+        plf: EQUITY_PLUS_PLF[ageKey]?.["Equity Plus Peak"] || 0.391,
+        upb: homeValue * (EQUITY_PLUS_PLF[ageKey]?.["Equity Plus Peak"] || 0.391),
         features: ['Highest Loan Amounts', 'Premium Program', 'Best for High-Value Homes', 'Maximum Proceeds']
       },
       {
         name: 'Equity Plus LOC',
         description: 'Line of Credit Program',
-        plf: EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus LOC"] || 0.338,
-        upb: homeValue * (EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus LOC"] || 0.338),
+        plf: EQUITY_PLUS_PLF[ageKey]?.["Equity Plus LOC"] || 0.338,
+        upb: homeValue * (EQUITY_PLUS_PLF[ageKey]?.["Equity Plus LOC"] || 0.338),
         features: ['Line of Credit', 'Growth Rate', 'Flexible Access', 'Future Planning']
       }
     ]
@@ -274,15 +275,16 @@ export default function NextStepCRM() {
   // Simple PLF calculation for individual use
   const calculateUPB = (homeValue: number, age: number, programType: string = 'HECM') => {
     let plf = 0.285 // Default HECM at age 62
+    const ageKey = Math.min(age, 95) as keyof typeof EQUITY_PLUS_PLF
     
     if (programType === 'HECM') {
       plf = age >= 70 ? 0.338 : age >= 65 ? 0.305 : 0.285
     } else if (programType === 'Equity Plus') {
-      plf = EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus"] || 0.338
+      plf = EQUITY_PLUS_PLF[ageKey]?.["Equity Plus"] || 0.338
     } else if (programType === 'Equity Plus Peak') {
-      plf = EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus Peak"] || 0.391
+      plf = EQUITY_PLUS_PLF[ageKey]?.["Equity Plus Peak"] || 0.391
     } else if (programType === 'Equity Plus LOC') {
-      plf = EQUITY_PLUS_PLF[Math.min(age, 95)]?.["Equity Plus LOC"] || 0.338
+      plf = EQUITY_PLUS_PLF[ageKey]?.["Equity Plus LOC"] || 0.338
     }
     
     return homeValue * plf
