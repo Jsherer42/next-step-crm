@@ -43,26 +43,30 @@ export default function NextStepCRM() {
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [showProgramComparison, setShowProgramComparison] = useState<Client | null>(null)
 
-  // Local Storage Functions
+  // Local Storage Functions - Browser Only
   const saveClientsToStorage = (clientData: Client[]) => {
-    try {
-      localStorage.setItem('nextStepClients', JSON.stringify(clientData))
-      console.log('✅ Clients saved to localStorage:', clientData.length)
-    } catch (error) {
-      console.error('❌ Error saving to localStorage:', error)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('nextStepClients', JSON.stringify(clientData))
+        console.log('✅ Clients saved to localStorage:', clientData.length)
+      } catch (error) {
+        console.error('❌ Error saving to localStorage:', error)
+      }
     }
   }
 
   const loadClientsFromStorage = (): Client[] => {
-    try {
-      const stored = localStorage.getItem('nextStepClients')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        console.log('✅ Clients loaded from localStorage:', parsed.length)
-        return parsed
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('nextStepClients')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          console.log('✅ Clients loaded from localStorage:', parsed.length)
+          return parsed
+        }
+      } catch (error) {
+        console.error('❌ Error loading from localStorage:', error)
       }
-    } catch (error) {
-      console.error('❌ Error loading from localStorage:', error)
     }
     
     // Return default demo clients if nothing in storage
