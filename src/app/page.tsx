@@ -126,16 +126,20 @@ export default function NextStepCRM() {
     ]
   }
 
-  // Load clients on component mount
+  // Load clients on component mount - only in browser
   useEffect(() => {
-    const loadedClients = loadClientsFromStorage()
-    setClients(loadedClients)
+    if (typeof window !== 'undefined') {
+      const loadedClients = loadClientsFromStorage()
+      setClients(loadedClients)
+      console.log('🔄 Component mounted, loaded clients:', loadedClients.length)
+    }
   }, [])
 
-  // Save clients whenever clients array changes
+  // Save clients whenever clients array changes - only in browser
   useEffect(() => {
-    if (clients.length > 0) {
+    if (typeof window !== 'undefined' && clients.length > 0) {
       saveClientsToStorage(clients)
+      console.log('💾 Saving clients to storage:', clients.length)
     }
   }, [clients])
 
@@ -211,21 +215,14 @@ export default function NextStepCRM() {
     }
   }
 
-  // Test GHL webhook with sample data
-  const testGHLImport = () => {
-    const testData = {
-      disposition: "Next Step CRM",
-      firstName: "Test",
-      lastName: "Lead",
-      email: "testlead@email.com",
-      phone: "(555) 999-8888",
-      homeValue: 500000,
-      address: "789 Test Street",
-      city: "Test City",
-      state: "TX",
-      zipCode: "12345"
-    }
-    handleGHLWebhook(testData)
+  // Test manual save/load functions
+  const testSaveLoad = () => {
+    console.log('🧪 Testing save/load manually...')
+    console.log('Current clients:', clients.length)
+    saveClientsToStorage(clients)
+    const loaded = loadClientsFromStorage()
+    console.log('Loaded clients:', loaded.length)
+    alert(`Saved ${clients.length} clients, loaded ${loaded.length} clients`)
   }
 
   // PLF Tables based on your actual data files
