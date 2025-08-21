@@ -273,7 +273,7 @@ export default function NextStepCRM() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 animate-gradient-x">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-green-500 to-teal-600">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-8 shadow-2xl">
         <div className="max-w-7xl mx-auto">
@@ -351,7 +351,7 @@ export default function NextStepCRM() {
                 <p className="text-sm font-medium text-white/80">Total UPB Pipeline</p>
                 <p className="text-3xl font-bold text-white">{formatCurrency(totalPipeline)}</p>
               </div>
-              <div className="bg-emerald-500 bg-opacity-80 rounded-full p-3">
+              <div className="bg-blue-500 bg-opacity-80 rounded-full p-3">
                 <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -364,7 +364,7 @@ export default function NextStepCRM() {
                 <p className="text-sm font-medium text-white/80">Active Clients</p>
                 <p className="text-3xl font-bold text-white">{clients.length}</p>
               </div>
-              <div className="bg-blue-500 bg-opacity-80 rounded-full p-3">
+              <div className="bg-green-500 bg-opacity-80 rounded-full p-3">
                 <User className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -377,7 +377,7 @@ export default function NextStepCRM() {
                 <p className="text-sm font-medium text-white/80">New Leads</p>
                 <p className="text-3xl font-bold text-white">{clients.filter(c => c.pipeline_status === 'New Lead' || c.pipeline_status === 'GHL Import').length}</p>
               </div>
-              <div className="bg-orange-500 bg-opacity-80 rounded-full p-3">
+              <div className="bg-teal-500 bg-opacity-80 rounded-full p-3">
                 <Phone className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -390,7 +390,7 @@ export default function NextStepCRM() {
                 <p className="text-sm font-medium text-white/80">Qualified</p>
                 <p className="text-3xl font-bold text-white">{clients.filter(c => c.pipeline_status === 'Application Submitted' || c.pipeline_status === 'Under Review').length}</p>
               </div>
-              <div className="bg-purple-500 bg-opacity-80 rounded-full p-3">
+              <div className="bg-blue-600 bg-opacity-80 rounded-full p-3">
                 <HomeIcon className="w-6 h-6 text-white" />
               </div>
             </div>
