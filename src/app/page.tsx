@@ -34,9 +34,45 @@ interface Client {
 // Global storage for clients - survives component re-renders
 let globalClientStorage: Client[] = []
 
+// Browser storage functions (try sessionStorage)
+const saveToSession = (clients: Client[]) => {
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.setItem('nextStepClients', JSON.stringify(clients))
+      console.log('✅ Saved to sessionStorage:', clients.length)
+    } catch (error) {
+      console.log('❌ sessionStorage failed:', error)
+    }
+  }
+}
+
+const loadFromSession = (): Client[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = sessionStorage.getItem('nextStepClients')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        console.log('✅ Loaded from sessionStorage:', parsed.length)
+        return parsed
+      }
+    } catch (error) {
+      console.log('❌ sessionStorage load failed:', error)
+    }
+  }
+  return []
+}
+
 export default function NextStepCRM() {
   // Initialize with demo clients if storage is empty
   const initializeClients = (): Client[] => {
+    // First try sessionStorage
+    const sessionClients = loadFromSession()
+    if (sessionClients.length > 0) {
+      globalClientStorage = sessionClients
+      return [...sessionClients]
+    }
+    
+    // If no session data, check global storage
     if (globalClientStorage.length === 0) {
       globalClientStorage = [
         {
