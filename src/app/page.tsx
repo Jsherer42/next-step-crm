@@ -31,126 +31,8 @@ interface Client {
   updated_at?: string
 }
 
-// Global storage for clients - survives component re-renders
-let globalClientStorage: Client[] = []
-
-// Browser storage functions (try sessionStorage)
-const saveToSession = (clients: Client[]) => {
-  if (typeof window !== 'undefined') {
-    try {
-      sessionStorage.setItem('nextStepClients', JSON.stringify(clients))
-      console.log('✅ Saved to sessionStorage:', clients.length)
-    } catch (error) {
-      console.log('❌ sessionStorage failed:', error)
-    }
-  }
-}
-
-const loadFromSession = (): Client[] => {
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = sessionStorage.getItem('nextStepClients')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        console.log('✅ Loaded from sessionStorage:', parsed.length)
-        return parsed
-      }
-    } catch (error) {
-      console.log('❌ sessionStorage load failed:', error)
-    }
-  }
-  return []
-}
-
 export default function NextStepCRM() {
-  // Initialize with demo clients if storage is empty (ONLY ONCE)
-  const initializeClients = (): Client[] => {
-    // First try sessionStorage
-    const sessionClients = loadFromSession()
-    if (sessionClients.length > 0) {
-      globalClientStorage = sessionClients
-      console.log('📥 Loaded', sessionClients.length, 'clients from sessionStorage')
-      return [...sessionClients]
-    }
-    
-    // Check if we've initialized before using a flag
-    const hasInitialized = typeof window !== 'undefined' && sessionStorage.getItem('hasInitialized')
-    
-    // Only create demo clients on very first visit
-    if (!hasInitialized && globalClientStorage.length === 0) {
-      const demoClients = [
-        {
-          id: '1',
-          first_name: 'Robert',
-          last_name: 'Johnson',
-          email: 'robert.johnson@email.com',
-          phone: '(555) 123-4567',
-          date_of_birth: '1962-05-15',
-          spouse_name: 'Linda Johnson',
-          spouse_date_of_birth: '1965-08-22',
-          spouse_is_nbs: false,
-          street_address: '123 Main Street',
-          city: 'Springfield',
-          state: 'IL',
-          zip_code: '62701',
-          home_value: 450000,
-          desired_proceeds: 200000,
-          loan_officer: 'Christian',
-          pipeline_status: 'New Lead',
-          lead_source: 'Website',
-          notes: 'Initial consultation completed. Very interested in HECM program.',
-          program_type: 'HECM',
-          interest_rate: 6.5,
-          property_type: 'Single Family',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          first_name: 'Margaret',
-          last_name: 'Chen',
-          email: 'margaret.chen@email.com',
-          phone: '(555) 987-6543',
-          date_of_birth: '1958-12-03',
-          spouse_name: '',
-          spouse_date_of_birth: '',
-          spouse_is_nbs: false,
-          street_address: '456 Oak Avenue',
-          city: 'Madison',
-          state: 'WI',
-          zip_code: '53703',
-          home_value: 620000,
-          desired_proceeds: 350000,
-          loan_officer: 'Ahmed',
-          pipeline_status: 'Application Submitted',
-          lead_source: 'Referral',
-          notes: 'High-value property. Considering Equity Plus Peak for maximum proceeds.',
-          program_type: 'Equity Plus Peak',
-          interest_rate: 7.2,
-          property_type: 'Single Family',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]
-      
-      globalClientStorage = demoClients
-      saveToSession(demoClients)
-      
-      // Set initialization flag
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('hasInitialized', 'true')
-      }
-      
-      console.log('🏠 First time initialization - created demo clients')
-      return [...demoClients]
-    }
-    
-    // Return empty array if no data and already initialized
-    console.log('📋 No stored clients found, starting empty')
-    return []
-  }
-
-  // State management
+  // Simple state - NO automatic demo clients
   const [clients, setClients] = useState<Client[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -160,22 +42,6 @@ export default function NextStepCRM() {
   const [newNote, setNewNote] = useState('')
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [showProgramComparison, setShowProgramComparison] = useState<Client | null>(null)
-
-  // Load clients from global storage on mount
-  useEffect(() => {
-    const initialClients = initializeClients()
-    setClients(initialClients)
-    console.log('✅ Loaded clients from global storage:', initialClients.length)
-  }, [])
-
-  // Update global storage whenever clients change
-  useEffect(() => {
-    if (clients.length > 0) {
-      globalClientStorage = [...clients]
-      saveToSession(clients)  // Save to sessionStorage too
-      console.log('💾 Updated both global and session storage with', clients.length, 'clients')
-    }
-  }, [clients])
 
   const [newClient, setNewClient] = useState<Client>({
     id: '',
@@ -204,143 +70,112 @@ export default function NextStepCRM() {
   // GHL Webhook handler for importing leads
   const handleGHLWebhook = async (webhookData: any) => {
     try {
-      // Check if this is a "Next Step CRM" disposition
-      if (webhookData.disposition === "Next Step CRM") {
-        // Create new client from GHL data
-        const newClient: Client = {
-          id: Date.now().toString(),
-          first_name: webhookData.firstName || 'Unknown',
-          last_name: webhookData.lastName || 'Lead',
-          email: webhookData.email || '',
-          phone: webhookData.phone || '',
-          date_of_birth: webhookData.dateOfBirth || '',
-          street_address: webhookData.address || '',
-          city: webhookData.city || '',
-          state: webhookData.state || '',
-          zip_code: webhookData.zipCode || '',
-          home_value: webhookData.homeValue || 0,
-          desired_proceeds: webhookData.desiredProceeds || 0,
-          loan_officer: 'Unassigned',
-          pipeline_status: 'GHL Import',
-          lead_source: 'GoHighLevel',
-          notes: `Imported from GHL on ${new Date().toLocaleDateString()}`,
-          program_type: 'HECM',
-          interest_rate: 6.5,
-          property_type: 'Single Family',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-
-        // Check for duplicates by phone number
-        const existingClient = clients.find(client => 
-          client.phone.replace(/\D/g, '') === newClient.phone.replace(/\D/g, '')
-        )
-
-        if (!existingClient) {
-          const updatedClients = [...clients, newClient]
-          setClients(updatedClients)
-          console.log('✅ New lead imported from GHL:', newClient.first_name, newClient.last_name)
-          alert(`✅ New lead added: ${newClient.first_name} ${newClient.last_name}`)
-        } else {
-          console.log('⚠️ Duplicate lead detected, skipping import')
-          alert('⚠️ Duplicate lead detected - not importing')
-        }
+      const newClient: Client = {
+        id: Date.now().toString(),
+        first_name: webhookData.firstName || 'Test',
+        last_name: webhookData.lastName || 'Lead',
+        email: webhookData.email || 'testlead@email.com',
+        phone: webhookData.phone || '(555) 999-8888',
+        date_of_birth: webhookData.dateOfBirth || '1970-01-01',
+        street_address: webhookData.address || '789 Test Street',
+        city: webhookData.city || 'Test City',
+        state: webhookData.state || 'TX',
+        zip_code: webhookData.zipCode || '12345',
+        home_value: webhookData.homeValue || 500000,
+        desired_proceeds: webhookData.desiredProceeds || 200000,
+        loan_officer: 'Unassigned',
+        pipeline_status: 'GHL Import',
+        lead_source: 'GoHighLevel',
+        notes: `Imported from GHL on ${new Date().toLocaleDateString()}`,
+        program_type: 'HECM',
+        interest_rate: 6.5,
+        property_type: 'Single Family',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
+
+      const updatedClients = [...clients, newClient]
+      setClients(updatedClients)
+      console.log('✅ New lead imported:', newClient.first_name, newClient.last_name)
+      alert(`✅ New lead added: ${newClient.first_name} ${newClient.last_name}`)
     } catch (error) {
       console.error('❌ Error processing GHL webhook:', error)
     }
   }
 
-  // Test persistence function
-  const testPersistence = () => {
-    const currentCount = clients.length
-    const sessionData = loadFromSession()
-    console.log('🧪 Testing persistence...')
-    console.log('Current clients in state:', currentCount)
-    console.log('Current clients in global storage:', globalClientStorage.length)
-    console.log('Current clients in sessionStorage:', sessionData.length)
-    
-    alert(`Persistence Test:\nClients in state: ${currentCount}\nClients in global storage: ${globalClientStorage.length}\nClients in sessionStorage: ${sessionData.length}\n\nNow refresh the page to test if data persists!`)
-  }
-
-  // PLF Tables based on your actual data files
-  const EQUITY_PLUS_PLF = {
-    55: { "Equity Plus": 0.338, "Equity Plus Peak": 0.391, "Equity Plus LOC": 0.338 },
-    56: { "Equity Plus": 0.341, "Equity Plus Peak": 0.394, "Equity Plus LOC": 0.341 },
-    57: { "Equity Plus": 0.344, "Equity Plus Peak": 0.396, "Equity Plus LOC": 0.344 },
-    58: { "Equity Plus": 0.347, "Equity Plus Peak": 0.399, "Equity Plus LOC": 0.347 },
-    59: { "Equity Plus": 0.350, "Equity Plus Peak": 0.402, "Equity Plus LOC": 0.350 },
-    60: { "Equity Plus": 0.353, "Equity Plus Peak": 0.405, "Equity Plus LOC": 0.353 },
-    61: { "Equity Plus": 0.356, "Equity Plus Peak": 0.408, "Equity Plus LOC": 0.356 },
-    62: { "Equity Plus": 0.359, "Equity Plus Peak": 0.411, "Equity Plus LOC": 0.359 },
-    63: { "Equity Plus": 0.362, "Equity Plus Peak": 0.414, "Equity Plus LOC": 0.362 },
-    64: { "Equity Plus": 0.365, "Equity Plus Peak": 0.417, "Equity Plus LOC": 0.365 },
-    65: { "Equity Plus": 0.368, "Equity Plus Peak": 0.420, "Equity Plus LOC": 0.368 },
-    66: { "Equity Plus": 0.371, "Equity Plus Peak": 0.423, "Equity Plus LOC": 0.371 },
-    67: { "Equity Plus": 0.374, "Equity Plus Peak": 0.426, "Equity Plus LOC": 0.374 },
-    68: { "Equity Plus": 0.377, "Equity Plus Peak": 0.429, "Equity Plus LOC": 0.377 },
-    69: { "Equity Plus": 0.380, "Equity Plus Peak": 0.432, "Equity Plus LOC": 0.380 },
-    70: { "Equity Plus": 0.383, "Equity Plus Peak": 0.435, "Equity Plus LOC": 0.383 },
-    75: { "Equity Plus": 0.395, "Equity Plus Peak": 0.447, "Equity Plus LOC": 0.395 },
-    80: { "Equity Plus": 0.407, "Equity Plus Peak": 0.459, "Equity Plus LOC": 0.407 },
-    85: { "Equity Plus": 0.419, "Equity Plus Peak": 0.471, "Equity Plus LOC": 0.419 },
-    90: { "Equity Plus": 0.431, "Equity Plus Peak": 0.483, "Equity Plus LOC": 0.431 },
-    95: { "Equity Plus": 0.443, "Equity Plus Peak": 0.495, "Equity Plus LOC": 0.443 }
-  }
-
-  // Enhanced PLF calculation with all programs
-  const calculateProgramComparison = (client: Client) => {
-    const age = getYoungestAge(client)
-    const homeValue = client.home_value || 0
-    const ageKey = Math.min(age, 95) as keyof typeof EQUITY_PLUS_PLF
-    
-    const programs = [
+  // Add demo button function
+  const addDemoClients = () => {
+    const demoClients: Client[] = [
       {
-        name: 'HECM',
-        description: 'Government Program - FHA Insured',
-        plf: age >= 70 ? 0.338 : age >= 65 ? 0.305 : 0.285,
-        upb: homeValue * (age >= 70 ? 0.338 : age >= 65 ? 0.305 : 0.285),
-        features: ['FHA Insured', 'No Income Requirements', 'Counseling Required', 'Mortgage Insurance']
+        id: '1',
+        first_name: 'Robert',
+        last_name: 'Johnson',
+        email: 'robert.johnson@email.com',
+        phone: '(555) 123-4567',
+        date_of_birth: '1962-05-15',
+        spouse_name: 'Linda Johnson',
+        spouse_date_of_birth: '1965-08-22',
+        spouse_is_nbs: false,
+        street_address: '123 Main Street',
+        city: 'Springfield',
+        state: 'IL',
+        zip_code: '62701',
+        home_value: 450000,
+        desired_proceeds: 200000,
+        loan_officer: 'Christian',
+        pipeline_status: 'New Lead',
+        lead_source: 'Website',
+        notes: 'Initial consultation completed. Very interested in HECM program.',
+        program_type: 'HECM',
+        interest_rate: 6.5,
+        property_type: 'Single Family',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       {
-        name: 'Equity Plus',
-        description: 'Standard Proprietary Program',
-        plf: EQUITY_PLUS_PLF[ageKey]?.["Equity Plus"] || 0.338,
-        upb: homeValue * (EQUITY_PLUS_PLF[ageKey]?.["Equity Plus"] || 0.338),
-        features: ['Higher Loan Limits', 'No Mortgage Insurance', 'Faster Processing', 'Flexible Terms']
-      },
-      {
-        name: 'Equity Plus Peak',
-        description: 'Enhanced Proprietary Program',
-        plf: EQUITY_PLUS_PLF[ageKey]?.["Equity Plus Peak"] || 0.391,
-        upb: homeValue * (EQUITY_PLUS_PLF[ageKey]?.["Equity Plus Peak"] || 0.391),
-        features: ['Highest Loan Amounts', 'Premium Program', 'Best for High-Value Homes', 'Maximum Proceeds']
-      },
-      {
-        name: 'Equity Plus LOC',
-        description: 'Line of Credit Program',
-        plf: EQUITY_PLUS_PLF[ageKey]?.["Equity Plus LOC"] || 0.338,
-        upb: homeValue * (EQUITY_PLUS_PLF[ageKey]?.["Equity Plus LOC"] || 0.338),
-        features: ['Line of Credit', 'Growth Rate', 'Flexible Access', 'Future Planning']
+        id: '2',
+        first_name: 'Margaret',
+        last_name: 'Chen',
+        email: 'margaret.chen@email.com',
+        phone: '(555) 987-6543',
+        date_of_birth: '1958-12-03',
+        spouse_name: '',
+        spouse_date_of_birth: '',
+        spouse_is_nbs: false,
+        street_address: '456 Oak Avenue',
+        city: 'Madison',
+        state: 'WI',
+        zip_code: '53703',
+        home_value: 620000,
+        desired_proceeds: 350000,
+        loan_officer: 'Ahmed',
+        pipeline_status: 'Application Submitted',
+        lead_source: 'Referral',
+        notes: 'High-value property. Considering Equity Plus Peak for maximum proceeds.',
+        program_type: 'Equity Plus Peak',
+        interest_rate: 7.2,
+        property_type: 'Single Family',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     ]
-
-    return programs.sort((a, b) => b.upb - a.upb)
+    
+    setClients([...clients, ...demoClients])
+    alert('Demo clients added!')
   }
 
-  // Simple PLF calculation for individual use
+  // PLF calculation
   const calculateUPB = (homeValue: number, age: number, programType: string = 'HECM') => {
-    let plf = 0.285 // Default HECM at age 62
-    const ageKey = Math.min(age, 95) as keyof typeof EQUITY_PLUS_PLF
+    let plf = 0.285
     
     if (programType === 'HECM') {
       plf = age >= 70 ? 0.338 : age >= 65 ? 0.305 : 0.285
     } else if (programType === 'Equity Plus') {
-      plf = EQUITY_PLUS_PLF[ageKey]?.["Equity Plus"] || 0.338
+      plf = 0.338
     } else if (programType === 'Equity Plus Peak') {
-      plf = EQUITY_PLUS_PLF[ageKey]?.["Equity Plus Peak"] || 0.391
+      plf = 0.391
     } else if (programType === 'Equity Plus LOC') {
-      plf = EQUITY_PLUS_PLF[ageKey]?.["Equity Plus LOC"] || 0.338
+      plf = 0.338
     }
     
     return homeValue * plf
@@ -363,14 +198,12 @@ export default function NextStepCRM() {
     return age
   }
 
-  // Calculate total UPB pipeline instead of desired proceeds
   const totalPipeline = clients.reduce((sum, client) => {
     const age = getYoungestAge(client)
     const upb = calculateUPB(client.home_value || 0, age, client.program_type || 'HECM')
     return sum + upb
   }, 0)
 
-  // Filtered clients
   const filteredClients = clients.filter(client => {
     const matchesSearch = 
       client.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -439,46 +272,8 @@ export default function NextStepCRM() {
     console.log('✅ Client deleted')
   }
 
-  const updateClient = (updatedClient: Client) => {
-    const updatedClients = clients.map(client => 
-      client.id === updatedClient.id 
-        ? { ...updatedClient, updated_at: new Date().toISOString() }
-        : client
-    )
-    setClients(updatedClients)
-    setEditingClient(null)
-    console.log('✅ Client updated:', updatedClient.first_name, updatedClient.last_name)
-  }
-
-  const addNote = (clientId: string) => {
-    if (newNote.trim()) {
-      const updatedClients = clients.map(client => 
-        client.id === clientId 
-          ? { 
-              ...client, 
-              notes: client.notes ? `${client.notes}\n\n${new Date().toLocaleDateString()}: ${newNote}` : newNote,
-              updated_at: new Date().toISOString()
-            }
-          : client
-      )
-      setClients(updatedClients)
-      setNewNote('')
-      console.log('✅ Note added to client')
-    }
-  }
-
-  const selectProgram = (client: Client, programName: string) => {
-    const updatedClient = { 
-      ...client, 
-      program_type: programName,
-      updated_at: new Date().toISOString()
-    }
-    updateClient(updatedClient)
-    setShowProgramComparison(null)
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 animate-gradient-x">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-8 shadow-2xl">
         <div className="max-w-7xl mx-auto">
@@ -490,7 +285,7 @@ export default function NextStepCRM() {
                   <HomeIcon className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black text-red-500">Next Step CRM</h1>
+                  <h1 className="text-3xl font-black text-white">Next Step CRM - ATLAS RESET</h1>
                   <p className="text-blue-100 font-semibold">City First FHA Retirement</p>
                 </div>
               </div>
@@ -528,10 +323,10 @@ export default function NextStepCRM() {
                 🔗 Test GHL Import
               </button>
               <button 
-                onClick={testPersistence}
+                onClick={addDemoClients}
                 className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl transition-all transform hover:scale-105 flex items-center gap-2"
               >
-                🧪 Test Persistence
+                👥 Add Demo Clients
               </button>
               <button 
                 onClick={() => setShowAddClient(true)}
@@ -547,34 +342,89 @@ export default function NextStepCRM() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
+        {/* Stats Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Total Pipeline */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-white/80">Total UPB Pipeline</p>
+                <p className="text-3xl font-bold text-white">{formatCurrency(totalPipeline)}</p>
+              </div>
+              <div className="bg-emerald-500 bg-opacity-80 rounded-full p-3">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          {/* Active Clients */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-white/80">Active Clients</p>
+                <p className="text-3xl font-bold text-white">{clients.length}</p>
+              </div>
+              <div className="bg-blue-500 bg-opacity-80 rounded-full p-3">
+                <User className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          {/* New Leads */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-white/80">New Leads</p>
+                <p className="text-3xl font-bold text-white">{clients.filter(c => c.pipeline_status === 'New Lead' || c.pipeline_status === 'GHL Import').length}</p>
+              </div>
+              <div className="bg-orange-500 bg-opacity-80 rounded-full p-3">
+                <Phone className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          {/* Qualified */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white border-opacity-30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-white/80">Qualified</p>
+                <p className="text-3xl font-bold text-white">{clients.filter(c => c.pipeline_status === 'Application Submitted' || c.pipeline_status === 'Under Review').length}</p>
+              </div>
+              <div className="bg-purple-500 bg-opacity-80 rounded-full p-3">
+                <HomeIcon className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Search and Filter */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100">
+        <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-8 border border-white border-opacity-30">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-4 top-3.5 h-5 w-5 text-white/60" />
               <input
                 type="text"
                 placeholder="Search clients by name, email, or phone..."
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-xl focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white/60 backdrop-blur-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="relative">
-              <Filter className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+              <Filter className="absolute left-4 top-3.5 h-5 w-5 text-white/60" />
               <select
-                className="pl-12 pr-8 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                className="pl-12 pr-8 py-3 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-xl focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white backdrop-blur-sm"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
-                <option value="all">All Status</option>
-                <option value="New Lead">New Lead</option>
-                <option value="Contacted">Contacted</option>
-                <option value="Application Submitted">Application Submitted</option>
-                <option value="Under Review">Under Review</option>
-                <option value="Approved">Approved</option>
-                <option value="Closed">Closed</option>
-                <option value="GHL Import">GHL Import</option>
+                <option value="all" className="text-gray-900">All Status</option>
+                <option value="New Lead" className="text-gray-900">New Lead</option>
+                <option value="Contacted" className="text-gray-900">Contacted</option>
+                <option value="Application Submitted" className="text-gray-900">Application Submitted</option>
+                <option value="Under Review" className="text-gray-900">Under Review</option>
+                <option value="Approved" className="text-gray-900">Approved</option>
+                <option value="Closed" className="text-gray-900">Closed</option>
+                <option value="GHL Import" className="text-gray-900">GHL Import</option>
               </select>
             </div>
           </div>
@@ -587,7 +437,7 @@ export default function NextStepCRM() {
             const upb = calculateUPB(client.home_value || 0, age, client.program_type || 'HECM')
             
             return (
-              <div key={client.id} className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
+              <div key={client.id} className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -661,27 +511,20 @@ export default function NextStepCRM() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedClient(client)}
-                      className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
+                      className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
                     >
                       <Eye className="w-4 h-4 mr-1" />
                       View
                     </button>
                     <button
-                      onClick={() => setShowProgramComparison(client)}
-                      className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
-                    >
-                      <Calculator className="w-4 h-4 mr-1" />
-                      Compare
-                    </button>
-                    <button
                       onClick={() => setEditingClient(client)}
-                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
+                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(client.id)}
-                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
+                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -695,7 +538,31 @@ export default function NextStepCRM() {
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 text-lg mb-2">No clients found</div>
-            <div className="text-gray-500">Try adjusting your search or filter criteria</div>
+            <div className="text-gray-500 mb-4">Click "Add Demo Clients" or "Test GHL Import" to get started!</div>
+            <div className="flex gap-4 justify-center">
+              <button 
+                onClick={addDemoClients}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all"
+              >
+                👥 Add Demo Clients
+              </button>
+              <button 
+                onClick={() => {
+                  const testData = {
+                    disposition: "Next Step CRM",
+                    firstName: "Test",
+                    lastName: "Lead",
+                    email: "testlead@email.com",
+                    phone: "(555) 999-8888",
+                    homeValue: 500000
+                  }
+                  handleGHLWebhook(testData)
+                }}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all"
+              >
+                🔗 Test GHL Import
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -707,7 +574,6 @@ export default function NextStepCRM() {
             <h2 className="text-2xl font-bold mb-6">Add New Client</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Personal Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Personal Information</h3>
                 
@@ -764,24 +630,8 @@ export default function NextStepCRM() {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Loan Officer</label>
-                  <select
-                    value={newClient.loan_officer || ''}
-                    onChange={(e) => setNewClient({...newClient, loan_officer: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Loan Officer</option>
-                    <option value="Christian">Christian</option>
-                    <option value="Ahmed">Ahmed</option>
-                    <option value="Sarah">Sarah</option>
-                    <option value="Michael">Michael</option>
-                  </select>
-                </div>
               </div>
 
-              {/* Property & Program Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Property Information</h3>
                 
@@ -816,50 +666,14 @@ export default function NextStepCRM() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
-                    <input
-                      type="text"
-                      value={newClient.zip_code || ''}
-                      onChange={(e) => setNewClient({...newClient, zip_code: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
-                    <select
-                      value={newClient.property_type || ''}
-                      onChange={(e) => setNewClient({...newClient, property_type: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Single Family">Single Family</option>
-                      <option value="Condominium">Condominium</option>
-                      <option value="Townhouse">Townhouse</option>
-                      <option value="Manufactured">Manufactured</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
-                    <input
-                      type="number"
-                      value={newClient.home_value || ''}
-                      onChange={(e) => setNewClient({...newClient, home_value: Number(e.target.value)})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Desired Proceeds</label>
-                    <input
-                      type="number"
-                      value={newClient.desired_proceeds || ''}
-                      onChange={(e) => setNewClient({...newClient, desired_proceeds: Number(e.target.value)})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                  <input
+                    type="number"
+                    value={newClient.home_value || ''}
+                    onChange={(e) => setNewClient({...newClient, home_value: Number(e.target.value)})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
 
                 <div>
@@ -875,32 +689,7 @@ export default function NextStepCRM() {
                     <option value="Equity Plus LOC">Equity Plus LOC (Line of Credit)</option>
                   </select>
                 </div>
-
-                {newClient.program_type === 'HECM' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Interest Rate (%)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={newClient.interest_rate || ''}
-                      onChange={(e) => setNewClient({...newClient, interest_rate: Number(e.target.value)})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                )}
               </div>
-            </div>
-
-            {/* Initial Notes */}
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Initial Notes</label>
-              <textarea
-                value={newClient.notes || ''}
-                onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter any initial notes about this client..."
-              />
             </div>
 
             <div className="flex justify-end gap-4 mt-8">
@@ -916,91 +705,6 @@ export default function NextStepCRM() {
               >
                 Add Client
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Program Comparison Modal */}
-      {showProgramComparison && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Program Comparison for {showProgramComparison.first_name} {showProgramComparison.last_name}</h2>
-              <button
-                onClick={() => setShowProgramComparison(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                <strong>Client Age:</strong> {getYoungestAge(showProgramComparison)} • 
-                <strong> Home Value:</strong> {formatCurrency(showProgramComparison.home_value || 0)}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {calculateProgramComparison(showProgramComparison).map((program, index) => (
-                <div 
-                  key={program.name} 
-                  className={`border-2 rounded-xl p-6 relative ${
-                    index === 0 ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'
-                  }`}
-                >
-                  {index === 0 && (
-                    <div className="absolute -top-3 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                      🏆 BEST OPTION
-                    </div>
-                  )}
-                  
-                  <h3 className="text-xl font-bold mb-2">{program.name}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{program.description}</p>
-                  
-                  <div className="space-y-3 mb-6">
-                    <div>
-                      <div className="text-sm text-gray-600">PLF Rate</div>
-                      <div className="text-lg font-bold">{(program.plf * 100).toFixed(1)}%</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600">Maximum UPB</div>
-                      <div className="text-2xl font-bold text-green-600">{formatCurrency(program.upb)}</div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 mb-6">
-                    <div className="text-sm font-semibold text-gray-700">Key Features:</div>
-                    {program.features.map((feature, idx) => (
-                      <div key={idx} className="text-sm text-gray-600 flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                        {feature}
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => selectProgram(showProgramComparison, program.name)}
-                    className={`w-full py-3 rounded-lg font-semibold transition-all ${
-                      index === 0 
-                        ? 'bg-green-600 hover:bg-green-700 text-white' 
-                        : 'bg-gray-600 hover:bg-gray-700 text-white'
-                    }`}
-                  >
-                    Select This Program
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-2">Recommendation Summary</h4>
-              <p className="text-blue-800">
-                Based on the analysis, <strong>{calculateProgramComparison(showProgramComparison)[0].name}</strong> offers 
-                the highest UPB of <strong>{formatCurrency(calculateProgramComparison(showProgramComparison)[0].upb)}</strong> 
-                for this client's situation.
-              </p>
             </div>
           </div>
         </div>
@@ -1061,147 +765,6 @@ export default function NextStepCRM() {
                   </div>
                 </div>
               </div>
-
-              {selectedClient.notes && (
-                <div>
-                  <div className="text-sm text-gray-600 mb-2">Notes</div>
-                  <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap">{selectedClient.notes}</div>
-                </div>
-              )}
-
-              <div>
-                <div className="text-sm text-gray-600 mb-2">Add Note</div>
-                <textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Add a note..."
-                />
-                <button
-                  onClick={() => addNote(selectedClient.id)}
-                  className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-                >
-                  Add Note
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Client Modal */}
-      {editingClient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Edit Client</h2>
-              <button
-                onClick={() => setEditingClient(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                  <input
-                    type="text"
-                    value={editingClient.first_name}
-                    onChange={(e) => setEditingClient({...editingClient, first_name: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                  <input
-                    type="text"
-                    value={editingClient.last_name}
-                    onChange={(e) => setEditingClient({...editingClient, last_name: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={editingClient.email}
-                  onChange={(e) => setEditingClient({...editingClient, email: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  value={editingClient.phone}
-                  onChange={(e) => setEditingClient({...editingClient, phone: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
-                  <input
-                    type="number"
-                    value={editingClient.home_value || ''}
-                    onChange={(e) => setEditingClient({...editingClient, home_value: Number(e.target.value)})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
-                  <select
-                    value={editingClient.program_type || ''}
-                    onChange={(e) => setEditingClient({...editingClient, program_type: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="HECM">HECM</option>
-                    <option value="Equity Plus">Equity Plus</option>
-                    <option value="Equity Plus Peak">Equity Plus Peak</option>
-                    <option value="Equity Plus LOC">Equity Plus LOC</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
-                <select
-                  value={editingClient.pipeline_status || ''}
-                  onChange={(e) => setEditingClient({...editingClient, pipeline_status: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="New Lead">New Lead</option>
-                  <option value="Contacted">Contacted</option>
-                  <option value="Application Submitted">Application Submitted</option>
-                  <option value="Under Review">Under Review</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Closed">Closed</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-4 mt-8">
-              <button
-                onClick={() => setEditingClient(null)}
-                className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg font-semibold transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => updateClient(editingClient)}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                <Save className="w-4 h-4 mr-2 inline" />
-                Save Changes
-              </button>
             </div>
           </div>
         </div>
