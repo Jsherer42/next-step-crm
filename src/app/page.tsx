@@ -120,6 +120,31 @@ export default function NextStepCRM() {
     return { eligible: true }
   }
 
+  // Calculate net proceeds (what client actually receives)
+  const calculateNetProceeds = (upb: number, currentMortgage: number, programType: string): number => {
+    // Estimated closing costs by program type
+    const estimatedCosts = {
+      'HECM': upb * 0.025 + 2500, // 2.5% + $2500 (FHA MIP, origination, etc.)
+      'Equity Plus': upb * 0.02 + 3000, // 2% + $3000 (title, appraisal, etc.)
+      'Equity Plus Peak': upb * 0.025 + 3500, // 2.5% + $3500 (premium program costs)
+      'Equity Plus LOC': upb * 0.02 + 3000, // 2% + $3000 (similar to standard)
+    }
+    
+    const costs = estimatedCosts[programType as keyof typeof estimatedCosts] || estimatedCosts['HECM']
+    return Math.max(0, upb - currentMortgage - costs)
+  }
+
+  // Validate property eligibility
+  const validatePropertyEligibility = (propertyType: string, occupancyStatus: string): { eligible: boolean; message?: string } => {
+    if (occupancyStatus !== 'Primary Residence') {
+      return { eligible: false, message: 'Must be primary residence for reverse mortgage' }
+    }
+    if (propertyType === 'Investment Property' || propertyType === 'Second Home') {
+      return { eligible: false, message: 'Investment/second homes not eligible' }
+    }
+    return { eligible: true }
+  }
+
   // Enhanced PLF calculation with all programs
   const calculateProgramComparison = (client: Client) => {
     const age = getYoungestAge(client)
