@@ -14,6 +14,9 @@ interface Client {
   spouse_last_name?: string
   spouse_date_of_birth?: string
   home_value?: number
+  property_type?: string
+  current_mortgage_balance?: number
+  occupancy_status?: string
   program_type?: string
   pipeline_status?: string
   created_at?: string
@@ -59,6 +62,9 @@ export default function NextStepCRM() {
     spouse_last_name: '',
     spouse_date_of_birth: '',
     home_value: 0,
+    property_type: 'Single Family Residence',
+    current_mortgage_balance: 0,
+    occupancy_status: 'Primary Residence',
     program_type: 'HECM',
     pipeline_status: 'New Lead'
   })
@@ -180,6 +186,9 @@ export default function NextStepCRM() {
         spouse_last_name: '',
         spouse_date_of_birth: '',
         home_value: 0,
+        property_type: 'Single Family Residence',
+        current_mortgage_balance: 0,
+        occupancy_status: 'Primary Residence',
         program_type: 'HECM',
         pipeline_status: 'New Lead'
       })
@@ -321,7 +330,9 @@ export default function NextStepCRM() {
           {filteredClients.map((client) => {
             const age = getYoungestAge(client)
             const upb = calculateUPB(client.home_value || 0, client.program_type || 'HECM', age)
-            const eligibility = validateProgramEligibility(age, client.program_type || 'HECM')
+            const netProceeds = calculateNetProceeds(upb, client.current_mortgage_balance || 0, client.program_type || 'HECM')
+            const ageEligibility = validateProgramEligibility(age, client.program_type || 'HECM')
+            const propertyEligibility = validatePropertyEligibility(client.property_type || 'Single Family Residence', client.occupancy_status || 'Primary Residence')
             
             return (
               <div key={client.id} className="bg-white rounded-2xl shadow-xl p-6 hover:shadow-2xl transition-all">
@@ -336,6 +347,7 @@ export default function NextStepCRM() {
                       </p>
                     )}
                     <p className="text-gray-600 text-sm">{client.pipeline_status}</p>
+                    <p className="text-xs text-gray-500">{client.property_type} • {client.occupancy_status}</p>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-blue-600 font-medium">Youngest Borrower</div>
@@ -343,10 +355,11 @@ export default function NextStepCRM() {
                   </div>
                 </div>
 
-                {!eligibility.eligible && (
+                {(!ageEligibility.eligible || !propertyEligibility.eligible) && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                    <div className="text-red-700 text-sm font-medium">⚠️ Eligibility Issue</div>
-                    <div className="text-red-600 text-xs">{eligibility.message}</div>
+                    <div className="text-red-700 text-sm font-medium">⚠️ Eligibility Issues</div>
+                    {!ageEligibility.eligible && <div className="text-red-600 text-xs">{ageEligibility.message}</div>}
+                    {!propertyEligibility.eligible && <div className="text-red-600 text-xs">{propertyEligibility.message}</div>}
                   </div>
                 )}
 
@@ -367,9 +380,20 @@ export default function NextStepCRM() {
                     <div className="font-bold text-gray-900">{formatCurrency(client.home_value || 0)}</div>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-3">
-                    <div className="text-xs text-blue-600 mb-1">UPB</div>
+                    <div className="text-xs text-blue-600 mb-1">Max UPB</div>
                     <div className="font-bold text-blue-900">{formatCurrency(upb)}</div>
                   </div>
+                </div>
+
+                {/* Enhanced Financial Display */}
+                <div className="bg-green-50 rounded-lg p-3 mb-4">
+                  <div className="text-xs text-green-600 mb-1">💰 Est. Net Proceeds</div>
+                  <div className="font-bold text-green-900 text-lg">{formatCurrency(netProceeds)}</div>
+                  {client.current_mortgage_balance && client.current_mortgage_balance > 0 && (
+                    <div className="text-xs text-gray-600 mt-1">
+                      After paying off ${formatCurrency(client.current_mortgage_balance)} mortgage
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mb-4">
@@ -468,9 +492,15 @@ export default function NextStepCRM() {
                         <div className="text-xs text-blue-600 mb-1">PLF Rate</div>
                         <div className="font-bold text-blue-900">{(program.plf * 100).toFixed(1)}%</div>
                       </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-600 mb-1">Max UPB</div>
+                        <div className="font-bold text-gray-900">{formatCurrency(program.upb)}</div>
+                      </div>
                       <div className="bg-green-50 rounded-lg p-3">
-                        <div className="text-xs text-green-600 mb-1">Max UPB</div>
-                        <div className="font-bold text-green-900">{formatCurrency(program.upb)}</div>
+                        <div className="text-xs text-green-600 mb-1">💰 Net Proceeds</div>
+                        <div className="font-bold text-green-900">
+                          {formatCurrency(calculateNetProceeds(program.upb, showProgramComparison.current_mortgage_balance || 0, program.name))}
+                        </div>
                       </div>
                     </div>
 
@@ -629,13 +659,59 @@ export default function NextStepCRM() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
                 <input
                   type="number"
                   value={newClient.home_value || ''}
                   onChange={(e) => setNewClient({...newClient, home_value: Number(e.target.value)})}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Property Details Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Property & Loan Details</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                    <select
+                      value={newClient.property_type || 'Single Family Residence'}
+                      onChange={(e) => setNewClient({...newClient, property_type: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Single Family Residence">Single Family Residence</option>
+                      <option value="Condominium">Condominium</option>
+                      <option value="Townhouse">Townhouse</option>
+                      <option value="Manufactured Home">Manufactured Home</option>
+                      <option value="2-4 Unit Property">2-4 Unit Property</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Occupancy Status *</label>
+                    <select
+                      value={newClient.occupancy_status || 'Primary Residence'}
+                      onChange={(e) => setNewClient({...newClient, occupancy_status: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Primary Residence">Primary Residence</option>
+                      <option value="Second Home">Second Home</option>
+                      <option value="Investment Property">Investment Property</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                  <input
+                    type="number"
+                    value={newClient.current_mortgage_balance || ''}
+                    onChange={(e) => setNewClient({...newClient, current_mortgage_balance: Number(e.target.value)})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter 0 if no existing mortgage"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Used to calculate net proceeds (amount client receives)
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -776,13 +852,59 @@ export default function NextStepCRM() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
                 <input
                   type="number"
                   value={editingClient.home_value || ''}
                   onChange={(e) => setEditingClient({...editingClient, home_value: Number(e.target.value)})}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Property Details Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Property & Loan Details</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                    <select
+                      value={editingClient.property_type || 'Single Family Residence'}
+                      onChange={(e) => setEditingClient({...editingClient, property_type: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Single Family Residence">Single Family Residence</option>
+                      <option value="Condominium">Condominium</option>
+                      <option value="Townhouse">Townhouse</option>
+                      <option value="Manufactured Home">Manufactured Home</option>
+                      <option value="2-4 Unit Property">2-4 Unit Property</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Occupancy Status *</label>
+                    <select
+                      value={editingClient.occupancy_status || 'Primary Residence'}
+                      onChange={(e) => setEditingClient({...editingClient, occupancy_status: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Primary Residence">Primary Residence</option>
+                      <option value="Second Home">Second Home</option>
+                      <option value="Investment Property">Investment Property</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                  <input
+                    type="number"
+                    value={editingClient.current_mortgage_balance || ''}
+                    onChange={(e) => setEditingClient({...editingClient, current_mortgage_balance: Number(e.target.value)})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter 0 if no existing mortgage"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Used to calculate net proceeds (amount client receives)
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -855,12 +977,57 @@ export default function NextStepCRM() {
                   <div className="font-semibold text-gray-800">{selectedClient.phone}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Home Value</div>
-                  <div className="font-semibold text-gray-800">{formatCurrency(selectedClient.home_value || 0)}</div>
+                  <div className="text-sm text-gray-600">Property Type</div>
+                  <div className="font-semibold text-gray-800">{selectedClient.property_type || 'Single Family Residence'}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Program</div>
-                  <div className="font-semibold text-gray-800">{selectedClient.program_type}</div>
+                  <div className="text-sm text-gray-600">Occupancy</div>
+                  <div className="font-semibold text-gray-800">{selectedClient.occupancy_status || 'Primary Residence'}</div>
+                </div>
+              </div>
+
+              {/* Financial Breakdown Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Financial Analysis</h3>
+                <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <div className="text-sm text-gray-600">Home Value</div>
+                      <div className="text-lg font-bold text-gray-900">{formatCurrency(selectedClient.home_value || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600">Current Mortgage</div>
+                      <div className="text-lg font-bold text-gray-900">{formatCurrency(selectedClient.current_mortgage_balance || 0)}</div>
+                    </div>
+                  </div>
+                  
+                  {(() => {
+                    const age = getYoungestAge(selectedClient)
+                    const upb = calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', age)
+                    const netProceeds = calculateNetProceeds(upb, selectedClient.current_mortgage_balance || 0, selectedClient.program_type || 'HECM')
+                    const estimatedCosts = upb - netProceeds - (selectedClient.current_mortgage_balance || 0)
+                    
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="text-sm text-gray-600">Maximum UPB ({selectedClient.program_type})</span>
+                          <span className="font-semibold">{formatCurrency(upb)}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="text-sm text-gray-600">Less: Current Mortgage</span>
+                          <span className="font-semibold text-red-600">-{formatCurrency(selectedClient.current_mortgage_balance || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="text-sm text-gray-600">Less: Est. Closing Costs</span>
+                          <span className="font-semibold text-red-600">-{formatCurrency(estimatedCosts)}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-3 bg-green-100 rounded-lg px-3">
+                          <span className="font-semibold text-green-800">💰 Net Proceeds to Client</span>
+                          <span className="text-xl font-bold text-green-900">{formatCurrency(netProceeds)}</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
 
