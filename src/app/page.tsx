@@ -63,18 +63,22 @@ const loadFromSession = (): Client[] => {
 }
 
 export default function NextStepCRM() {
-  // Initialize with demo clients if storage is empty
+  // Initialize with demo clients if storage is empty (ONLY ONCE)
   const initializeClients = (): Client[] => {
     // First try sessionStorage
     const sessionClients = loadFromSession()
     if (sessionClients.length > 0) {
       globalClientStorage = sessionClients
+      console.log('📥 Loaded', sessionClients.length, 'clients from sessionStorage')
       return [...sessionClients]
     }
     
-    // If no session data, check global storage
-    if (globalClientStorage.length === 0) {
-      globalClientStorage = [
+    // Check if we've initialized before using a flag
+    const hasInitialized = typeof window !== 'undefined' && sessionStorage.getItem('hasInitialized')
+    
+    // Only create demo clients on very first visit
+    if (!hasInitialized && globalClientStorage.length === 0) {
+      const demoClients = [
         {
           id: '1',
           first_name: 'Robert',
@@ -128,9 +132,22 @@ export default function NextStepCRM() {
           updated_at: new Date().toISOString()
         }
       ]
-      console.log('🏠 Initialized demo clients in global storage')
+      
+      globalClientStorage = demoClients
+      saveToSession(demoClients)
+      
+      // Set initialization flag
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('hasInitialized', 'true')
+      }
+      
+      console.log('🏠 First time initialization - created demo clients')
+      return [...demoClients]
     }
-    return [...globalClientStorage]
+    
+    // Return empty array if no data and already initialized
+    console.log('📋 No stored clients found, starting empty')
+    return []
   }
 
   // State management
@@ -155,7 +172,8 @@ export default function NextStepCRM() {
   useEffect(() => {
     if (clients.length > 0) {
       globalClientStorage = [...clients]
-      console.log('💾 Updated global storage with', clients.length, 'clients')
+      saveToSession(clients)  // Save to sessionStorage too
+      console.log('💾 Updated both global and session storage with', clients.length, 'clients')
     }
   }, [clients])
 
@@ -236,11 +254,13 @@ export default function NextStepCRM() {
   // Test persistence function
   const testPersistence = () => {
     const currentCount = clients.length
+    const sessionData = loadFromSession()
     console.log('🧪 Testing persistence...')
     console.log('Current clients in state:', currentCount)
     console.log('Current clients in global storage:', globalClientStorage.length)
+    console.log('Current clients in sessionStorage:', sessionData.length)
     
-    alert(`Persistence Test:\nClients in state: ${currentCount}\nClients in global storage: ${globalClientStorage.length}\n\nNow refresh the page to test if data persists!`)
+    alert(`Persistence Test:\nClients in state: ${currentCount}\nClients in global storage: ${globalClientStorage.length}\nClients in sessionStorage: ${sessionData.length}\n\nNow refresh the page to test if data persists!`)
   }
 
   // PLF Tables based on your actual data files
