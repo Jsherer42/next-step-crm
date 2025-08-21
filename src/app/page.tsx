@@ -162,6 +162,27 @@ export default function NextStepCRM() {
     return { eligible: true }
   }
 
+  // Calculate days in current stage
+  const calculateDaysInStage = (pipelineDate?: string): number => {
+    if (!pipelineDate) return 0
+    const stageDate = new Date(pipelineDate)
+    const today = new Date()
+    const diffTime = Math.abs(today.getTime() - stageDate.getTime())
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  }
+
+  // Get pipeline stage color
+  const getPipelineStageColor = (status?: string): string => {
+    const stage = PIPELINE_STAGES.find(s => s.value === status)
+    return stage?.color || 'bg-gray-100 border-gray-300 text-gray-800'
+  }
+
+  // Get pipeline stage label
+  const getPipelineStageLabel = (status?: string): string => {
+    const stage = PIPELINE_STAGES.find(s => s.value === status)
+    return stage?.label || status || 'Unknown'
+  }
+
   // Enhanced PLF calculation with all programs
   const calculateProgramComparison = (client: Client) => {
     const age = getYoungestAge(client)
