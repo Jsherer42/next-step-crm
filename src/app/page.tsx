@@ -317,13 +317,33 @@ export default function NextStepCRM() {
     }).format(amount)
   }
 
-  // Add new client to Supabase
+  // Add new client to Supabase (MATCH GHL WEBHOOK FORMAT)
   const addClient = async () => {
     if (newClient.first_name && newClient.last_name) {
       try {
+        // Format data to match exactly what GHL webhook sends successfully
         const clientData = {
-          ...newClient,
-          pipeline_date: newClient.pipeline_date || new Date().toISOString().split('T')[0]
+          first_name: newClient.first_name,
+          last_name: newClient.last_name,
+          email: newClient.email || '',
+          phone: newClient.phone || '',
+          date_of_birth: newClient.date_of_birth,
+          spouse_first_name: newClient.spouse_first_name || null,
+          spouse_last_name: newClient.spouse_last_name || null,
+          spouse_date_of_birth: newClient.spouse_date_of_birth || null,
+          home_value: newClient.home_value || 0,
+          address: newClient.address || '',
+          property_type: newClient.property_type || 'Single Family Residence',
+          mortgage_balance: newClient.mortgage_balance || 0,
+          occupancy_status: newClient.occupancy_status || 'Primary Residence',
+          program_type: newClient.program_type || 'HECM',
+          pipeline_status: newClient.pipeline_status || 'Proposal Out',
+          pipeline_date: newClient.pipeline_date || new Date().toISOString().split('T')[0],
+          lead_source: 'Manual Entry',
+          is_married: false,
+          desired_proceeds: 0,
+          assigned_loan_officer_id: null,
+          created_by_id: null
         }
 
         const { data, error } = await supabase
