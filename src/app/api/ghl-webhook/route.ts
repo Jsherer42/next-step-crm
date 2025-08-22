@@ -1,108 +1,125 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Initialize Supabase client with CORRECT URL and API KEY
+// Initialize Supabase client with correct credentials
 const supabaseUrl = 'https://nmcqlekpyqfgyzoelcsa.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-export async function GET() {
-  return NextResponse.json({
-    message: "GHL Webhook endpoint is active",
-    timestamp: new Date().toISOString(),
-    status: "ready"
-  })
-}
-
 export async function POST(request: NextRequest) {
   try {
-    // Parse the incoming webhook data from GHL
-    const ghlData = await request.json()
+    console.log('GHL Webhook received')
+    const data = await request.json()
+    console.log('GHL Webhook received:', JSON.stringify(data, null, 2))
     
-    console.log('GHL Webhook received:', JSON.stringify(ghlData, null, 2))
+    // Extract and map the correct fields from GHL data
+    const phoneNumber = data.phone || ''
+    const fullName = data.full_name || ''
+    const fullAddress = data.full_address || ''
     
-    // Extract contact data from GHL webhook
-    // GHL sends different formats, so we handle multiple possibilities
-    const contactData = ghlData.contact || ghlData.data || ghlData
+    // Parse the full name into first and last name
+    let firstName = 'Unknown'
+    let lastName = 'Unknown'
     
-    if (!contactData) {
-      console.error('No contact data found in webhook')
-      return NextResponse.json({ error: 'No contact data provided' }, { status: 400 })
+    if (fullName && fullName.trim() !== '') {
+      const nameParts = fullName.trim().split(' ')
+      firstName = nameParts[0] || 'Unknown'
+      lastName = nameParts.slice(1).join(' ') || 'Unknown'
     }
     
-    // Map GHL fields to our CRM format (matching our database structure)
+    // Look for email in various possible locations
+    let email = ''
+    if (data.email) {
+      email = data.email
+    } else if (data.contact && data.contact.email) {
+      email = data.contact.email
+    } else if (data.customData && data.customData.email) {
+      email = data.customData.email
+    }
+    
+    // Look for custom fields that might contain property information
+    let homeValue = 500000 // Default value
+    let address = fullAddress
+    let propertyType = 'Single Family Residence'
+    let mortgageBalance = 0
+    
+    // Check for custom fields
+    if (data.customData) {
+      if (data.customData.home_value) homeValue = parseInt(data.customData.home_value)
+      if (data.customData.homeValue) homeValue = parseInt(data.customData.homeValue)
+      if (data.customData.property_value) homeValue = parseInt(data.customData.property_value)
+      if (data.customData.propertyValue) homeValue = parseInt(data.customData.propertyValue)
+      
+      if (data.customData.property_type) propertyType = data.customData.property_type
+      if (data.customData.propertyType) propertyType = data.customData.propertyType
+      
+      if (data.customData.mortgage_balance) mortgageBalance = parseInt(data.customData.mortgage_balance)
+      if (data.customData.mortgageBalance) mortgageBalance = parseInt(data.customData.mortgageBalance)
+      if (data.customData.current_mortgage) mortgageBalance = parseInt(data.customData.current_mortgage)
+    }
+    
+    // Create client data object with correct field mapping
     const clientData = {
-      first_name: contactData.firstName || contactData.first_name || contactData.name?.split(' ')[0] || 'Unknown',
-      last_name: contactData.lastName || contactData.last_name || contactData.name?.split(' ').slice(1).join(' ') || 'Unknown',
-      email: contactData.email || '',
-      phone: contactData.phone || contactData.phoneNumber || '',
-      date_of_birth: contactData.dateOfBirth || contactData.date_of_birth || '1960-01-01',
-      
-      // Spouse info (usually not in GHL, but include fields)
-      spouse_first_name: contactData.spouseFirstName || null,
-      spouse_last_name: contactData.spouseLastName || null,
-      spouse_date_of_birth: contactData.spouseDateOfBirth || null,
-      
-      // Property info (may come from custom fields)
-      home_value: parseInt(contactData.homeValue || contactData.home_value || '500000'),
-      address: contactData.address || contactData.address1 || '',
-      property_type: contactData.propertyType || 'Single Family Residence',
-      mortgage_balance: parseInt(contactData.mortgageBalance || contactData.mortgage_balance || '0'),
-      occupancy_status: contactData.occupancyStatus || 'Primary Residence',
-      
-      // Program and pipeline info
-      program_type: contactData.programType || 'HECM',
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      phone: phoneNumber,
+      date_of_birth: '1960-01-01', // Default - can be updated later
+      spouse_first_name: null,
+      spouse_last_name: null,
+      spouse_date_of_birth: null,
+      home_value: homeValue,
+      address: address,
+      property_type: propertyType,
+      mortgage_balance: mortgageBalance,
+      occupancy_status: 'Primary Residence',
+      program_type: 'HECM',
       pipeline_status: 'Proposal Out',
       pipeline_date: new Date().toISOString().split('T')[0],
-      
-      // Lead source
       lead_source: 'GHL Import',
-      
-      // Set default values for required fields
       is_married: false,
       desired_proceeds: 0,
       assigned_loan_officer_id: null,
       created_by_id: null
     }
-    
-    console.log('Mapped client data:', JSON.stringify(clientData, null, 2))
-    
-    // Validate required fields
-    if (!clientData.first_name || !clientData.last_name) {
-      console.error('Missing required fields: first_name or last_name')
-      return NextResponse.json({ 
-        error: 'Missing required fields: first_name and last_name are required' 
-      }, { status: 400 })
-    }
-    
-    // Insert into Supabase (without id field - let it auto-generate)
-    const { data, error } = await supabase
+
+    console.log('Mapped client data:', clientData)
+
+    // Insert into Supabase (don't include 'id' field - let it auto-generate)
+    const { data: insertedData, error } = await supabase
       .from('clients')
       .insert([clientData])
       .select()
-    
+
     if (error) {
-      console.error('Supabase insert error:', error)
+      console.error('Error inserting client:', error)
       return NextResponse.json({ 
-        error: 'Database insert failed', 
-        details: error.message 
-      }, { status: 500 })
+        success: false, 
+        error: error.message 
+      }, { status: 400 })
     }
-    
-    console.log('Successfully created client:', data)
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Client created successfully',
-      client: data[0],
-      timestamp: new Date().toISOString()
-    })
-    
-  } catch (error) {
-    console.error('Webhook processing error:', error)
+
+    console.log('Successfully created client:', insertedData)
+
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: error instanceof Error ? error.message : 'Unknown error'
+      success: true, 
+      message: 'Client created successfully',
+      client: insertedData[0]
+    })
+
+  } catch (error) {
+    console.error('Webhook error:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'GHL Webhook endpoint is active',
+    timestamp: new Date().toISOString(),
+    status: 'ready'
+  })
 }
