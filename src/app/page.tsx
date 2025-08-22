@@ -602,8 +602,386 @@ export default function NextStepCRM() {
           })}
         </div>
 
-        {/* Add all the modals here - I'll include them but truncate for space */}
-        {/* Add Client Modal, Edit Modal, View Modal, Program Comparison Modal */}
+        {/* Add Client Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Client</h2>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                    <input
+                      type="text"
+                      value={newClient.first_name}
+                      onChange={(e) => setNewClient({...newClient, first_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter first name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                    <input
+                      type="text"
+                      value={newClient.last_name}
+                      onChange={(e) => setNewClient({...newClient, last_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter last name"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={newClient.email}
+                      onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter email"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={newClient.phone}
+                      onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
+                  <input
+                    type="date"
+                    value={newClient.date_of_birth}
+                    onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
+                    <input
+                      type="number"
+                      value={newClient.home_value || ''}
+                      onChange={(e) => setNewClient({...newClient, home_value: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter home value"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                    <input
+                      type="number"
+                      value={newClient.mortgage_balance || ''}
+                      onChange={(e) => setNewClient({...newClient, mortgage_balance: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter current mortgage balance"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-8">
+                <button
+                  onClick={addClient}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg transition-colors font-medium"
+                >
+                  Add Client
+                </button>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Client Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Client</h2>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                    <input
+                      type="text"
+                      value={editingClient.first_name}
+                      onChange={(e) => setEditingClient({...editingClient, first_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter first name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                    <input
+                      type="text"
+                      value={editingClient.last_name}
+                      onChange={(e) => setEditingClient({...editingClient, last_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter last name"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
+                    <input
+                      type="number"
+                      value={editingClient.home_value || ''}
+                      onChange={(e) => setEditingClient({...editingClient, home_value: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter home value"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                    <input
+                      type="number"
+                      value={editingClient.mortgage_balance || ''}
+                      onChange={(e) => setEditingClient({...editingClient, mortgage_balance: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter current mortgage balance"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
+                  <select
+                    value={editingClient.pipeline_status}
+                    onChange={(e) => setEditingClient({...editingClient, pipeline_status: e.target.value, pipeline_date: new Date().toISOString().split('T')[0]})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {PIPELINE_STAGES.map(stage => (
+                      <option key={stage.value} value={stage.value}>{stage.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-8">
+                <button
+                  onClick={updateClient}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg transition-colors font-medium"
+                >
+                  Update Client
+                </button>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Client Modal */}
+        {selectedClient && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">{selectedClient.first_name} {selectedClient.last_name}</h2>
+                  {selectedClient.spouse_first_name && (
+                    <p className="text-gray-600">& {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setSelectedClient(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-600">Email</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.email || 'Not provided'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Phone</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.phone}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Date of Birth</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.date_of_birth} (Age: {calculateAge(selectedClient.date_of_birth)})</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Program Type</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.program_type}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-600">Client Age</div>
+                    <div className="font-semibold text-blue-600">{getYoungestAge(selectedClient)} years</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Home Value</div>
+                    <div className="font-semibold text-green-600">{formatCurrency(selectedClient.home_value || 0)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Current Mortgage</div>
+                    <div className="font-semibold text-red-600">{formatCurrency(selectedClient.mortgage_balance || 0)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Est. Net Proceeds</div>
+                    <div className="font-semibold text-green-600">
+                      {formatCurrency(calculateNetProceeds(
+                        calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)),
+                        selectedClient.mortgage_balance || 0,
+                        selectedClient.program_type || 'HECM'
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-sm text-gray-600 mb-1">Estimated UPB</div>
+                  <div className="text-3xl font-bold text-blue-600">
+                    {formatCurrency(calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)))}
+                  </div>
+                  <div className="text-sm text-gray-500">Based on {selectedClient.program_type} program for youngest borrower age {getYoungestAge(selectedClient)}</div>
+                </div>
+              </div>
+
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setSelectedClient(null)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Program Comparison Modal */}
+        {showProgramComparison && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl p-8 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Program Comparison</h2>
+                  <p className="text-gray-600">Age: {getYoungestAge(showProgramComparison)} | Home Value: {formatCurrency(showProgramComparison.home_value || 0)}</p>
+                </div>
+                <button
+                  onClick={() => setShowProgramComparison(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {calculateProgramComparison(showProgramComparison).map((program, index) => {
+                  const isCurrentProgram = program.name === showProgramComparison.program_type
+                  const isBestProgram = index === calculateProgramComparison(showProgramComparison).reduce((bestIndex, current, currentIndex, array) => 
+                    current.netProceeds > array[bestIndex].netProceeds ? currentIndex : bestIndex, 0)
+                  
+                  return (
+                    <div key={program.name} className={`p-4 rounded-lg border-2 ${
+                      isBestProgram ? 'border-green-500 bg-green-50' : 
+                      isCurrentProgram ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
+                    }`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="font-bold text-lg text-gray-800">{program.name}</h3>
+                        {isBestProgram && <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">🏆 BEST OPTION</span>}
+                        {isCurrentProgram && <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">CURRENT</span>}
+                      </div>
+                      
+                      <div className="space-y-3 mb-4">
+                        <div className="bg-blue-50 rounded-lg p-3">
+                          <div className="text-xs text-blue-600 mb-1">PLF Rate</div>
+                          <div className="font-bold text-blue-800">{(program.plf * 100).toFixed(2)}%</div>
+                        </div>
+                        
+                        <div className="bg-purple-50 rounded-lg p-3">
+                          <div className="text-xs text-purple-600 mb-1">Gross UPB</div>
+                          <div className="font-bold text-purple-800">{formatCurrency(program.upb)}</div>
+                        </div>
+                        
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="text-xs text-green-600 mb-1">Net Proceeds</div>
+                          <div className="font-bold text-green-800">{formatCurrency(program.netProceeds)}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs text-gray-600 mb-3">{program.description}</div>
+                      
+                      <button
+                        onClick={async () => {
+                          const updatedClient = {...showProgramComparison, program_type: program.name}
+                          try {
+                            const { error } = await supabase
+                              .from('clients')
+                              .update({ program_type: program.name })
+                              .eq('id', updatedClient.id)
+
+                            if (error) {
+                              console.error('Error updating program:', error)
+                              return
+                            }
+
+                            await fetchClients()
+                            setShowProgramComparison(null)
+                          } catch (error) {
+                            console.error('Error:', error)
+                          }
+                        }}
+                        className={`w-full py-2 px-3 rounded text-sm font-medium transition-colors ${
+                          isCurrentProgram 
+                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                        }`}
+                        disabled={isCurrentProgram}
+                      >
+                        {isCurrentProgram ? 'Current Program' : 'Select Program'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setShowProgramComparison(null)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors font-medium"
+                >
+                  Close Comparison
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
