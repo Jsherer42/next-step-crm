@@ -22,7 +22,7 @@ interface Client {
   home_value?: number
   address?: string
   property_type?: string
-  current_mortgage_balance?: number
+  mortgage_balance?: number
   occupancy_status?: string
   program_type?: string
   pipeline_status?: string
@@ -83,7 +83,7 @@ export default function NextStepCRM() {
     home_value: 0,
     address: '',
     property_type: 'Single Family Residence',
-    current_mortgage_balance: 0,
+    mortgage_balance: 0,
     occupancy_status: 'Primary Residence',
     program_type: 'HECM',
     pipeline_status: 'Proposal Out',
@@ -103,7 +103,7 @@ export default function NextStepCRM() {
     home_value: 0,
     address: '',
     property_type: 'Single Family Residence',
-    current_mortgage_balance: 0,
+    mortgage_balance: 0,
     occupancy_status: 'Primary Residence',
     program_type: 'HECM',
     pipeline_status: 'Proposal Out',
@@ -235,7 +235,7 @@ export default function NextStepCRM() {
     const age = getYoungestAge(client)
     const homeValue = client.home_value || 0
     const ageKey = Math.min(age, 95) as keyof typeof EQUITY_PLUS_PLF
-    const currentMortgage = client.current_mortgage_balance || 0
+    const currentMortgage = client.mortgage_balance || 0
 
     const programs = [
       {
@@ -491,7 +491,7 @@ export default function NextStepCRM() {
           {filteredClients.map((client) => {
             const age = getYoungestAge(client)
             const upb = calculateUPB(client.home_value || 0, client.program_type || 'HECM', age)
-            const netProceeds = calculateNetProceeds(upb, client.current_mortgage_balance || 0, client.program_type || 'HECM')
+            const netProceeds = calculateNetProceeds(upb, client.mortgage_balance || 0, client.program_type || 'HECM')
             const ageEligibility = validateProgramEligibility(age, client.program_type || 'HECM')
             const propertyEligibility = validatePropertyEligibility(client.property_type || 'Single Family Residence', client.occupancy_status || 'Primary Residence')
             const daysInStage = calculateDaysInStage(client.pipeline_date)
@@ -724,8 +724,8 @@ export default function NextStepCRM() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
                       <input
                         type="number"
-                        value={newClient.current_mortgage_balance || ''}
-                        onChange={(e) => setNewClient({...newClient, current_mortgage_balance: parseInt(e.target.value) || 0})}
+                        value={newClient.mortgage_balance || ''}
+                        onChange={(e) => setNewClient({...newClient, mortgage_balance: parseInt(e.target.value) || 0})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Enter current mortgage balance"
                       />
@@ -940,8 +940,8 @@ export default function NextStepCRM() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
                       <input
                         type="number"
-                        value={editingClient.current_mortgage_balance || ''}
-                        onChange={(e) => setEditingClient({...editingClient, current_mortgage_balance: parseInt(e.target.value) || 0})}
+                        value={editingClient.mortgage_balance || ''}
+                        onChange={(e) => setEditingClient({...editingClient, mortgage_balance: parseInt(e.target.value) || 0})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Enter current mortgage balance"
                       />
@@ -1228,7 +1228,7 @@ export default function NextStepCRM() {
                     <div>
                       <span className="font-medium">Current Mortgage:</span> 
                       <span className="text-red-600 font-bold ml-1">
-                        {formatCurrency(selectedClient.current_mortgage_balance || 0)}
+                        {formatCurrency(selectedClient.mortgage_balance || 0)}
                       </span>
                     </div>
                     <div>
@@ -1236,7 +1236,7 @@ export default function NextStepCRM() {
                       <span className="text-green-600 font-bold ml-1">
                         {formatCurrency(calculateNetProceeds(
                           calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)),
-                          selectedClient.current_mortgage_balance || 0,
+                          selectedClient.mortgage_balance || 0,
                           selectedClient.program_type || 'HECM'
                         ))}
                       </span>
