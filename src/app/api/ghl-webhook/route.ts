@@ -37,6 +37,62 @@ export async function POST(request: NextRequest) {
       email = data.customData.email
     }
     
+    // Look for Date of Birth in various possible field names
+    let dateOfBirth = '1960-01-01' // Default fallback
+    
+    if (data.customData) {
+      // Check common DOB field names
+      if (data.customData.date_of_birth) {
+        dateOfBirth = formatDate(data.customData.date_of_birth)
+      } else if (data.customData.dateOfBirth) {
+        dateOfBirth = formatDate(data.customData.dateOfBirth)
+      } else if (data.customData.birthday) {
+        dateOfBirth = formatDate(data.customData.birthday)
+      } else if (data.customData.Birthday) {
+        dateOfBirth = formatDate(data.customData.Birthday)
+      } else if (data.customData['Birthday DD/MM/YYYY']) {
+        dateOfBirth = formatDate(data.customData['Birthday DD/MM/YYYY'])
+      } else if (data.customData.dob) {
+        dateOfBirth = formatDate(data.customData.dob)
+      }
+    }
+    
+    // Helper function to convert various date formats to YYYY-MM-DD
+    function formatDate(dateString) {
+      if (!dateString || dateString.trim() === '') return '1960-01-01'
+      
+      try {
+        // Handle MM/DD/YYYY or DD/MM/YYYY format
+        if (dateString.includes('/')) {
+          const parts = dateString.split('/')
+          if (parts.length === 3) {
+            // Assume MM/DD/YYYY format first
+            let month = parts[0].padStart(2, '0')
+            let day = parts[1].padStart(2, '0')
+            let year = parts[2]
+            
+            // If month > 12, probably DD/MM/YYYY format
+            if (parseInt(parts[0]) > 12) {
+              day = parts[0].padStart(2, '0')
+              month = parts[1].padStart(2, '0')
+            }
+            
+            return `${year}-${month}-${day}`
+          }
+        }
+        
+        // Try to parse as a regular date
+        const date = new Date(dateString)
+        if (!isNaN(date.getTime())) {
+          return date.toISOString().split('T')[0]
+        }
+      } catch (error) {
+        console.log('Date parsing error:', error)
+      }
+      
+      return '1960-01-01' // Fallback
+    }
+    
     // Look for custom fields that might contain property information
     let homeValue = 500000 // Default value
     let address = fullAddress
@@ -64,7 +120,7 @@ export async function POST(request: NextRequest) {
       last_name: lastName,
       email: email,
       phone: phoneNumber,
-      date_of_birth: '1960-01-01', // Default - can be updated later
+      date_of_birth: dateOfBirth,
       spouse_first_name: null,
       spouse_last_name: null,
       spouse_date_of_birth: null,
