@@ -6,7 +6,7 @@ import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Fi
 
 // Initialize Supabase client
 const supabaseUrl = 'https://nmcqlekpyqfgyzoelcsa.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ0MjYzNTEsImV4cCI6MjA0MDAwMjM1MX0.nwWtZpWr_qfJPNL6pf74VYzr-kRrQRn5n9uDcUJVJyE'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 interface Client {
