@@ -611,107 +611,6 @@ export default function NextStepCRM() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-sm text-gray-600">Email</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.email}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Phone</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.phone}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Date of Birth</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.date_of_birth} (Age: {calculateAge(selectedClient.date_of_birth)})</div>
-                  </div>
-                  {selectedClient.spouse_first_name && (
-                    <div>
-                      <div className="text-sm text-gray-600">Spouse</div>
-                      <div className="font-semibold text-gray-800">
-                        {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}
-                        {selectedClient.spouse_date_of_birth && (
-                          <span className="text-sm text-gray-600 block">
-                            DOB: {selectedClient.spouse_date_of_birth} (Age: {calculateAge(selectedClient.spouse_date_of_birth)})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {selectedClient.address && (
-                    <div className="col-span-2">
-                      <div className="text-sm text-gray-600">Property Address</div>
-                      <div className="font-semibold text-gray-800 flex items-center justify-between">
-                        <span>{selectedClient.address}</span>
-                        <a
-                          href={`https://www.zillow.com/homes/${encodeURIComponent(selectedClient.address)}_rb/`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                        >
-                          🏠 View on Zillow
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="font-medium">Client Age:</span> 
-                      <span className="text-blue-600 font-bold ml-1">
-                        {getYoungestAge(selectedClient)} years
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Home Value:</span> 
-                      <span className="text-green-600 font-bold ml-1">
-                        {formatCurrency(selectedClient.home_value || 0)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Current Mortgage:</span> 
-                      <span className="text-red-600 font-bold ml-1">
-                        {formatCurrency(selectedClient.current_mortgage_balance || 0)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Est. Net Proceeds:</span> 
-                      <span className="text-green-600 font-bold ml-1">
-                        {formatCurrency(calculateNetProceeds(
-                          calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)),
-                          selectedClient.current_mortgage_balance || 0,
-                          selectedClient.program_type || 'HECM'
-                        ))}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-4 text-center">
-                    <div className="text-sm text-gray-600">Estimated UPB</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)))}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Based on {selectedClient.program_type || 'HECM'} program for youngest borrower age {getYoungestAge(selectedClient)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <button
-                    onClick={() => setSelectedClient(null)}
-                    className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors font-medium"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-} gap-4">
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
                     <input
                       type="text"
@@ -832,7 +731,6 @@ export default function NextStepCRM() {
                       />
                     </div>
 
-                    {/* Address Field */}
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
                       <input
@@ -1049,7 +947,6 @@ export default function NextStepCRM() {
                       />
                     </div>
 
-                    {/* Address Field */}
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
                       <input
@@ -1270,4 +1167,105 @@ export default function NextStepCRM() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-600">Email</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.email}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Phone</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.phone}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Date of Birth</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.date_of_birth} (Age: {calculateAge(selectedClient.date_of_birth)})</div>
+                  </div>
+                  {selectedClient.spouse_first_name && (
+                    <div>
+                      <div className="text-sm text-gray-600">Spouse</div>
+                      <div className="font-semibold text-gray-800">
+                        {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}
+                        {selectedClient.spouse_date_of_birth && (
+                          <span className="text-sm text-gray-600 block">
+                            DOB: {selectedClient.spouse_date_of_birth} (Age: {calculateAge(selectedClient.spouse_date_of_birth)})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {selectedClient.address && (
+                    <div className="col-span-2">
+                      <div className="text-sm text-gray-600">Property Address</div>
+                      <div className="font-semibold text-gray-800 flex items-center justify-between">
+                        <span>{selectedClient.address}</span>
+                        <a
+                          href={`https://www.zillow.com/homes/${encodeURIComponent(selectedClient.address)}_rb/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                        >
+                          🏠 View on Zillow
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="font-medium">Client Age:</span> 
+                      <span className="text-blue-600 font-bold ml-1">
+                        {getYoungestAge(selectedClient)} years
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Home Value:</span> 
+                      <span className="text-green-600 font-bold ml-1">
+                        {formatCurrency(selectedClient.home_value || 0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Current Mortgage:</span> 
+                      <span className="text-red-600 font-bold ml-1">
+                        {formatCurrency(selectedClient.current_mortgage_balance || 0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Est. Net Proceeds:</span> 
+                      <span className="text-green-600 font-bold ml-1">
+                        {formatCurrency(calculateNetProceeds(
+                          calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)),
+                          selectedClient.current_mortgage_balance || 0,
+                          selectedClient.program_type || 'HECM'
+                        ))}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-center">
+                    <div className="text-sm text-gray-600">Estimated UPB</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatCurrency(calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)))}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Based on {selectedClient.program_type || 'HECM'} program for youngest borrower age {getYoungestAge(selectedClient)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <button
+                    onClick={() => setSelectedClient(null)}
+                    className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
