@@ -24,22 +24,6 @@ interface Client {
   created_at?: string
 }
 
-// Pipeline stages with colors
-const PIPELINE_STAGES = [
-  { value: 'Proposal Out', label: 'Proposal Out/Pitched', color: 'bg-sky-100 border-sky-300 text-sky-800' },
-  { value: 'Counseling Scheduled', label: 'Counseling Scheduled', color: 'bg-blue-100 border-blue-300 text-blue-800' },
-  { value: 'Counseling In', label: 'Counseling In', color: 'bg-teal-100 border-teal-300 text-teal-800' },
-  { value: 'Docs Out', label: 'Docs Out', color: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
-  { value: 'Docs In', label: 'Docs In', color: 'bg-orange-100 border-orange-300 text-orange-800' },
-  { value: 'Submitted to Processing', label: 'Submitted to Processing', color: 'bg-purple-100 border-purple-300 text-purple-800' },
-  { value: 'Appraisal Ordered', label: 'Appraisal Ordered', color: 'bg-pink-100 border-pink-300 text-pink-800' },
-  { value: 'Appraisal In', label: 'Appraisal In', color: 'bg-fuchsia-100 border-fuchsia-300 text-fuchsia-800' },
-  { value: 'Submit to UW', label: 'Submit to UW', color: 'bg-red-100 border-red-300 text-red-800' },
-  { value: 'Conditional Approval', label: 'Conditional Approval', color: 'bg-lime-100 border-lime-300 text-lime-800' },
-  { value: 'CTC', label: 'CTC', color: 'bg-green-100 border-green-300 text-green-800' },
-  { value: 'Funded', label: 'Funded', color: 'bg-gray-100 border-gray-300 text-gray-800' }
-]
-
 // PLF Tables for calculations
 const HECM_PLF = {
   62: 0.575, 63: 0.580, 64: 0.585, 65: 0.590, 66: 0.595, 67: 0.600, 68: 0.605, 69: 0.610, 70: 0.615,
@@ -137,63 +121,6 @@ export default function NextStepCRM() {
     return Math.min(primaryAge, spouseAge)
   }
 
-  // Validate program eligibility based on age
-  const validateProgramEligibility = (age: number, programType: string): { eligible: boolean; message?: string } => {
-    if (programType === 'HECM' && age < 62) {
-      return { eligible: false, message: `HECM requires minimum age 62. Current youngest borrower is ${age}.` }
-    }
-    if ((programType === 'Equity Plus Standard' || programType === 'Equity Plus Extra') && age < 55) {
-      return { eligible: false, message: `Equity Plus requires minimum age 55. Current youngest borrower is ${age}.` }
-    }
-    return { eligible: true }
-  }
-
-  // Validate property eligibility
-  const validatePropertyEligibility = (propertyType: string, occupancyStatus: string): { eligible: boolean; message?: string } => {
-    if (occupancyStatus !== 'Primary Residence') {
-      return { eligible: false, message: 'Reverse mortgages require primary residence occupancy.' }
-    }
-    if (propertyType === 'Investment Property') {
-      return { eligible: false, message: 'Investment properties are not eligible for reverse mortgages.' }
-    }
-    return { eligible: true }
-  }
-
-  // Calculate net proceeds (what client actually receives)
-  const calculateNetProceeds = (upb: number, currentMortgage: number, programType: string): number => {
-    // Estimated closing costs by program type
-    const estimatedCosts = {
-      'HECM': 8000,
-      'Equity Plus Standard': 12000,
-      'Equity Plus Extra': 12000,
-      'Equity Plus Select': 12000
-    }
-    
-    const closingCosts = estimatedCosts[programType as keyof typeof estimatedCosts] || 8000
-    return Math.max(0, upb - currentMortgage - closingCosts)
-  }
-
-  // Calculate days in current stage
-  const calculateDaysInStage = (pipelineDate?: string): number => {
-    if (!pipelineDate) return 0
-    const stageDate = new Date(pipelineDate)
-    const today = new Date()
-    const diffTime = Math.abs(today.getTime() - stageDate.getTime())
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  }
-
-  // Get pipeline stage color
-  const getPipelineStageColor = (status?: string): string => {
-    const stage = PIPELINE_STAGES.find(s => s.value === status)
-    return stage?.color || 'bg-gray-100 border-gray-300 text-gray-800'
-  }
-
-  // Get pipeline stage label
-  const getPipelineStageLabel = (status?: string): string => {
-    const stage = PIPELINE_STAGES.find(s => s.value === status)
-    return stage?.label || status || 'Unknown'
-  }
-
   // Calculate UPB based on program type and age
   const calculateUPB = (homeValue: number, programType: string, age: number): number => {
     const ageKey = Math.min(age, 95) as keyof typeof HECM_PLF
@@ -211,52 +138,17 @@ export default function NextStepCRM() {
     return effectiveValue * plf
   }
 
-  // Enhanced PLF calculation with all programs
-  const calculateProgramComparison = (client: Client) => {
-    const age = getYoungestAge(client)
-    const homeValue = client.home_value || 0
-    const ageKey = Math.min(age, 95) as keyof typeof EQUITY_PLUS_PLF
-    const currentMortgage = client.current_mortgage_balance || 0
-
-    const programs = [
-      {
-        name: 'HECM',
-        plf: HECM_PLF[ageKey as keyof typeof HECM_PLF] || 0.575,
-        lendingLimit: 1149825,
-        description: 'FHA-insured reverse mortgage'
-      },
-      {
-        name: 'Equity Plus Standard',
-        plf: EQUITY_PLUS_PLF[ageKey] || 0.350,
-        lendingLimit: 4000000,
-        description: 'Standard proprietary reverse mortgage'
-      },
-      {
-        name: 'Equity Plus Extra',
-        plf: (EQUITY_PLUS_PLF[ageKey] || 0.350) * 1.1,
-        lendingLimit: 4000000,
-        description: 'Enhanced proprietary option'
-      },
-      {
-        name: 'Equity Plus Select',
-        plf: (EQUITY_PLUS_PLF[ageKey] || 0.350) * 1.05,
-        lendingLimit: 4000000,
-        description: 'Premium proprietary option'
-      }
-    ]
-
-    return programs.map(program => {
-      const effectiveValue = Math.min(homeValue, program.lendingLimit)
-      const upb = effectiveValue * program.plf
-      const netProceeds = calculateNetProceeds(upb, currentMortgage, program.name)
-      
-      return {
-        ...program,
-        upb,
-        netProceeds,
-        effectiveValue
-      }
-    })
+  // Calculate net proceeds (what client actually receives)
+  const calculateNetProceeds = (upb: number, currentMortgage: number, programType: string): number => {
+    const estimatedCosts = {
+      'HECM': 8000,
+      'Equity Plus Standard': 12000,
+      'Equity Plus Extra': 12000,
+      'Equity Plus Select': 12000
+    }
+    
+    const closingCosts = estimatedCosts[programType as keyof typeof estimatedCosts] || 8000
+    return Math.max(0, upb - currentMortgage - closingCosts)
   }
 
   // Format currency
@@ -275,8 +167,7 @@ export default function NextStepCRM() {
       const client = {
         ...newClient,
         id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-        pipeline_date: newClient.pipeline_date || new Date().toISOString().split('T')[0]
+        created_at: new Date().toISOString()
       }
       setClients([...clients, client])
       setNewClient({
@@ -305,9 +196,7 @@ export default function NextStepCRM() {
   // Update client
   const updateClient = () => {
     setClients(clients.map(client => 
-      client.id === editingClient.id 
-        ? { ...editingClient, pipeline_date: editingClient.pipeline_date || new Date().toISOString().split('T')[0] }
-        : client
+      client.id === editingClient.id ? editingClient : client
     ))
     setShowEditModal(false)
   }
@@ -329,9 +218,6 @@ export default function NextStepCRM() {
     const age = getYoungestAge(client)
     return sum + calculateUPB(client.home_value || 0, client.program_type || 'HECM', age)
   }, 0)
-
-  const activePipeline = clients.filter(c => c.pipeline_status !== 'Funded').length
-  const fundedLoans = clients.filter(c => c.pipeline_status === 'Funded').length
 
   // Test import function
   const testGHLImport = () => {
@@ -366,8 +252,8 @@ export default function NextStepCRM() {
           <p className="text-blue-100">Professional Reverse Mortgage Management</p>
         </div>
 
-        {/* Enhanced Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
@@ -380,26 +266,17 @@ export default function NextStepCRM() {
           <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100">Active Pipeline</p>
-                <p className="text-3xl font-bold">{activePipeline}</p>
-              </div>
-              <Calculator className="w-12 h-12 text-green-200" />
-            </div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100">Funded Loans</p>
-                <p className="text-3xl font-bold">{fundedLoans}</p>
-              </div>
-              <DollarSign className="w-12 h-12 text-yellow-200" />
-            </div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="text-blue-100">Total Pipeline</p>
                 <p className="text-2xl font-bold">{formatCurrency(totalPipeline)}</p>
+              </div>
+              <DollarSign className="w-12 h-12 text-green-200" />
+            </div>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-2xl p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100">Average UPB</p>
+                <p className="text-2xl font-bold">{clients.length > 0 ? formatCurrency(totalPipeline / clients.length) : '$0'}</p>
               </div>
               <HomeIcon className="w-12 h-12 text-purple-200" />
             </div>
@@ -440,21 +317,9 @@ export default function NextStepCRM() {
             const age = getYoungestAge(client)
             const upb = calculateUPB(client.home_value || 0, client.program_type || 'HECM', age)
             const netProceeds = calculateNetProceeds(upb, client.current_mortgage_balance || 0, client.program_type || 'HECM')
-            const ageEligibility = validateProgramEligibility(age, client.program_type || 'HECM')
-            const propertyEligibility = validatePropertyEligibility(client.property_type || 'Single Family Residence', client.occupancy_status || 'Primary Residence')
-            const daysInStage = calculateDaysInStage(client.pipeline_date)
-            const stageColor = getPipelineStageColor(client.pipeline_status)
 
             return (
-              <div key={client.id} className={`bg-white bg-opacity-20 rounded-2xl p-6 text-white backdrop-blur-lg border-l-4 ${stageColor}`}>
-                {/* Pipeline Status Header */}
-                <div className={`-mx-6 -mt-6 mb-4 px-6 py-3 rounded-t-2xl ${stageColor.replace('border-l-4', '')}`}>
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-sm">{getPipelineStageLabel(client.pipeline_status)}</span>
-                    <span className="text-xs">{daysInStage} days</span>
-                  </div>
-                </div>
-
+              <div key={client.id} className="bg-white bg-opacity-20 rounded-2xl p-6 text-white backdrop-blur-lg">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">
@@ -484,22 +349,6 @@ export default function NextStepCRM() {
                   </span>
                   <span>{formatCurrency(client.home_value || 0)}</span>
                 </div>
-
-                {/* Property and Eligibility Warnings */}
-                {(!ageEligibility.eligible || !propertyEligibility.eligible) && (
-                  <div className="mb-4 space-y-2">
-                    {!ageEligibility.eligible && (
-                      <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
-                        ⚠️ {ageEligibility.message}
-                      </div>
-                    )}
-                    {!propertyEligibility.eligible && (
-                      <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
-                        ⚠️ {propertyEligibility.message}
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 <div className="flex gap-2 justify-center">
                   <button
@@ -616,146 +465,39 @@ export default function NextStepCRM() {
                   />
                 </div>
 
-                {/* Spouse Section */}
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Spouse Information (Optional)</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
-                      <input
-                        type="text"
-                        value={newClient.spouse_first_name || ''}
-                        onChange={(e) => setNewClient({...newClient, spouse_first_name: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter spouse first name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
-                      <input
-                        type="text"
-                        value={newClient.spouse_last_name || ''}
-                        onChange={(e) => setNewClient({...newClient, spouse_last_name: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter spouse last name"
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
-                    <input
-                      type="date"
-                      value={newClient.spouse_date_of_birth || ''}
-                      onChange={(e) => setNewClient({...newClient, spouse_date_of_birth: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+                {/* Address Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
+                  <input
+                    type="text"
+                    value={newClient.address || ''}
+                    onChange={(e) => setNewClient({...newClient, address: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter property address"
+                  />
                 </div>
 
-                {/* Property Information */}
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Property Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
-                      <input
-                        type="number"
-                        value={newClient.home_value || ''}
-                        onChange={(e) => setNewClient({...newClient, home_value: parseInt(e.target.value) || 0})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter home value"
-                        required
-                      />
-                    </div>
-
-                    {/* Address Field */}
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Address *</label>
-                      <input
-                        type="text"
-                        value={newClient.address || ''}
-                        onChange={(e) => setNewClient({...newClient, address: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter property address"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
-                      <select
-                        value={newClient.property_type}
-                        onChange={(e) => setNewClient({...newClient, property_type: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="Single Family Residence">Single Family Residence</option>
-                        <option value="Condominium">Condominium</option>
-                        <option value="Townhouse">Townhouse</option>
-                        <option value="Manufactured Home">Manufactured Home</option>
-                        <option value="2-4 Unit Property">2-4 Unit Property</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
-                      <input
-                        type="number"
-                        value={newClient.current_mortgage_balance || ''}
-                        onChange={(e) => setNewClient({...newClient, current_mortgage_balance: parseInt(e.target.value) || 0})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter current mortgage balance"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Occupancy Status</label>
-                      <select
-                        value={newClient.occupancy_status}
-                        onChange={(e) => setNewClient({...newClient, occupancy_status: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="Primary Residence">Primary Residence</option>
-                        <option value="Second Home">Second Home</option>
-                        <option value="Investment Property">Investment Property</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
-                      <select
-                        value={newClient.program_type}
-                        onChange={(e) => setNewClient({...newClient, program_type: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="HECM">HECM</option>
-                        <option value="Equity Plus Standard">Equity Plus Standard</option>
-                        <option value="Equity Plus Extra">Equity Plus Extra</option>
-                        <option value="Equity Plus Select">Equity Plus Select</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
-                      <select
-                        value={newClient.pipeline_status}
-                        onChange={(e) => setNewClient({...newClient, pipeline_status: e.target.value, pipeline_date: new Date().toISOString().split('T')[0]})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        {PIPELINE_STAGES.map(stage => (
-                          <option key={stage.value} value={stage.value}>{stage.label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Stage Date</label>
-                      <input
-                        type="date"
-                        value={newClient.pipeline_date}
-                        onChange={(e) => setNewClient({...newClient, pipeline_date: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
+                    <input
+                      type="number"
+                      value={newClient.home_value || ''}
+                      onChange={(e) => setNewClient({...newClient, home_value: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter home value"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                    <input
+                      type="number"
+                      value={newClient.current_mortgage_balance || ''}
+                      onChange={(e) => setNewClient({...newClient, current_mortgage_balance: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter current mortgage balance"
+                    />
                   </div>
                 </div>
               </div>
@@ -778,234 +520,6 @@ export default function NextStepCRM() {
           </div>
         )}
 
-        {/* Edit Client Modal */}
-        {showEditModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Client</h2>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-                    <input
-                      type="text"
-                      value={editingClient.first_name}
-                      onChange={(e) => setEditingClient({...editingClient, first_name: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter first name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-                    <input
-                      type="text"
-                      value={editingClient.last_name}
-                      onChange={(e) => setEditingClient({...editingClient, last_name: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter last name"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input
-                      type="email"
-                      value={editingClient.email}
-                      onChange={(e) => setEditingClient({...editingClient, email: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter email"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                    <input
-                      type="tel"
-                      value={editingClient.phone}
-                      onChange={(e) => setEditingClient({...editingClient, phone: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
-                  <input
-                    type="date"
-                    value={editingClient.date_of_birth}
-                    onChange={(e) => setEditingClient({...editingClient, date_of_birth: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                {/* Spouse Section */}
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Spouse Information (Optional)</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
-                      <input
-                        type="text"
-                        value={editingClient.spouse_first_name || ''}
-                        onChange={(e) => setEditingClient({...editingClient, spouse_first_name: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter spouse first name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
-                      <input
-                        type="text"
-                        value={editingClient.spouse_last_name || ''}
-                        onChange={(e) => setEditingClient({...editingClient, spouse_last_name: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter spouse last name"
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
-                    <input
-                      type="date"
-                      value={editingClient.spouse_date_of_birth || ''}
-                      onChange={(e) => setEditingClient({...editingClient, spouse_date_of_birth: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {/* Property Information */}
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Property Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Home Value *</label>
-                      <input
-                        type="number"
-                        value={editingClient.home_value || ''}
-                        onChange={(e) => setEditingClient({...editingClient, home_value: parseInt(e.target.value) || 0})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter home value"
-                        required
-                      />
-                    </div>
-
-                    {/* Address Field */}
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Address *</label>
-                      <input
-                        type="text"
-                        value={editingClient.address || ''}
-                        onChange={(e) => setEditingClient({...editingClient, address: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter property address"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
-                      <select
-                        value={editingClient.property_type}
-                        onChange={(e) => setEditingClient({...editingClient, property_type: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="Single Family Residence">Single Family Residence</option>
-                        <option value="Condominium">Condominium</option>
-                        <option value="Townhouse">Townhouse</option>
-                        <option value="Manufactured Home">Manufactured Home</option>
-                        <option value="2-4 Unit Property">2-4 Unit Property</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
-                      <input
-                        type="number"
-                        value={editingClient.current_mortgage_balance || ''}
-                        onChange={(e) => setEditingClient({...editingClient, current_mortgage_balance: parseInt(e.target.value) || 0})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter current mortgage balance"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Occupancy Status</label>
-                      <select
-                        value={editingClient.occupancy_status}
-                        onChange={(e) => setEditingClient({...editingClient, occupancy_status: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="Primary Residence">Primary Residence</option>
-                        <option value="Second Home">Second Home</option>
-                        <option value="Investment Property">Investment Property</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
-                      <select
-                        value={editingClient.program_type}
-                        onChange={(e) => setEditingClient({...editingClient, program_type: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="HECM">HECM</option>
-                        <option value="Equity Plus Standard">Equity Plus Standard</option>
-                        <option value="Equity Plus Extra">Equity Plus Extra</option>
-                        <option value="Equity Plus Select">Equity Plus Select</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
-                      <select
-                        value={editingClient.pipeline_status}
-                        onChange={(e) => setEditingClient({...editingClient, pipeline_status: e.target.value, pipeline_date: new Date().toISOString().split('T')[0]})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        {PIPELINE_STAGES.map(stage => (
-                          <option key={stage.value} value={stage.value}>{stage.label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Stage Date</label>
-                      <input
-                        type="date"
-                        value={editingClient.pipeline_date}
-                        onChange={(e) => setEditingClient({...editingClient, pipeline_date: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-4 mt-8">
-                <button
-                  onClick={updateClient}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg transition-colors font-medium"
-                >
-                  Update Client
-                </button>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-lg transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* View Client Modal */}
         {selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1013,8 +527,8 @@ export default function NextStepCRM() {
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">{selectedClient.first_name} {selectedClient.last_name}</h2>
-                  {selectedClient.spouse_first_name && (
-                    <p className="text-gray-600">& {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}</p>
+                  {selectedClient.address && (
+                    <p className="text-gray-600">{selectedClient.address}</p>
                   )}
                 </div>
                 <button
@@ -1025,199 +539,44 @@ export default function NextStepCRM() {
                 </button>
               </div>
 
-              <div className="space-y-6">
-                {/* Pipeline Status Section */}
-                <div className={`p-4 rounded-lg border-l-4 ${getPipelineStageColor(selectedClient.pipeline_status)}`}>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold text-lg">{getPipelineStageLabel(selectedClient.pipeline_status)}</h3>
-                      <p className="text-sm text-gray-600">Stage Date: {selectedClient.pipeline_date || 'Not set'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">Days in Stage</p>
-                      <p className="text-2xl font-bold text-blue-600">{calculateDaysInStage(selectedClient.pipeline_date)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm text-gray-600">Email</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.email}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Phone</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.phone}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Date of Birth</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.date_of_birth} (Age: {calculateAge(selectedClient.date_of_birth)})</div>
-                  </div>
-                  {selectedClient.spouse_first_name && (
-                    <div>
-                      <div className="text-sm text-gray-600">Spouse</div>
-                      <div className="font-semibold text-gray-800">
-                        {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}
-                        {selectedClient.spouse_date_of_birth && (
-                          <span className="text-sm text-gray-600 block">
-                            DOB: {selectedClient.spouse_date_of_birth} (Age: {calculateAge(selectedClient.spouse_date_of_birth)})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {selectedClient.address && (
-                    <div className="col-span-2">
-                      <div className="text-sm text-gray-600">Property Address</div>
-                      <div className="font-semibold text-gray-800 flex items-center justify-between">
-                        <span>{selectedClient.address}</span>
-                        <a
-                          href={`https://www.zillow.com/homes/${encodeURIComponent(selectedClient.address)}_rb/`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                        >
-                          🏠 View on Zillow
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="font-medium">Client Age:</span> 
-                      <span className="text-blue-600 font-bold ml-1">
-                        {getYoungestAge(selectedClient)} years
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Home Value:</span> 
-                      <span className="text-green-600 font-bold ml-1">
-                        {formatCurrency(selectedClient.home_value || 0)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Current Mortgage:</span> 
-                      <span className="text-red-600 font-bold ml-1">
-                        {formatCurrency(selectedClient.current_mortgage_balance || 0)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Est. Net Proceeds:</span> 
-                      <span className="text-green-600 font-bold ml-1">
-                        {formatCurrency(calculateNetProceeds(
-                          calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)),
-                          selectedClient.current_mortgage_balance || 0,
-                          selectedClient.program_type || 'HECM'
-                        ))}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-4 text-center">
-                    <div className="text-sm text-gray-600">Estimated UPB</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)))}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Based on {selectedClient.program_type || 'HECM'} program for youngest borrower age {getYoungestAge(selectedClient)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <button
-                    onClick={() => setSelectedClient(null)}
-                    className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors font-medium"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Program Comparison Modal */}
-        {showProgramComparison && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl p-8 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Program Comparison</h2>
-                  <p className="text-gray-600">Age: {getYoungestAge(showProgramComparison)} | Home Value: {formatCurrency(showProgramComparison.home_value || 0)}</p>
+                  <div className="text-sm text-gray-600">Email</div>
+                  <div className="font-semibold text-gray-800">{selectedClient.email}</div>
                 </div>
-                <button
-                  onClick={() => setShowProgramComparison(null)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <div>
+                  <div className="text-sm text-gray-600">Phone</div>
+                  <div className="font-semibold text-gray-800">{selectedClient.phone}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">Age</div>
+                  <div className="font-semibold text-gray-800">{getYoungestAge(selectedClient)} years</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">Home Value</div>
+                  <div className="font-semibold text-gray-800">{formatCurrency(selectedClient.home_value || 0)}</div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {calculateProgramComparison(showProgramComparison).map((program, index) => {
-                  const isCurrentProgram = program.name === showProgramComparison.program_type
-                  const isBestProgram = index === calculateProgramComparison(showProgramComparison).reduce((bestIndex, current, currentIndex, array) => 
-                    current.netProceeds > array[bestIndex].netProceeds ? currentIndex : bestIndex, 0)
-                  
-                  return (
-                    <div key={program.name} className={`p-4 rounded-lg border-2 ${
-                      isBestProgram ? 'border-green-500 bg-green-50' : 
-                      isCurrentProgram ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
-                    }`}>
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-bold text-lg text-gray-800">{program.name}</h3>
-                        {isBestProgram && <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">🏆 BEST OPTION</span>}
-                        {isCurrentProgram && <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">CURRENT</span>}
-                      </div>
-                      
-                      <div className="space-y-3 mb-4">
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <div className="text-xs text-blue-600 mb-1">PLF Rate</div>
-                          <div className="font-bold text-blue-800">{(program.plf * 100).toFixed(2)}%</div>
-                        </div>
-                        
-                        <div className="bg-purple-50 rounded-lg p-3">
-                          <div className="text-xs text-purple-600 mb-1">Gross UPB</div>
-                          <div className="font-bold text-purple-800">{formatCurrency(program.upb)}</div>
-                        </div>
-                        
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <div className="text-xs text-green-600 mb-1">Net Proceeds</div>
-                          <div className="font-bold text-green-800">{formatCurrency(program.netProceeds)}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="text-xs text-gray-600 mb-3">{program.description}</div>
-                      
-                      <button
-                        onClick={() => {
-                          const updatedClient = {...showProgramComparison, program_type: program.name}
-                          setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
-                          setShowProgramComparison(null)
-                        }}
-                        className={`w-full py-2 px-3 rounded text-sm font-medium transition-colors ${
-                          isCurrentProgram 
-                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
-                        }`}
-                        disabled={isCurrentProgram}
-                      >
-                        {isCurrentProgram ? 'Current Program' : 'Select Program'}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
+              {selectedClient.address && (
+                <div className="mb-6">
+                  <a
+                    href={`https://www.zillow.com/homes/${encodeURIComponent(selectedClient.address)}_rb/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
+                  >
+                    🏠 View on Zillow
+                  </a>
+                </div>
+              )}
 
-              <div className="mt-8 text-center">
+              <div className="text-center">
                 <button
-                  onClick={() => setShowProgramComparison(null)}
+                  onClick={() => setSelectedClient(null)}
                   className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors font-medium"
                 >
-                  Close Comparison
+                  Close
                 </button>
               </div>
             </div>
