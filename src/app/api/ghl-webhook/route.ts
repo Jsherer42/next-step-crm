@@ -7,7 +7,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 // Helper function to convert various date formats to YYYY-MM-DD
-function formatDate(dateString) {
+function formatDate(dateString: string): string {
   if (!dateString || dateString.trim() === '') return '1960-01-01'
   
   try {
