@@ -1,7 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Filter, Edit2, Eye, X, User, BarChart3 } from 'lucide-react'
+
+// Initialize Supabase client
+const supabaseUrl = 'https://nmcqlekpyqfgyzcelcsa.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6Y2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ0MjYzNTEsImV4cCI6MjA0MDAwMjM1MX0.nwWtZpWr_qfJPNL6pf74VYzr-kRrQRn5n9uDcUJVJyE'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 interface Client {
   id: string
@@ -58,6 +64,7 @@ const EQUITY_PLUS_PLF = {
 
 export default function NextStepCRM() {
   const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -103,18 +110,31 @@ export default function NextStepCRM() {
     pipeline_date: new Date().toISOString().split('T')[0]
   })
 
-  // Load clients from localStorage
+  // Load clients from Supabase
   useEffect(() => {
-    const savedClients = localStorage.getItem('nextStepClients')
-    if (savedClients) {
-      setClients(JSON.parse(savedClients))
-    }
+    fetchClients()
   }, [])
 
-  // Save clients to localStorage
-  useEffect(() => {
-    localStorage.setItem('nextStepClients', JSON.stringify(clients))
-  }, [clients])
+  const fetchClients = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching clients:', error)
+        return
+      }
+
+      setClients(data || [])
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Calculate age from date of birth
   const calculateAge = (dateOfBirth: string): number => {
@@ -268,59 +288,114 @@ export default function NextStepCRM() {
     }).format(amount)
   }
 
-  // Add new client
-  const addClient = () => {
+  // Add new client to Supabase
+  const addClient = async () => {
     if (newClient.first_name && newClient.last_name) {
-      const client = {
-        ...newClient,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-        pipeline_date: newClient.pipeline_date || new Date().toISOString().split('T')[0]
+      try {
+        const clientData = {
+          ...newClient,
+          pipeline_date: newClient.pipeline_date || new Date().toISOString().split('T')[0]
+        }
+
+        const { data, error } = await supabase
+          .from('clients')
+          .insert([clientData])
+          .select()
+
+        if (error) {
+          console.error('Error adding client:', error)
+          alert('Error adding client. Please try again.')
+          return
+        }
+
+        // Refresh the clients list
+        await fetchClients()
+        
+        // Reset form
+        setNewClient({
+          id: '',
+          first_name: '',
+          last_name: '',
+          email: '',
+          phone: '',
+          date_of_birth: '',
+          spouse_first_name: '',
+          spouse_last_name: '',
+          spouse_date_of_birth: '',
+          home_value: 0,
+          address: '',
+          property_type: 'Single Family Residence',
+          current_mortgage_balance: 0,
+          occupancy_status: 'Primary Residence',
+          program_type: 'HECM',
+          pipeline_status: 'Proposal Out',
+          pipeline_date: new Date().toISOString().split('T')[0]
+        })
+        setShowAddModal(false)
+      } catch (error) {
+        console.error('Error:', error)
+        alert('Error adding client. Please try again.')
       }
-      setClients([...clients, client])
-      setNewClient({
-        id: '',
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        date_of_birth: '',
-        spouse_first_name: '',
-        spouse_last_name: '',
-        spouse_date_of_birth: '',
-        home_value: 0,
-        address: '',
-        property_type: 'Single Family Residence',
-        current_mortgage_balance: 0,
-        occupancy_status: 'Primary Residence',
-        program_type: 'HECM',
-        pipeline_status: 'Proposal Out',
-        pipeline_date: new Date().toISOString().split('T')[0]
-      })
-      setShowAddModal(false)
     }
   }
 
-  // Update client
-  const updateClient = () => {
-    setClients(clients.map(client => 
-      client.id === editingClient.id 
-        ? { ...editingClient, pipeline_date: editingClient.pipeline_date || new Date().toISOString().split('T')[0] }
-        : client
-    ))
-    setShowEditModal(false)
+  // Update client in Supabase
+  const updateClient = async () => {
+    try {
+      const updateData = {
+        ...editingClient,
+        pipeline_date: editingClient.pipeline_date || new Date().toISOString().split('T')[0]
+      }
+
+      const { error } = await supabase
+        .from('clients')
+        .update(updateData)
+        .eq('id', editingClient.id)
+
+      if (error) {
+        console.error('Error updating client:', error)
+        alert('Error updating client. Please try again.')
+        return
+      }
+
+      // Refresh the clients list
+      await fetchClients()
+      setShowEditModal(false)
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Error updating client. Please try again.')
+    }
   }
 
-  // Delete client
-  const deleteClient = (id: string) => {
-    setClients(clients.filter(client => client.id !== id))
+  // Delete client from Supabase
+  const deleteClient = async (id: string) => {
+    if (confirm('Are you sure you want to delete this client?')) {
+      try {
+        const { error } = await supabase
+          .from('clients')
+          .delete()
+          .eq('id', id)
+
+        if (error) {
+          console.error('Error deleting client:', error)
+          alert('Error deleting client. Please try again.')
+          return
+        }
+
+        // Refresh the clients list
+        await fetchClients()
+      } catch (error) {
+        console.error('Error:', error)
+        alert('Error deleting client. Please try again.')
+      }
+    }
   }
 
   // Filter clients
   const filteredClients = clients.filter(client =>
     `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm)
+    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.phone && client.phone.includes(searchTerm))
   )
 
   // Calculate stats
@@ -332,6 +407,14 @@ export default function NextStepCRM() {
   const activePipeline = clients.filter(c => c.pipeline_status !== 'Funded').length
   const fundedLoans = clients.filter(c => c.pipeline_status === 'Funded').length
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-green-400 flex items-center justify-center">
+        <div className="text-white text-2xl">Loading your CRM...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-green-400">
       <div className="container mx-auto px-6 py-8">
@@ -339,6 +422,7 @@ export default function NextStepCRM() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Next Step CRM</h1>
           <p className="text-blue-100">Professional Reverse Mortgage Management</p>
+          <p className="text-blue-200 text-sm">💎 Database-Powered</p>
         </div>
 
         {/* Enhanced Stats */}
@@ -526,6 +610,107 @@ export default function NextStepCRM() {
               
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-600">Email</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.email}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Phone</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.phone}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Date of Birth</div>
+                    <div className="font-semibold text-gray-800">{selectedClient.date_of_birth} (Age: {calculateAge(selectedClient.date_of_birth)})</div>
+                  </div>
+                  {selectedClient.spouse_first_name && (
+                    <div>
+                      <div className="text-sm text-gray-600">Spouse</div>
+                      <div className="font-semibold text-gray-800">
+                        {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}
+                        {selectedClient.spouse_date_of_birth && (
+                          <span className="text-sm text-gray-600 block">
+                            DOB: {selectedClient.spouse_date_of_birth} (Age: {calculateAge(selectedClient.spouse_date_of_birth)})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {selectedClient.address && (
+                    <div className="col-span-2">
+                      <div className="text-sm text-gray-600">Property Address</div>
+                      <div className="font-semibold text-gray-800 flex items-center justify-between">
+                        <span>{selectedClient.address}</span>
+                        <a
+                          href={`https://www.zillow.com/homes/${encodeURIComponent(selectedClient.address)}_rb/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                        >
+                          🏠 View on Zillow
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="font-medium">Client Age:</span> 
+                      <span className="text-blue-600 font-bold ml-1">
+                        {getYoungestAge(selectedClient)} years
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Home Value:</span> 
+                      <span className="text-green-600 font-bold ml-1">
+                        {formatCurrency(selectedClient.home_value || 0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Current Mortgage:</span> 
+                      <span className="text-red-600 font-bold ml-1">
+                        {formatCurrency(selectedClient.current_mortgage_balance || 0)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Est. Net Proceeds:</span> 
+                      <span className="text-green-600 font-bold ml-1">
+                        {formatCurrency(calculateNetProceeds(
+                          calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)),
+                          selectedClient.current_mortgage_balance || 0,
+                          selectedClient.program_type || 'HECM'
+                        ))}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-center">
+                    <div className="text-sm text-gray-600">Estimated UPB</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatCurrency(calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)))}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Based on {selectedClient.program_type || 'HECM'} program for youngest borrower age {getYoungestAge(selectedClient)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <button
+                    onClick={() => setSelectedClient(null)}
+                    className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+} gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
                     <input
@@ -1006,10 +1191,24 @@ export default function NextStepCRM() {
                       <div className="text-xs text-gray-600 mb-3">{program.description}</div>
                       
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           const updatedClient = {...showProgramComparison, program_type: program.name}
-                          setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
-                          setShowProgramComparison(null)
+                          try {
+                            const { error } = await supabase
+                              .from('clients')
+                              .update({ program_type: program.name })
+                              .eq('id', updatedClient.id)
+
+                            if (error) {
+                              console.error('Error updating program:', error)
+                              return
+                            }
+
+                            await fetchClients()
+                            setShowProgramComparison(null)
+                          } catch (error) {
+                            console.error('Error:', error)
+                          }
                         }}
                         className={`w-full py-2 px-3 rounded text-sm font-medium transition-colors ${
                           isCurrentProgram 
@@ -1071,105 +1270,4 @@ export default function NextStepCRM() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm text-gray-600">Email</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.email}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Phone</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.phone}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Date of Birth</div>
-                    <div className="font-semibold text-gray-800">{selectedClient.date_of_birth} (Age: {calculateAge(selectedClient.date_of_birth)})</div>
-                  </div>
-                  {selectedClient.spouse_first_name && (
-                    <div>
-                      <div className="text-sm text-gray-600">Spouse</div>
-                      <div className="font-semibold text-gray-800">
-                        {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}
-                        {selectedClient.spouse_date_of_birth && (
-                          <span className="text-sm text-gray-600 block">
-                            DOB: {selectedClient.spouse_date_of_birth} (Age: {calculateAge(selectedClient.spouse_date_of_birth)})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {selectedClient.address && (
-                    <div className="col-span-2">
-                      <div className="text-sm text-gray-600">Property Address</div>
-                      <div className="font-semibold text-gray-800 flex items-center justify-between">
-                        <span>{selectedClient.address}</span>
-                        <a
-                          href={`https://www.zillow.com/homes/${encodeURIComponent(selectedClient.address)}_rb/`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                        >
-                          🏠 View on Zillow
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="font-medium">Client Age:</span> 
-                      <span className="text-blue-600 font-bold ml-1">
-                        {getYoungestAge(selectedClient)} years
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Home Value:</span> 
-                      <span className="text-green-600 font-bold ml-1">
-                        {formatCurrency(selectedClient.home_value || 0)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Current Mortgage:</span> 
-                      <span className="text-red-600 font-bold ml-1">
-                        {formatCurrency(selectedClient.current_mortgage_balance || 0)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Est. Net Proceeds:</span> 
-                      <span className="text-green-600 font-bold ml-1">
-                        {formatCurrency(calculateNetProceeds(
-                          calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)),
-                          selectedClient.current_mortgage_balance || 0,
-                          selectedClient.program_type || 'HECM'
-                        ))}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-4 text-center">
-                    <div className="text-sm text-gray-600">Estimated UPB</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(calculateUPB(selectedClient.home_value || 0, selectedClient.program_type || 'HECM', getYoungestAge(selectedClient)))}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Based on {selectedClient.program_type || 'HECM'} program for youngest borrower age {getYoungestAge(selectedClient)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <button
-                    onClick={() => setSelectedClient(null)}
-                    className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors font-medium"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+                <div className="grid grid-cols-2
