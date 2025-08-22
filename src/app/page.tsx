@@ -292,7 +292,8 @@ export default function NextStepCRM() {
   const addClient = async () => {
     if (newClient.first_name && newClient.last_name) {
       try {
-        const clientData = {
+        // Remove the id field - let Supabase auto-generate the UUID
+        const { id, ...clientData } = {
           ...newClient,
           pipeline_date: newClient.pipeline_date || new Date().toISOString().split('T')[0]
         }
@@ -342,7 +343,8 @@ export default function NextStepCRM() {
   // Update client in Supabase
   const updateClient = async () => {
     try {
-      const updateData = {
+      // Remove the id field from update data
+      const { id, ...updateData } = {
         ...editingClient,
         pipeline_date: editingClient.pipeline_date || new Date().toISOString().split('T')[0]
       }
