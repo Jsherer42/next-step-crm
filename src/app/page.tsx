@@ -46,7 +46,7 @@ const PIPELINE_STAGES = [
   { value: 'Funded', label: 'Funded', color: 'bg-gray-100 border-gray-300 text-gray-800' }
 ]
 
-// UPDATED PLF Tables with CORRECT R3/PLF3 values from your HECM table
+// UPDATED PLF Tables with CORRECT values from your tables
 const HECM_PLF = {
   62: 0.339, 63: 0.346, 64: 0.353, 65: 0.361, 66: 0.368, 67: 0.376, 68: 0.384, 69: 0.392, 70: 0.397,
   71: 0.397, 72: 0.399, 73: 0.408, 74: 0.416, 75: 0.426, 76: 0.433, 77: 0.443, 78: 0.454, 79: 0.460,
@@ -55,11 +55,27 @@ const HECM_PLF = {
 }
 
 const EQUITY_PLUS_PLF = {
-  55: 0.350, 56: 0.355, 57: 0.360, 58: 0.365, 59: 0.370, 60: 0.375, 61: 0.380, 62: 0.555, 63: 0.560,
-  64: 0.565, 65: 0.570, 66: 0.575, 67: 0.580, 68: 0.585, 69: 0.590, 70: 0.595, 71: 0.600, 72: 0.605,
-  73: 0.610, 74: 0.615, 75: 0.620, 76: 0.625, 77: 0.630, 78: 0.635, 79: 0.640, 80: 0.645, 81: 0.650,
-  82: 0.655, 83: 0.660, 84: 0.665, 85: 0.670, 86: 0.675, 87: 0.680, 88: 0.685, 89: 0.690, 90: 0.695,
-  91: 0.700, 92: 0.705, 93: 0.710, 94: 0.715, 95: 0.720
+  55: 0.338, 56: 0.341, 57: 0.343, 58: 0.346, 59: 0.349, 60: 0.353, 61: 0.356, 62: 0.358, 63: 0.362,
+  64: 0.365, 65: 0.370, 66: 0.376, 67: 0.382, 68: 0.388, 69: 0.394, 70: 0.402, 71: 0.410, 72: 0.426,
+  73: 0.426, 74: 0.437, 75: 0.447, 76: 0.457, 77: 0.467, 78: 0.472, 79: 0.484, 80: 0.495, 81: 0.506,
+  82: 0.520, 83: 0.534, 84: 0.540, 85: 0.550, 86: 0.553, 87: 0.557, 88: 0.559, 89: 0.559, 90: 0.559,
+  91: 0.559, 92: 0.559, 93: 0.559, 94: 0.559, 95: 0.559
+}
+
+const PEAK_PLF = {
+  55: 0.391, 56: 0.393, 57: 0.396, 58: 0.397, 59: 0.400, 60: 0.404, 61: 0.407, 62: 0.410, 63: 0.414,
+  64: 0.419, 65: 0.424, 66: 0.429, 67: 0.435, 68: 0.440, 69: 0.446, 70: 0.453, 71: 0.460, 72: 0.477,
+  73: 0.477, 74: 0.487, 75: 0.497, 76: 0.516, 77: 0.524, 78: 0.534, 79: 0.543, 80: 0.544, 81: 0.556,
+  82: 0.563, 83: 0.581, 84: 0.590, 85: 0.600, 86: 0.603, 87: 0.606, 88: 0.610, 89: 0.610, 90: 0.611,
+  91: 0.611, 92: 0.611, 93: 0.611, 94: 0.611, 95: 0.611
+}
+
+const LOC_PLF = {
+  55: 0.338, 56: 0.341, 57: 0.343, 58: 0.346, 59: 0.349, 60: 0.353, 61: 0.356, 62: 0.358, 63: 0.362,
+  64: 0.365, 65: 0.370, 66: 0.376, 67: 0.382, 68: 0.388, 69: 0.394, 70: 0.402, 71: 0.410, 72: 0.426,
+  73: 0.426, 74: 0.437, 75: 0.447, 76: 0.467, 77: 0.472, 78: 0.484, 79: 0.495, 80: 0.506, 81: 0.506,
+  82: 0.520, 83: 0.534, 84: 0.540, 85: 0.550, 86: 0.558, 87: 0.557, 88: 0.559, 89: 0.559, 90: 0.559,
+  91: 0.559, 92: 0.559, 93: 0.559, 94: 0.559, 95: 0.559
 }
 
 export default function NextStepCRM() {
@@ -183,9 +199,9 @@ export default function NextStepCRM() {
   const calculateNetProceeds = (upb: number, currentMortgage: number, programType: string): number => {
     const estimatedCosts = {
       'HECM': 8000,
-      'Equity Plus Standard': 12000,
-      'Equity Plus Extra': 12000,
-      'Equity Plus Select': 12000
+      'Equity Plus': 12000,
+      'Peak': 12000,
+      'LOC': 12000
     }
     
     const closingCosts = estimatedCosts[programType as keyof typeof estimatedCosts] || 8000
@@ -220,8 +236,14 @@ export default function NextStepCRM() {
     let plf = 0
     if (programType === 'HECM') {
       plf = HECM_PLF[ageKey] || 0.339
+    } else if (programType === 'Equity Plus') {
+      plf = EQUITY_PLUS_PLF[ageKey] || 0.338
+    } else if (programType === 'Peak') {
+      plf = PEAK_PLF[ageKey] || 0.391
+    } else if (programType === 'LOC') {
+      plf = LOC_PLF[ageKey] || 0.338
     } else {
-      plf = EQUITY_PLUS_PLF[ageKey] || 0.350
+      plf = HECM_PLF[ageKey] || 0.339 // Default to HECM
     }
     
     const lendingLimit = programType === 'HECM' ? 1149825 : 4000000
@@ -230,39 +252,46 @@ export default function NextStepCRM() {
     return effectiveValue * plf
   }
 
-  // Enhanced PLF calculation with all programs
+  // Enhanced PLF calculation with all programs (WITH $450K MINIMUM VALIDATION)
   const calculateProgramComparison = (client: Client) => {
     const age = getYoungestAge(client)
     const homeValue = client.home_value || 0
     const ageKey = Math.min(age, 95) as keyof typeof EQUITY_PLUS_PLF
     const currentMortgage = client.mortgage_balance || 0
 
+    // Always include HECM
     const programs = [
       {
         name: 'HECM',
         plf: HECM_PLF[ageKey as keyof typeof HECM_PLF] || 0.339,
         lendingLimit: 1149825,
         description: 'FHA-insured reverse mortgage'
-      },
-      {
-        name: 'Equity Plus Standard',
-        plf: EQUITY_PLUS_PLF[ageKey] || 0.350,
-        lendingLimit: 4000000,
-        description: 'Standard proprietary reverse mortgage'
-      },
-      {
-        name: 'Equity Plus Extra',
-        plf: (EQUITY_PLUS_PLF[ageKey] || 0.350) * 1.1,
-        lendingLimit: 4000000,
-        description: 'Enhanced proprietary option'
-      },
-      {
-        name: 'Equity Plus Select',
-        plf: (EQUITY_PLUS_PLF[ageKey] || 0.350) * 1.05,
-        lendingLimit: 4000000,
-        description: 'Premium proprietary option'
       }
     ]
+
+    // Only add jumbo products if home value is $450K or above
+    if (homeValue >= 450000) {
+      programs.push(
+        {
+          name: 'Equity Plus',
+          plf: EQUITY_PLUS_PLF[ageKey] || 0.338,
+          lendingLimit: 4000000,
+          description: 'Standard proprietary reverse mortgage'
+        },
+        {
+          name: 'Peak',
+          plf: PEAK_PLF[ageKey] || 0.391,
+          lendingLimit: 4000000,
+          description: 'Enhanced proprietary option'
+        },
+        {
+          name: 'LOC',
+          plf: LOC_PLF[ageKey] || 0.338,
+          lendingLimit: 4000000,
+          description: 'Line of credit option'
+        }
+      )
+    }
 
     return programs.map(program => {
       const effectiveValue = Math.min(homeValue, program.lendingLimit)
