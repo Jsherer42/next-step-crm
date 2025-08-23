@@ -286,7 +286,7 @@ export default function NextStepCRM() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-green-500 to-teal-600 flex items-center justify-center p-4">
         <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-8 w-full max-w-md border border-blue-200/50">
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -347,17 +347,17 @@ export default function NextStepCRM() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-green-500 to-teal-600">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-blue-200/50">
+      <header className="bg-white/90 backdrop-blur-lg shadow-lg border-b border-white/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-teal-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-teal-500 rounded-xl flex items-center justify-center">
                 <Home className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-green-600 to-teal-600 bg-clip-text text-transparent">
                   Next Step CRM
                 </h1>
                 <p className="text-sm text-gray-600">Reverse Mortgage Management</p>
@@ -382,7 +382,7 @@ export default function NextStepCRM() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-blue-200/50">
+          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/30">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Clients</p>
@@ -420,7 +420,7 @@ export default function NextStepCRM() {
         </div>
 
         {/* Search and Add Client */}
-        <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-blue-200/50 mb-8">
+        <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/30 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -435,7 +435,7 @@ export default function NextStepCRM() {
             
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-teal-600 transition-all transform hover:scale-105 shadow-lg"
+              className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 via-green-500 to-teal-500 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:via-green-600 hover:to-teal-600 transition-all transform hover:scale-105 shadow-lg"
             >
               <Plus className="w-5 h-5" />
               <span>Add Client</span>
@@ -450,7 +450,7 @@ export default function NextStepCRM() {
             const netProceeds = calculateNetProceeds(client.home_value, client.mortgage_balance, age)
             
             return (
-              <div key={client.id} className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all transform hover:scale-105">
+              <div key={client.id} className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/30 hover:shadow-2xl transition-all transform hover:scale-105">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900">
