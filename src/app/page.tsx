@@ -63,21 +63,21 @@ const getPipelineStageColor = (status) => {
   return stage ? stage.color : 'bg-gray-100 border-gray-300 text-gray-800'
 }
 
-// Get dynamic glassmorphism styling based on pipeline status
+// Get dynamic glassmorphism styling based on pipeline status - MATCHING PIPELINE COLORS
 const getPipelineCardStyling = (status) => {
   const styles = {
-    'Proposal Out': 'bg-gradient-to-br from-sky-400/20 to-blue-500/20 border border-sky-300/30 backdrop-blur-lg',
-    'Counseling Scheduled': 'bg-gradient-to-br from-blue-400/20 to-indigo-500/20 border border-blue-300/30 backdrop-blur-lg',
-    'Counseling In': 'bg-gradient-to-br from-teal-400/20 to-cyan-500/20 border border-teal-300/30 backdrop-blur-lg',
-    'Docs Out': 'bg-gradient-to-br from-yellow-400/20 to-amber-500/20 border border-yellow-300/30 backdrop-blur-lg',
-    'Docs In': 'bg-gradient-to-br from-orange-400/20 to-red-500/20 border border-orange-300/30 backdrop-blur-lg',
-    'Submitted to Processing': 'bg-gradient-to-br from-purple-400/20 to-violet-500/20 border border-purple-300/30 backdrop-blur-lg',
-    'Appraisal Ordered': 'bg-gradient-to-br from-pink-400/20 to-rose-500/20 border border-pink-300/30 backdrop-blur-lg',
-    'Appraisal In': 'bg-gradient-to-br from-fuchsia-400/20 to-purple-500/20 border border-fuchsia-300/30 backdrop-blur-lg',
-    'Submit to UW': 'bg-gradient-to-br from-red-400/20 to-pink-500/20 border border-red-300/30 backdrop-blur-lg',
-    'Conditional Approval': 'bg-gradient-to-br from-lime-400/20 to-green-500/20 border border-lime-300/30 backdrop-blur-lg',
-    'CTC': 'bg-gradient-to-br from-green-400/20 to-emerald-500/20 border border-green-300/30 backdrop-blur-lg',
-    'Funded': 'bg-gradient-to-br from-gray-400/20 to-slate-500/20 border border-gray-300/30 backdrop-blur-lg'
+    'Proposal Out': 'bg-gradient-to-br from-sky-400/25 to-sky-600/15 border border-sky-300/40 backdrop-blur-lg', // Light blue
+    'Counseling Scheduled': 'bg-gradient-to-br from-blue-400/25 to-blue-600/15 border border-blue-300/40 backdrop-blur-lg', // Blue
+    'Counseling In': 'bg-gradient-to-br from-teal-400/25 to-teal-600/15 border border-teal-300/40 backdrop-blur-lg', // Teal
+    'Docs Out': 'bg-gradient-to-br from-yellow-400/25 to-yellow-600/15 border border-yellow-300/40 backdrop-blur-lg', // Yellow
+    'Docs In': 'bg-gradient-to-br from-orange-400/25 to-orange-600/15 border border-orange-300/40 backdrop-blur-lg', // Orange
+    'Submitted to Processing': 'bg-gradient-to-br from-purple-400/25 to-purple-600/15 border border-purple-300/40 backdrop-blur-lg', // Purple
+    'Appraisal Ordered': 'bg-gradient-to-br from-pink-400/25 to-pink-600/15 border border-pink-300/40 backdrop-blur-lg', // Pink
+    'Appraisal In': 'bg-gradient-to-br from-fuchsia-400/25 to-fuchsia-600/15 border border-fuchsia-300/40 backdrop-blur-lg', // Magenta
+    'Submit to UW': 'bg-gradient-to-br from-red-400/25 to-red-600/15 border border-red-300/40 backdrop-blur-lg', // Red
+    'Conditional Approval': 'bg-gradient-to-br from-lime-400/25 to-lime-600/15 border border-lime-300/40 backdrop-blur-lg', // Lime
+    'CTC': 'bg-gradient-to-br from-green-400/25 to-green-600/15 border border-green-300/40 backdrop-blur-lg', // Green
+    'Funded': 'bg-gradient-to-br from-gray-400/25 to-gray-600/15 border border-gray-300/40 backdrop-blur-lg' // Gray - completed
   }
   return styles[status] || 'bg-white/90 backdrop-blur-lg border border-white/30'
 }
