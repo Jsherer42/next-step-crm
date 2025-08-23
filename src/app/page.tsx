@@ -95,7 +95,7 @@ export default function NextStepCRM() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthLoading(true)
 
