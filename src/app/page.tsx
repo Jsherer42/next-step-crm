@@ -2,28 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Filter, Edit2, Eye, X, User, BarChart3, Eye as EyeIcon, EyeOff, Lock, LogOut } from 'lucide-react'
+import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Filter, Edit2, Eye, X, User, BarChart3 } from 'lucide-react'
 
-// Initialize Supabase client
+// Initialize Supabase client - ONLY THE API KEY WAS CHANGED
 const supabaseUrl = 'https://nmcqlekpyqfgyzoelcsa.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// MAIN APP COMPONENT WITH AUTHENTICATION
 export default function NextStepCRM() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  
-  // Authentication states
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loginLoading, setLoginLoading] = useState(false)
-  const [loginError, setLoginError] = useState('')
-  const [rememberMe, setRememberMe] = useState(false)
-
-  // CRM states
   const [clients, setClients] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -52,7 +39,7 @@ export default function NextStepCRM() {
     desired_proceeds: ''
   })
 
-  // PLF Tables - CORRECT VALUES
+  // UPDATED PLF Tables with CORRECT values from your tables
   const HECM_PLF = {
     62: 0.339, 63: 0.346, 64: 0.353, 65: 0.361, 66: 0.368, 67: 0.376, 68: 0.384, 69: 0.392, 70: 0.397,
     71: 0.397, 72: 0.399, 73: 0.408, 74: 0.416, 75: 0.426, 76: 0.433, 77: 0.441, 78: 0.449, 79: 0.457,
@@ -81,68 +68,9 @@ export default function NextStepCRM() {
     89: 0.567, 90: 0.576, 91: 0.584, 92: 0.592, 93: 0.601, 94: 0.609, 95: 0.617
   }
 
-  // Authentication functions
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoginLoading(true)
-    setLoginError('')
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        setLoginError('Invalid email or password. Please try again.')
-        setLoginLoading(false)
-        return
-      }
-
-      if (data.user) {
-        if (rememberMe) {
-          localStorage.setItem('nextStepCRM_rememberMe', 'true')
-        }
-        setUser(data.user)
-      }
-    } catch (err) {
-      setLoginError('Login failed. Please check your credentials.')
-      setLoginLoading(false)
-    }
-  }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    localStorage.removeItem('nextStepCRM_rememberMe')
-    setUser(null)
-  }
-
-  // Check authentication status on app load
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        setUser(session?.user ?? null)
-      } catch (error) {
-        console.error('Error checking auth status:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  // CRM Helper Functions
+  // Calculate age from date of birth
   const calculateAge = (dateOfBirth: string): number => {
-    if (!dateOfBirth) return 65
+    if (!dateOfBirth) return 65 // Default age
     const today = new Date()
     const birthDate = new Date(dateOfBirth)
     let age = today.getFullYear() - birthDate.getFullYear()
@@ -153,6 +81,7 @@ export default function NextStepCRM() {
     return age
   }
 
+  // Get youngest age (client or spouse)
   const getYoungestAge = (client: any): number => {
     const clientAge = calculateAge(client.date_of_birth)
     if (!client.is_married || !client.spouse_date_of_birth) {
@@ -162,6 +91,7 @@ export default function NextStepCRM() {
     return Math.min(clientAge, spouseAge)
   }
 
+  // Calculate UPB based on program type and age
   const calculateUPB = (homeValue: number, programType: string, age: number): number => {
     const ageKey = Math.min(age, 95) as keyof typeof HECM_PLF
     
@@ -179,6 +109,7 @@ export default function NextStepCRM() {
     return Math.round(homeValue * plf)
   }
 
+  // Calculate net proceeds (what client actually receives)
   const calculateNetProceeds = (upb: number, currentMortgage: number, programType: string): number => {
     const estimatedCosts = {
       'HECM': 8000,
@@ -191,6 +122,7 @@ export default function NextStepCRM() {
     return Math.max(0, upb - currentMortgage - costs)
   }
 
+  // Enhanced PLF calculation with all programs (WITH $450K MINIMUM VALIDATION)
   const calculateProgramComparison = (client: any) => {
     const age = getYoungestAge(client)
     const homeValue = client.home_value || 0
@@ -215,6 +147,7 @@ export default function NextStepCRM() {
 
     // Equity Plus programs only available for homes $450K+
     if (homeValue >= 450000) {
+      // Equity Plus
       const equityPlusPLF = EQUITY_PLUS_PLF[ageKey] || 0.4
       const equityPlusUPB = Math.round(homeValue * equityPlusPLF)
       const equityPlusNetProceeds = calculateNetProceeds(equityPlusUPB, mortgageBalance, 'Equity Plus')
@@ -228,6 +161,7 @@ export default function NextStepCRM() {
         rawNetProceeds: equityPlusNetProceeds
       })
 
+      // Peak
       const peakPLF = PEAK_PLF[ageKey] || 0.4
       const peakUPB = Math.round(homeValue * peakPLF)
       const peakNetProceeds = calculateNetProceeds(peakUPB, mortgageBalance, 'Peak')
@@ -241,6 +175,7 @@ export default function NextStepCRM() {
         rawNetProceeds: peakNetProceeds
       })
 
+      // LOC
       const locPLF = LOC_PLF[ageKey] || 0.4
       const locUPB = Math.round(homeValue * locPLF)
       const locNetProceeds = calculateNetProceeds(locUPB, mortgageBalance, 'LOC')
@@ -258,7 +193,7 @@ export default function NextStepCRM() {
     return programs
   }
 
-  // CRM Data Functions
+  // Load clients from Supabase
   const loadClients = async () => {
     const { data, error } = await supabase
       .from('clients')
@@ -273,9 +208,11 @@ export default function NextStepCRM() {
     setClients(data || [])
   }
 
+  // Add new client to Supabase (MATCH GHL WEBHOOK FORMAT)
   const addClient = async () => {
     if (newClient.first_name && newClient.last_name) {
       try {
+        // Format data to match exactly what GHL webhook sends successfully
         const clientData = {
           first_name: newClient.first_name,
           last_name: newClient.last_name,
@@ -339,6 +276,7 @@ export default function NextStepCRM() {
     }
   }
 
+  // Update client
   const updateClient = async (clientData: any) => {
     try {
       const { data, error } = await supabase
@@ -353,6 +291,7 @@ export default function NextStepCRM() {
         return
       }
 
+      // Update local state
       setClients(clients.map(client => 
         client.id === selectedClient.id ? data[0] : client
       ))
@@ -365,6 +304,7 @@ export default function NextStepCRM() {
     }
   }
 
+  // Delete client
   const deleteClient = async (clientId: string) => {
     if (confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
       const { error } = await supabase
@@ -382,6 +322,7 @@ export default function NextStepCRM() {
     }
   }
 
+  // Calculate days in current status
   const getDaysInStatus = (pipelineDate: string): number => {
     if (!pipelineDate) return 0
     const statusDate = new Date(pipelineDate)
@@ -390,12 +331,14 @@ export default function NextStepCRM() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
+  // Pipeline status options
   const pipelineStatuses = [
     'Proposal Out', 'Pitched', 'Application Submitted', 'In Processing', 
     'Conditional Approval', 'Clear to Close', 'Scheduled to Fund', 'Funded',
     'Cancelled', 'Declined', 'On Hold', 'Follow Up'
   ]
 
+  // Get status color
   const getStatusColor = (status: string): string => {
     const colors: {[key: string]: string} = {
       'Proposal Out': 'bg-blue-100 text-blue-800',
@@ -414,6 +357,7 @@ export default function NextStepCRM() {
     return colors[status] || 'bg-gray-100 text-gray-800'
   }
 
+  // Filter clients based on search term and status filter
   const filteredClients = clients.filter(client => {
     const matchesSearch = searchTerm === '' || 
       `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -425,134 +369,16 @@ export default function NextStepCRM() {
     return matchesSearch && matchesFilter
   })
 
+  // Load clients when component mounts
   useEffect(() => {
-    if (user) {
-      loadClients()
-    }
-  }, [user])
-
-  // Show loading spinner while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-green-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading Next Step CRM...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show login page if not authenticated
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-green-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 opacity-50" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`}}></div>
-        
-        <div className="relative w-full max-w-md">
-          <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <HomeIcon className="w-10 h-10 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                Next Step CRM
-              </h1>
-              <p className="text-gray-600 mt-2">Reverse Mortgage Solutions</p>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="your.name@city1st.com"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 pr-12 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <label htmlFor="remember-me" className="ml-3 text-sm text-gray-700">
-                  Remember me for 30 days
-                </label>
-              </div>
-
-              {loginError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                  <p className="text-red-700 text-sm">{loginError}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loginLoading}
-                className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white py-3 px-4 rounded-xl font-medium hover:from-blue-600 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loginLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Signing in...
-                  </div>
-                ) : (
-                  'Sign In'
-                )}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500">
-                Forgot your password? Contact your administrator
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+    loadClients()
+  }, [])
 
   // Calculate statistics
   const totalClients = clients.length
   const activeClients = clients.filter(c => !['Funded', 'Cancelled', 'Declined'].includes(c.pipeline_status)).length
   const fundedClients = clients.filter(c => c.pipeline_status === 'Funded').length
 
-  // Main CRM Interface (when authenticated)
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-green-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -566,18 +392,9 @@ export default function NextStepCRM() {
               </h1>
               <p className="text-blue-100 mt-1">Reverse Mortgage Pipeline Management</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm text-blue-100">Welcome back</div>
-                <div className="font-semibold">{user.email}</div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-colors flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
+            <div className="text-right">
+              <div className="text-sm text-blue-100">Welcome back</div>
+              <div className="font-semibold">Admin User</div>
             </div>
           </div>
         </div>
@@ -797,6 +614,7 @@ export default function NextStepCRM() {
                 <h3 className="text-2xl font-bold text-gray-900">Add New Client</h3>
               </div>
               <div className="p-6 space-y-6">
+                {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
@@ -843,61 +661,154 @@ export default function NextStepCRM() {
                       className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                </div>
+
+                {/* Spouse Information */}
+                <div className="border-t border-gray-200 pt-6">
+                  <div className="flex items-center gap-2 mb-4">
                     <input
-                      type="number"
-                      value={newClient.home_value}
-                      onChange={(e) => setNewClient({...newClient, home_value: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      type="checkbox"
+                      id="is_married"
+                      checked={newClient.is_married}
+                      onChange={(e) => setNewClient({...newClient, is_married: e.target.checked})}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                     />
+                    <label htmlFor="is_married" className="text-sm font-medium text-gray-700">
+                      Client is married
+                    </label>
+                  </div>
+
+                  {newClient.is_married && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
+                        <input
+                          type="text"
+                          value={newClient.spouse_first_name}
+                          onChange={(e) => setNewClient({...newClient, spouse_first_name: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
+                        <input
+                          type="text"
+                          value={newClient.spouse_last_name}
+                          onChange={(e) => setNewClient({...newClient, spouse_last_name: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
+                        <input
+                          type="date"
+                          value={newClient.spouse_date_of_birth}
+                          onChange={(e) => setNewClient({...newClient, spouse_date_of_birth: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Property Information */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-lg font-semibold mb-4">Property Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                      <input
+                        type="number"
+                        value={newClient.home_value}
+                        onChange={(e) => setNewClient({...newClient, home_value: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                      <input
+                        type="number"
+                        value={newClient.mortgage_balance}
+                        onChange={(e) => setNewClient({...newClient, mortgage_balance: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
+                      <input
+                        type="text"
+                        value={newClient.address}
+                        onChange={(e) => setNewClient({...newClient, address: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+                      <select
+                        value={newClient.property_type}
+                        onChange={(e) => setNewClient({...newClient, property_type: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Single Family Residence">Single Family Residence</option>
+                        <option value="Condominium">Condominium</option>
+                        <option value="Townhome">Townhome</option>
+                        <option value="Manufactured Home">Manufactured Home</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Occupancy Status</label>
+                      <select
+                        value={newClient.occupancy_status}
+                        onChange={(e) => setNewClient({...newClient, occupancy_status: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Primary Residence">Primary Residence</option>
+                        <option value="Second Home">Second Home</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="is_married"
-                    checked={newClient.is_married}
-                    onChange={(e) => setNewClient({...newClient, is_married: e.target.checked})}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="is_married" className="text-sm font-medium text-gray-700">
-                    Client is married
-                  </label>
-                </div>
-
-                {newClient.is_married && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Loan Information */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-lg font-semibold mb-4">Loan Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
-                      <input
-                        type="text"
-                        value={newClient.spouse_first_name}
-                        onChange={(e) => setNewClient({...newClient, spouse_first_name: e.target.value})}
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
+                      <select
+                        value={newClient.program_type}
+                        onChange={(e) => setNewClient({...newClient, program_type: e.target.value})}
                         className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      >
+                        <option value="HECM">HECM</option>
+                        <option value="Equity Plus">Equity Plus</option>
+                        <option value="Peak">Peak</option>
+                        <option value="LOC">LOC</option>
+                      </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
-                      <input
-                        type="text"
-                        value={newClient.spouse_last_name}
-                        onChange={(e) => setNewClient({...newClient, spouse_last_name: e.target.value})}
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
+                      <select
+                        value={newClient.pipeline_status}
+                        onChange={(e) => setNewClient({...newClient, pipeline_status: e.target.value})}
                         className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      >
+                        {pipelineStatuses.map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Desired Proceeds</label>
                       <input
-                        type="date"
-                        value={newClient.spouse_date_of_birth}
-                        onChange={(e) => setNewClient({...newClient, spouse_date_of_birth: e.target.value})}
+                        type="number"
+                        value={newClient.desired_proceeds}
+                        onChange={(e) => setNewClient({...newClient, desired_proceeds: e.target.value})}
                         className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-4 p-6 border-t border-gray-200">
@@ -1153,6 +1064,7 @@ export default function NextStepCRM() {
                 </h3>
               </div>
               <div className="p-6 space-y-6">
+                {/* Personal Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-lg font-semibold mb-3 text-blue-600">Personal Information</h4>
@@ -1163,8 +1075,15 @@ export default function NextStepCRM() {
                       <div><span className="font-medium">Email:</span> {selectedClient.email || 'Not provided'}</div>
                       <div><span className="font-medium">Phone:</span> {selectedClient.phone || 'Not provided'}</div>
                       <div><span className="font-medium">Married:</span> {selectedClient.is_married ? 'Yes' : 'No'}</div>
+                      {selectedClient.is_married && selectedClient.spouse_first_name && (
+                        <>
+                          <div><span className="font-medium">Spouse:</span> {selectedClient.spouse_first_name} {selectedClient.spouse_last_name}</div>
+                          <div><span className="font-medium">Spouse Age:</span> {calculateAge(selectedClient.spouse_date_of_birth)}</div>
+                        </>
+                      )}
                     </div>
                   </div>
+
                   <div>
                     <h4 className="text-lg font-semibold mb-3 text-green-600">Property Information</h4>
                     <div className="space-y-2">
@@ -1188,6 +1107,28 @@ export default function NextStepCRM() {
                     </div>
                   </div>
                 </div>
+
+                {/* Loan Information */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-lg font-semibold mb-3 text-purple-600">Loan Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <div><span className="font-medium">Program:</span> {selectedClient.program_type}</div>
+                      <div><span className="font-medium">Pipeline Status:</span> 
+                        <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getStatusColor(selectedClient.pipeline_status)}`}>
+                          {selectedClient.pipeline_status}
+                        </span>
+                      </div>
+                      <div><span className="font-medium">Days in Status:</span> {getDaysInStatus(selectedClient.pipeline_date)}</div>
+                      <div><span className="font-medium">Lead Source:</span> {selectedClient.lead_source || 'Not specified'}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <div><span className="font-medium">UPB:</span> ${calculateUPB(selectedClient.home_value, selectedClient.program_type, getYoungestAge(selectedClient)).toLocaleString()}</div>
+                      <div><span className="font-medium">Net Proceeds:</span> ${calculateNetProceeds(calculateUPB(selectedClient.home_value, selectedClient.program_type, getYoungestAge(selectedClient)), selectedClient.mortgage_balance || 0, selectedClient.program_type).toLocaleString()}</div>
+                      <div><span className="font-medium">Desired Proceeds:</span> ${selectedClient.desired_proceeds?.toLocaleString() || 'Not specified'}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end gap-4 p-6 border-t border-gray-200">
@@ -1196,6 +1137,15 @@ export default function NextStepCRM() {
                   className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
                 >
                   Close
+                </button>
+                <button
+                  onClick={() => {
+                    setShowViewModal(false)
+                    setShowEditModal(true)
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-xl hover:from-blue-600 hover:to-green-600 transition-all duration-200 font-medium"
+                >
+                  Edit Client
                 </button>
               </div>
             </div>
@@ -1266,6 +1216,13 @@ export default function NextStepCRM() {
                     </div>
                   )
                 })()}
+                
+                <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <p className="text-sm text-blue-700">
+                    <strong>Note:</strong> Net proceeds are estimates and include approximate closing costs. 
+                    Actual amounts may vary based on specific loan terms, property appraisal, and closing costs.
+                  </p>
+                </div>
               </div>
 
               <div className="flex justify-end gap-4 p-6 border-t border-gray-200">
