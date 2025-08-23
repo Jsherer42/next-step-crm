@@ -1,170 +1,604 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react'
+import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Filter, Edit2, Eye, X, User, BarChart3, LogOut, EyeOff, Lock } from 'lucide-react'
 
-// Initialize Supabase client
+// Updated API key that works
 const supabaseUrl = 'https://nmcqlekpyqfgyzoelcsa.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+// HECM PLF lookup table (R3/PLF3 values for 6.375% rate)
+const hecmPLFTable = {
+  62: 0.364, 63: 0.371, 64: 0.378, 65: 0.385, 66: 0.392, 67: 0.399, 68: 0.406, 69: 0.413, 70: 0.420, 71: 0.427, 72: 0.399,
+  73: 0.441, 74: 0.448, 75: 0.455, 76: 0.462, 77: 0.469, 78: 0.476, 79: 0.483, 80: 0.490, 81: 0.497, 82: 0.504, 83: 0.511,
+  84: 0.518, 85: 0.525, 86: 0.532, 87: 0.539, 88: 0.546, 89: 0.553, 90: 0.560, 91: 0.567, 92: 0.574, 93: 0.581, 94: 0.588, 95: 0.595
+}
+
+export default function NextStepCRM() {
+  // Authentication state
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(false)
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+  // Core state
+  const [clients, setClients] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [viewingClient, setViewingClient] = useState(null)
+  const [showProgramComparison, setShowProgramComparison] = useState(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null)
 
-    try {
-      // Authenticate with Supabase
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+  // Form state
+  const [newClient, setNewClient] = useState({
+    first_name: '', last_name: '', email: '', phone: '', date_of_birth: '', address: '', city: '', state: '', zip_code: '',
+    home_value: '', mortgage_balance: '', program_type: 'HECM', spouse_name: '', spouse_dob: '', spouse_is_nbs: false,
+    pipeline_status: 'Lead Generated'
+  })
 
-      if (authError) {
-        setError('Invalid email or password. Please try again.')
-        setLoading(false)
-        return
+  // Check authentication on load
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setUser(session?.user || null)
+      
+      if (session?.user) {
+        await loadClients()
       }
-
-      // Success! Redirect to CRM (this would be handled by the parent component)
-      console.log('Login successful:', data.user)
-      
-      // For now, show success message (in real implementation, this would redirect)
-      alert('Login successful! Redirecting to CRM...')
-      
-    } catch (error) {
-      console.error('Login error:', error)
-      setError('An unexpected error occurred. Please try again.')
-    } finally {
       setLoading(false)
+    }
+    
+    checkUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null)
+        if (session?.user) {
+          loadClients()
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Login function
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setAuthLoading(true)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginForm.email,
+      password: loginForm.password
+    })
+
+    if (error) {
+      alert('Login failed: ' + error.message)
+    }
+    
+    setAuthLoading(false)
+  }
+
+  // Logout function
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setClients([])
+  }
+
+  // Load clients from database
+  const loadClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setClients(data || [])
+    } catch (error) {
+      console.error('Error loading clients:', error)
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-green-400 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Next Step CRM</h1>
-          <p className="text-blue-100">Professional Reverse Mortgage Management</p>
-          <div className="flex items-center justify-center mt-4">
-            <User className="w-8 h-8 text-white mr-2" />
-            <span className="text-white font-medium">Secure Login</span>
+  // Calculate age from date of birth
+  const calculateAge = (dob) => {
+    if (!dob) return null
+    const birthDate = new Date(dob)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  // Get youngest age between client and spouse
+  const getYoungestAge = (client) => {
+    const clientAge = calculateAge(client.date_of_birth)
+    const spouseAge = client.spouse_dob ? calculateAge(client.spouse_dob) : null
+    
+    if (clientAge && spouseAge) {
+      return Math.min(clientAge, spouseAge)
+    }
+    return clientAge || spouseAge || 0
+  }
+
+  // Calculate UPB for HECM
+  const calculateUPB = (homeValue, age, programType = 'HECM') => {
+    if (!homeValue || !age) return 0
+    
+    const maxLoanAmount = Math.min(homeValue, 1149825) // FHA lending limit
+    const plf = hecmPLFTable[age] || 0.364
+    return Math.round(maxLoanAmount * plf)
+  }
+
+  // Add new client
+  const handleAddClient = async () => {
+    if (!newClient.first_name || !newClient.last_name) {
+      alert('Please fill in required fields')
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([{
+          ...newClient,
+          home_value: parseFloat(newClient.home_value) || null,
+          mortgage_balance: parseFloat(newClient.mortgage_balance) || null
+        }])
+        .select()
+
+      if (error) throw error
+
+      setClients([...clients, data[0]])
+      setShowAddModal(false)
+      setNewClient({
+        first_name: '', last_name: '', email: '', phone: '', date_of_birth: '', address: '', city: '', state: '', zip_code: '',
+        home_value: '', mortgage_balance: '', program_type: 'HECM', spouse_name: '', spouse_dob: '', spouse_is_nbs: false,
+        pipeline_status: 'Lead Generated'
+      })
+    } catch (error) {
+      console.error('Error adding client:', error)
+      alert('Failed to add client: ' + error.message)
+    }
+  }
+
+  // Save edited client
+  const handleSaveEdit = async () => {
+    if (!selectedClient) return
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({
+          first_name: selectedClient.first_name,
+          last_name: selectedClient.last_name,
+          email: selectedClient.email,
+          phone: selectedClient.phone,
+          date_of_birth: selectedClient.date_of_birth,
+          address: selectedClient.address,
+          city: selectedClient.city,
+          state: selectedClient.state,
+          zip_code: selectedClient.zip_code,
+          home_value: parseFloat(selectedClient.home_value) || null,
+          mortgage_balance: parseFloat(selectedClient.mortgage_balance) || null,
+          program_type: selectedClient.program_type,
+          spouse_name: selectedClient.spouse_name,
+          spouse_dob: selectedClient.spouse_dob,
+          spouse_is_nbs: selectedClient.spouse_is_nbs,
+          pipeline_status: selectedClient.pipeline_status
+        })
+        .eq('id', selectedClient.id)
+
+      if (error) throw error
+
+      setClients(clients.map(client => 
+        client.id === selectedClient.id ? selectedClient : client
+      ))
+      
+      setShowEditModal(false)
+      setSelectedClient(null)
+    } catch (error) {
+      console.error('Error updating client:', error)
+      alert('Failed to update client: ' + error.message)
+    }
+  }
+
+  // Delete client
+  const handleDeleteClient = async (clientId) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId)
+
+      if (error) throw error
+
+      setClients(clients.filter(client => client.id !== clientId))
+      setShowDeleteConfirm(null)
+    } catch (error) {
+      console.error('Error deleting client:', error)
+      alert('Failed to delete client: ' + error.message)
+    }
+  }
+
+  // Filter clients
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = `${client.first_name} ${client.last_name} ${client.email}`.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = filterStatus === 'all' || client.pipeline_status === filterStatus
+    return matchesSearch && matchesStatus
+  })
+
+  // Loading screen
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-white animate-pulse" />
           </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Next Step CRM</h2>
+          <p className="text-gray-600">Loading...</p>
         </div>
+      </div>
+    )
+  }
 
-        {/* Login Card */}
-        <div className="bg-white bg-opacity-20 backdrop-blur-lg rounded-2xl p-8 border border-white border-opacity-20 shadow-2xl">
-          <form onSubmit={handleLogin} className="space-y-6">
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-200 w-5 h-5" />
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-0 bg-white bg-opacity-20 text-white placeholder-blue-200 focus:ring-2 focus:ring-white focus:bg-opacity-30 transition-all"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
+  // Login screen
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-green-400 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-white mb-2">Next Step CRM</h1>
+            <p className="text-blue-100">Professional Reverse Mortgage Management</p>
+            <div className="flex items-center justify-center mt-4">
+              <User className="w-8 h-8 text-white mr-2" />
+              <span className="text-white font-medium">Secure Login</span>
             </div>
+          </div>
 
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-200 w-5 h-5" />
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 rounded-xl border-0 bg-white bg-opacity-20 text-white placeholder-blue-200 focus:ring-2 focus:ring-white focus:bg-opacity-30 transition-all"
-                  placeholder="Enter your password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-200 hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me */}
-            <div className="flex items-center">
-              <input
-                id="remember"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-blue-600 bg-white bg-opacity-20 border-white border-opacity-30 rounded focus:ring-2 focus:ring-white"
-              />
-              <label htmlFor="remember" className="ml-2 text-sm text-blue-100">
-                Remember me for 30 days
-              </label>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-500 bg-opacity-20 border border-red-400 border-opacity-30 rounded-xl p-3">
-                <p className="text-red-100 text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Login Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-white bg-opacity-20 hover:bg-opacity-30 disabled:bg-opacity-10 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white border-opacity-20 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Signing In...
+          {/* Login Card */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-lg rounded-2xl p-8 border border-white border-opacity-20 shadow-2xl">
+            <form onSubmit={handleLogin} className="space-y-6">
+              {/* Email Field */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-200 w-5 h-5" />
+                  <input
+                    id="email"
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border-0 bg-white bg-opacity-20 text-white placeholder-blue-200 focus:ring-2 focus:ring-white focus:bg-opacity-30 transition-all"
+                    placeholder="Enter your email"
+                    required
+                  />
                 </div>
-              ) : (
-                'Sign In to CRM'
-              )}
-            </button>
-          </form>
+              </div>
 
-          {/* Footer */}
-          <div className="mt-6 text-center">
-            <p className="text-blue-100 text-sm">
-              Forgot your password?{' '}
-              <button className="text-white font-medium hover:underline">
-                Contact Administrator
+              {/* Password Field */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-200 w-5 h-5" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                    className="w-full pl-10 pr-12 py-3 rounded-xl border-0 bg-white bg-opacity-20 text-white placeholder-blue-200 focus:ring-2 focus:ring-white focus:bg-opacity-30 transition-all"
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-200 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Login Button */}
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full bg-white bg-opacity-20 hover:bg-opacity-30 disabled:bg-opacity-10 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white border-opacity-20 disabled:cursor-not-allowed"
+              >
+                {authLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Signing In...
+                  </div>
+                ) : (
+                  'Sign In to CRM'
+                )}
               </button>
+            </form>
+          </div>
+
+          {/* Security Notice */}
+          <div className="mt-6 text-center">
+            <p className="text-blue-200 text-xs">
+              🔐 Secure authentication powered by enterprise-grade encryption
             </p>
           </div>
         </div>
+      </div>
+    )
+  }
 
-        {/* Security Notice */}
-        <div className="mt-6 text-center">
-          <p className="text-blue-200 text-xs">
-            🔐 Secure authentication powered by enterprise-grade encryption
-          </p>
+  // Main CRM Dashboard
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-green-50">
+      {/* Header */}
+      <div className="bg-white shadow-lg border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center mr-3">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Next Step CRM</h1>
+                <p className="text-sm text-gray-600">Reverse Mortgage Division</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Welcome, {user.email}</span>
+              <button
+                onClick={handleLogout}
+                className="flex items-center px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-1" />
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Dashboard Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <div className="flex items-center">
+              <User className="w-8 h-8 text-blue-500 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Clients</p>
+                <p className="text-2xl font-bold text-gray-900">{clients.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+            <div className="flex items-center">
+              <BarChart3 className="w-8 h-8 text-green-500 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Active Pipeline</p>
+                <p className="text-2xl font-bold text-gray-900">{clients.filter(c => c.pipeline_status !== 'Closed').length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+            <div className="flex items-center">
+              <Calculator className="w-8 h-8 text-yellow-500 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Under Review</p>
+                <p className="text-2xl font-bold text-gray-900">{clients.filter(c => c.pipeline_status === 'Under Review').length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+            <div className="flex items-center">
+              <DollarSign className="w-8 h-8 text-purple-500 mr-3" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Closed Loans</p>
+                <p className="text-2xl font-bold text-gray-900">{clients.filter(c => c.pipeline_status === 'Closed').length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+              <div className="relative">
+                <Search className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search clients..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                />
+              </div>
+              
+              <div className="relative">
+                <Filter className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="Lead Generated">Lead Generated</option>
+                  <option value="Initial Contact">Initial Contact</option>
+                  <option value="Application Started">Application Started</option>
+                  <option value="Application Submitted">Application Submitted</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Closed">Closed</option>
+                  <option value="GHL Import">GHL Import</option>
+                </select>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white rounded-lg font-semibold transition-all duration-200"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Client
+            </button>
+          </div>
+        </div>
+
+        {/* Beautiful Client Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredClients.length === 0 && (
+            <div className="col-span-full text-center py-12">
+              <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">No clients found</h3>
+              <p className="text-gray-500">Get started by adding your first client</p>
+            </div>
+          )}
+
+          {filteredClients.map((client) => {
+            const age = getYoungestAge(client)
+            const homeValue = client.home_value || 0
+            const mortgageBalance = client.mortgage_balance || 0
+            const upb = calculateUPB(homeValue, age, client.program_type || 'HECM')
+            const netProceeds = Math.max(0, upb - mortgageBalance)
+
+            return (
+              <div key={client.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
+                <div className="p-6">
+                  {/* Client Header */}
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {client.first_name} {client.last_name}
+                      </h3>
+                      <p className="text-gray-600 text-sm">
+                        Age: {age} {client.spouse_name && `• Spouse: ${client.spouse_name}`}
+                        {client.spouse_is_nbs && <span className="ml-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">NBS</span>}
+                      </p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      client.pipeline_status === 'Closed' ? 'bg-green-100 text-green-800' :
+                      client.pipeline_status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
+                      client.pipeline_status === 'Application Submitted' ? 'bg-blue-100 text-blue-800' :
+                      client.pipeline_status === 'GHL Import' ? 'bg-purple-100 text-purple-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {client.pipeline_status}
+                    </span>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="space-y-2 mb-4">
+                    {client.phone && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Phone className="w-4 h-4 text-blue-500 mr-2" />
+                        {client.phone}
+                      </div>
+                    )}
+                    {client.email && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Mail className="w-4 h-4 text-green-500 mr-2" />
+                        {client.email}
+                      </div>
+                    )}
+                    {client.address && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <HomeIcon className="w-4 h-4 text-indigo-500 mr-2" />
+                        {client.address}, {client.city}, {client.state}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Financial Information */}
+                  <div className="space-y-3">
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 border border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-gray-700">Home Value</span>
+                        <span className="font-semibold text-gray-900">${homeValue.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    
+                    {upb > 0 && (
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm font-medium text-blue-700">Max Loan ({client.program_type || 'HECM'})</span>
+                          <span className="font-semibold text-blue-900">${upb.toLocaleString()}</span>
+                        </div>
+                        <div className="text-xs text-blue-600">
+                          PLF: {((upb / Math.min(homeValue, 1149825)) * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                    )}
+
+                    {netProceeds > 0 && (
+                      <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 rounded-lg p-3 border border-purple-200">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-purple-700">Est. Net Proceeds</span>
+                          <span className="font-bold text-purple-900">${netProceeds.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => setViewingClient(client)}
+                      className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-semibold transition-all duration-200"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </button>
+                    {homeValue >= 450000 && (
+                      <button
+                        onClick={() => setShowProgramComparison(client)}
+                        className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg text-sm font-semibold transition-all duration-200"
+                      >
+                        <Calculator className="w-4 h-4 mr-1" />
+                        Compare
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSelectedClient(client)
+                        setShowEditModal(true)
+                      }}
+                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg text-sm font-semibold transition-all duration-200"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(client.id)}
+                      className="flex items-center justify-center px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-sm font-semibold transition-all duration-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* GHL Webhook Endpoint for automatic lead import */}
+        {/* This endpoint receives leads from GHL when disposition = "Next Step CRM" */}
       </div>
     </div>
   )
