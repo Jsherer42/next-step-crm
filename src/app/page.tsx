@@ -43,7 +43,7 @@ const locPLFTable = {
 
 export default function NextStepCRM() {
   // Authentication state
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [authLoading, setAuthLoading] = useState(false)
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
