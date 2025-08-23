@@ -250,13 +250,34 @@ export default function NextStepCRM() {
   }
 
   const updateClient = async () => {
+    // Remove any fields that don't exist in database schema
+    const clientToUpdate = { ...editingClient }
+    
     const { error } = await supabase
       .from('clients')
-      .update(editingClient)
+      .update(clientToUpdate)
       .eq('id', editingClient.id)
 
     if (error) {
-      alert('Error updating client: ' + error.message)
+      // If error mentions missing columns, try without address fields
+      if (error.message.includes('column') && error.message.includes('city')) {
+        const { street_address, city, state, zip_code, ...clientWithoutAddress } = clientToUpdate
+        const { error: retryError } = await supabase
+          .from('clients')
+          .update(clientWithoutAddress)
+          .eq('id', editingClient.id)
+        
+        if (retryError) {
+          alert('Error updating client: ' + retryError.message)
+        } else {
+          alert('Client updated (address fields not saved - database schema needs updating)')
+          setShowEditModal(false)
+          setEditingClient(null)
+          await loadClients()
+        }
+      } else {
+        alert('Error updating client: ' + error.message)
+      }
     } else {
       setShowEditModal(false)
       setEditingClient(null)
@@ -489,11 +510,21 @@ export default function NextStepCRM() {
                   </div>
                   
                   {client.street_address && (
-                    <div className="flex items-center space-x-2">
-                      <Home className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">
-                        {client.street_address}, {client.city}, {client.state} {client.zip_code}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 flex-1">
+                        <Home className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">
+                          {client.street_address}, {client.city}, {client.state} {client.zip_code}
+                        </span>
+                      </div>
+                      <a
+                        href={`https://www.zillow.com/homes/${encodeURIComponent(client.street_address + ' ' + client.city + ' ' + client.state + ' ' + client.zip_code)}_rb/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 w-8 h-8 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white transition-colors shadow-sm"
+                      >
+                        <Home className="w-4 h-4" />
+                      </a>
                     </div>
                   )}
 
