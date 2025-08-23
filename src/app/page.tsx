@@ -50,16 +50,16 @@ export default function NextStepCRM() {
   const [showPassword, setShowPassword] = useState(false)
 
   // Core state
-  const [clients, setClients] = useState([])
+  const [clients, setClients] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showProgramComparison, setShowProgramComparison] = useState(false)
-  const [selectedClient, setSelectedClient] = useState(null)
-  const [editingClient, setEditingClient] = useState(null)
-  const [viewingClient, setViewingClient] = useState(null)
+  const [selectedClient, setSelectedClient] = useState<any>(null)
+  const [editingClient, setEditingClient] = useState<any>(null)
+  const [viewingClient, setViewingClient] = useState<any>(null)
 
   // Form state for new client
   const [newClient, setNewClient] = useState({
