@@ -90,6 +90,10 @@ export default function NextStepCRM() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
 
+  // Session timeout state
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false)
+  const [timeoutCountdown, setTimeoutCountdown] = useState(0)
+
   // Core state
   const [clients, setClients] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -112,6 +116,94 @@ export default function NextStepCRM() {
     spouse_first_name: '', spouse_last_name: '', spouse_date_of_birth: '',
     non_borrowing_spouse: false
   })
+
+  // Session timeout management
+  useEffect(() => {
+    if (!user) return
+
+    let timeoutTimer
+    let warningTimer
+    let countdownTimer
+
+    const TIMEOUT_DURATION = 10 * 60 * 1000 // 10 minutes in milliseconds
+    const WARNING_DURATION = 2 * 60 * 1000 // Show warning 2 minutes before timeout
+
+    const resetTimeout = () => {
+      // Clear existing timers
+      clearTimeout(timeoutTimer)
+      clearTimeout(warningTimer)
+      clearTimeout(countdownTimer)
+      setShowTimeoutWarning(false)
+
+      // Set warning timer (8 minutes from now)
+      warningTimer = setTimeout(() => {
+        setShowTimeoutWarning(true)
+        setTimeoutCountdown(120) // 2 minutes countdown
+
+        // Start countdown
+        countdownTimer = setInterval(() => {
+          setTimeoutCountdown(prev => {
+            if (prev <= 1) {
+              handleTimeoutLogout()
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
+      }, TIMEOUT_DURATION - WARNING_DURATION)
+
+      // Set logout timer (10 minutes from now)
+      timeoutTimer = setTimeout(handleTimeoutLogout, TIMEOUT_DURATION)
+    }
+
+    const handleTimeoutLogout = async () => {
+      clearTimeout(timeoutTimer)
+      clearTimeout(warningTimer)
+      clearTimeout(countdownTimer)
+      setShowTimeoutWarning(false)
+      
+      await supabase.auth.signOut()
+      setUser(null)
+      setClients([])
+      alert('Session expired due to inactivity. Please log in again.')
+    }
+
+    const extendSession = () => {
+      setShowTimeoutWarning(false)
+      clearTimeout(countdownTimer)
+      resetTimeout()
+    }
+
+    // Activity events to track
+    const activityEvents = [
+      'mousedown', 'mousemove', 'keypress', 'scroll', 
+      'touchstart', 'click', 'keydown'
+    ]
+
+    // Add activity listeners
+    const handleActivity = () => {
+      if (!showTimeoutWarning) {
+        resetTimeout()
+      }
+    }
+
+    activityEvents.forEach(event => {
+      document.addEventListener(event, handleActivity, true)
+    })
+
+    // Initialize timeout
+    resetTimeout()
+
+    // Cleanup function
+    return () => {
+      clearTimeout(timeoutTimer)
+      clearTimeout(warningTimer)
+      clearTimeout(countdownTimer)
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, handleActivity, true)
+      })
+    }
+  }, [user, showTimeoutWarning])
 
   // Check authentication on mount
   useEffect(() => {
@@ -605,7 +697,635 @@ export default function NextStepCRM() {
       </main>
 
       {/* All Modals - Add, Edit, View, Delete, Compare */}
-      {/* Note: Modal content continues but truncated for space - the full working modals are included in the complete code */}
+      {/* Session Timeout Warning Modal */}
+      {showTimeoutWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border-4 border-red-500">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-8 h-8 text-red-600" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-red-600 mb-2">Session Expiring Soon!</h2>
+              
+              <p className="text-gray-700 mb-4">
+                Your session will expire due to inactivity in:
+              </p>
+              
+              <div className="text-4xl font-bold text-red-600 mb-6">
+                {Math.floor(timeoutCountdown / 60)}:{(timeoutCountdown % 60).toString().padStart(2, '0')}
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-6">
+                Click "Stay Logged In" to extend your session, or you will be automatically logged out for security.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut()
+                    setUser(null)
+                    setClients([])
+                    setShowTimeoutWarning(false)
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-semibold"
+                >
+                  Logout Now
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTimeoutWarning(false)
+                    clearTimeout(timeoutCountdown)
+                    // This will trigger the resetTimeout through the activity handler
+                    document.dispatchEvent(new Event('mousedown'))
+                  }}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 via-green-500 to-teal-500 text-white rounded-xl hover:from-blue-600 hover:via-green-600 hover:to-teal-600 transition-all font-semibold shadow-lg"
+                >
+                  Stay Logged In
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Client Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-screen overflow-y-auto">
+            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Add New Client</h2>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="px-6 py-6 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                  <input
+                    type="text"
+                    value={newClient.first_name}
+                    onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    value={newClient.last_name}
+                    onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={newClient.date_of_birth}
+                    onChange={(e) => setNewClient({ ...newClient, date_of_birth: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
+                  <select
+                    value={newClient.pipeline_status}
+                    onChange={(e) => setNewClient({ ...newClient, pipeline_status: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {PIPELINE_STAGES.map((stage) => (
+                      <option key={stage.value} value={stage.value}>
+                        {stage.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+                  <input
+                    type="text"
+                    value={newClient.street_address}
+                    onChange={(e) => setNewClient({ ...newClient, street_address: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                  <input
+                    type="text"
+                    value={newClient.city}
+                    onChange={(e) => setNewClient({ ...newClient, city: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                  <input
+                    type="text"
+                    value={newClient.state}
+                    onChange={(e) => setNewClient({ ...newClient, state: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
+                  <input
+                    type="text"
+                    value={newClient.zip_code}
+                    onChange={(e) => setNewClient({ ...newClient, zip_code: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                  <input
+                    type="number"
+                    value={newClient.home_value}
+                    onChange={(e) => setNewClient({ ...newClient, home_value: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                  <input
+                    type="number"
+                    value={newClient.mortgage_balance}
+                    onChange={(e) => setNewClient({ ...newClient, mortgage_balance: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newClient.non_borrowing_spouse || false}
+                      onChange={(e) => setNewClient({ ...newClient, non_borrowing_spouse: e.target.checked })}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Has Non-Borrowing Spouse</span>
+                  </label>
+                </div>
+
+                {newClient.non_borrowing_spouse && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
+                      <input
+                        type="text"
+                        value={newClient.spouse_first_name}
+                        onChange={(e) => setNewClient({ ...newClient, spouse_first_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
+                      <input
+                        type="text"
+                        value={newClient.spouse_last_name}
+                        onChange={(e) => setNewClient({ ...newClient, spouse_last_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
+                      <input
+                        type="date"
+                        value={newClient.spouse_date_of_birth}
+                        onChange={(e) => setNewClient({ ...newClient, spouse_date_of_birth: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <div className="sticky bottom-0 bg-white px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl border-t border-gray-200">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addClient}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-lg hover:from-blue-600 hover:to-teal-600 transition-all"
+              >
+                Add Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Client Modal */}
+      {showEditModal && editingClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-screen overflow-y-auto">
+            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Edit Client</h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="px-6 py-6 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                  <input
+                    type="text"
+                    value={editingClient.first_name || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, first_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    value={editingClient.last_name || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, last_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={editingClient.email || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={editingClient.phone || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={editingClient.date_of_birth || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, date_of_birth: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
+                  <select
+                    value={editingClient.pipeline_status || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, pipeline_status: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {PIPELINE_STAGES.map((stage) => (
+                      <option key={stage.value} value={stage.value}>
+                        {stage.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+                  <input
+                    type="text"
+                    value={editingClient.street_address || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, street_address: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                  <input
+                    type="text"
+                    value={editingClient.city || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, city: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                  <input
+                    type="text"
+                    value={editingClient.state || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, state: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
+                  <input
+                    type="text"
+                    value={editingClient.zip_code || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, zip_code: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                  <input
+                    type="number"
+                    value={editingClient.home_value || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, home_value: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                  <input
+                    type="number"
+                    value={editingClient.mortgage_balance || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, mortgage_balance: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={editingClient.non_borrowing_spouse || false}
+                      onChange={(e) => setEditingClient({ ...editingClient, non_borrowing_spouse: e.target.checked })}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Has Non-Borrowing Spouse</span>
+                  </label>
+                </div>
+
+                {editingClient.non_borrowing_spouse && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
+                      <input
+                        type="text"
+                        value={editingClient.spouse_first_name || ''}
+                        onChange={(e) => setEditingClient({ ...editingClient, spouse_first_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
+                      <input
+                        type="text"
+                        value={editingClient.spouse_last_name || ''}
+                        onChange={(e) => setEditingClient({ ...editingClient, spouse_last_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
+                      <input
+                        type="date"
+                        value={editingClient.spouse_date_of_birth || ''}
+                        onChange={(e) => setEditingClient({ ...editingClient, spouse_date_of_birth: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <div className="sticky bottom-0 bg-white px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl border-t border-gray-200">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updateClient}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-lg hover:from-blue-600 hover:to-teal-600 transition-all"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Client Modal */}
+      {showViewModal && viewingClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Client Details</h2>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <p className="text-lg text-gray-900">{viewingClient.first_name} {viewingClient.last_name}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <p className="text-lg text-gray-900">{viewingClient.email}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <p className="text-lg text-gray-900">{viewingClient.phone}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Age</label>
+                  <p className="text-lg text-gray-900">{calculateAge(viewingClient.date_of_birth) || 'N/A'}</p>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Address</label>
+                  <p className="text-lg text-gray-900">
+                    {viewingClient.street_address}, {viewingClient.city}, {viewingClient.state} {viewingClient.zip_code}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Home Value</label>
+                  <p className="text-lg text-gray-900">${parseFloat(viewingClient.home_value || 0).toLocaleString()}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Mortgage Balance</label>
+                  <p className="text-lg text-gray-900">${parseFloat(viewingClient.mortgage_balance || 0).toLocaleString()}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Pipeline Status</label>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getPipelineStageColor(viewingClient.pipeline_status)}`}>
+                    {viewingClient.pipeline_status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Delete Client</h2>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete {selectedClient.first_name} {selectedClient.last_name}? 
+                This action cannot be undone.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteClient(selectedClient.id)}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compare Programs Modal */}
+      {showCompareModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Program Comparison - {selectedClient.first_name} {selectedClient.last_name}
+                </h2>
+                <button
+                  onClick={() => setShowCompareModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {getAvailablePrograms(selectedClient.home_value, calculateAge(selectedClient.date_of_birth)).map((program) => {
+                  const age = calculateAge(selectedClient.date_of_birth)
+                  const eligibleAmount = selectedClient.home_value * program.plf
+                  const netProceeds = eligibleAmount - (selectedClient.mortgage_balance || 0)
+                  
+                  return (
+                    <div key={program.name} className="border border-gray-200 rounded-xl p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{program.name}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{program.description}</p>
+                      
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-sm text-gray-600">PLF Rate:</span>
+                          <span className="font-semibold text-blue-600 ml-2">{(program.plf * 100).toFixed(1)}%</span>
+                        </div>
+                        
+                        <div>
+                          <span className="text-sm text-gray-600">Eligible Amount:</span>
+                          <span className="font-semibold text-green-600 ml-2">
+                            ${Math.round(eligibleAmount).toLocaleString()}
+                          </span>
+                        </div>
+                        
+                        <div>
+                          <span className="text-sm text-gray-600">Est. Net Proceeds:</span>
+                          <span className={`font-semibold ml-2 ${netProceeds > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            ${Math.round(Math.max(0, netProceeds)).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <strong>Note:</strong> These are estimated calculations based on current rates and age-based PLF tables. 
+                  Actual loan amounts may vary based on interest rates, closing costs, and other factors.
+                  Age {calculateAge(selectedClient.date_of_birth)} client qualifies for {getAvailablePrograms(selectedClient.home_value, calculateAge(selectedClient.date_of_birth)).length} program(s).
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
