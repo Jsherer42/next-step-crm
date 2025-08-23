@@ -1117,6 +1117,44 @@ export default function NextStepCRM() {
               <div className="space-y-6">
                 {/* Basic Information */}
                 <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">Basic Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="font-medium text-gray-600">First Name:</span> <span className="text-gray-800">{selectedClient.first_name}</span></div>
+                    <div><span className="font-medium text-gray-600">Last Name:</span> <span className="text-gray-800">{selectedClient.last_name}</span></div>
+                    <div><span className="font-medium text-gray-600">Email:</span> <span className="text-gray-800">{selectedClient.email || 'N/A'}</span></div>
+                    <div><span className="font-medium text-gray-600">Phone:</span> <span className="text-gray-800">{selectedClient.phone || 'N/A'}</span></div>
+                    <div><span className="font-medium text-gray-600">Date of Birth:</span> <span className="text-gray-800">{selectedClient.date_of_birth || 'N/A'}</span></div>
+                    <div><span className="font-medium text-gray-600">Age:</span> <span className="text-gray-800">{calculateAge(selectedClient.date_of_birth) || 'N/A'}</span></div>
+                  </div>
+                </div>
+
+                {/* Spouse Information */}
+                {(selectedClient.spouse_first_name || selectedClient.spouse_last_name) && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">Spouse Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><span className="font-medium text-gray-600">Spouse First Name:</span> <span className="text-gray-800">{selectedClient.spouse_first_name || 'N/A'}</span></div>
+                      <div><span className="font-medium text-gray-600">Spouse Last Name:</span> <span className="text-gray-800">{selectedClient.spouse_last_name || 'N/A'}</span></div>
+                      <div><span className="font-medium text-gray-600">Spouse DOB:</span> <span className="text-gray-800">{selectedClient.spouse_date_of_birth || 'N/A'}</span></div>
+                      <div><span className="font-medium text-gray-600">Spouse Age:</span> <span className="text-gray-800">{calculateAge(selectedClient.spouse_date_of_birth) || 'N/A'}</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Property Information */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">Property Information</h3>
+                  <div className="grid grid-cols-1 gap-4 text-sm">
+                    <div><span className="font-medium text-gray-600">Address:</span> <span className="text-gray-800">{selectedClient.address || 'N/A'}</span></div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><span className="font-medium text-gray-600">Property Value:</span> <span className="text-gray-800">${parseFloat(selectedClient.property_value || 0).toLocaleString()}</span></div>
+                      <div><span className="font-medium text-gray-600">Current Mortgage:</span> <span className="text-gray-800">${parseFloat(selectedClient.current_mortgage_balance || 0).toLocaleString()}</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan Information */}
+                <div>
                   <h3 className="text-lg font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">Loan Information</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div><span className="font-medium text-gray-600">Program Type:</span> <span className="text-gray-800">{selectedClient.program_type}</span></div>
