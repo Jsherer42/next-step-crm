@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Filter, Edit2, Eye, X, User, BarChart3, LogOut } from 'lucide-react'
+import { createClient, User } from '@supabase/supabase-js'
+import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Filter, Edit2, Eye, X, User as UserIcon, BarChart3, LogOut } from 'lucide-react'
 
 // Updated API key (the ONLY change needed for authentication)
 const supabaseUrl = 'https://nmcqlekpyqfgyzoelcsa.supabase.co'
@@ -42,11 +42,11 @@ const locPLFTable = {
 }
 
 export default function NextStepCRM() {
-  // Authentication state
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [authLoading, setAuthLoading] = useState(false)
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
+  // Authentication state with proper TypeScript typing
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [authLoading, setAuthLoading] = useState<boolean>(false)
+  const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' })
 
   // CRM state
   const [clients, setClients] = useState([])
@@ -123,8 +123,8 @@ export default function NextStepCRM() {
     }
   }
 
-  // Login function
-  const handleLogin = async (e) => {
+  // Login function with proper event typing
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setAuthLoading(true)
 
@@ -455,7 +455,7 @@ export default function NextStepCRM() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
             <div className="flex items-center">
-              <User className="w-8 h-8 text-blue-500 mr-3" />
+              <UserIcon className="w-8 h-8 text-blue-500 mr-3" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Clients</p>
                 <p className="text-2xl font-bold text-gray-900">{filteredClients.length}</p>
@@ -649,7 +649,7 @@ export default function NextStepCRM() {
 
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
-            <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <UserIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">No clients found</h3>
             <p className="text-gray-500 mb-4">
               {searchTerm ? 'Try adjusting your search criteria' : 'Get started by adding your first client'}
