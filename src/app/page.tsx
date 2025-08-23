@@ -918,41 +918,209 @@ export default function NextStepCRM() {
           </div>
         )}
 
-        {/* Edit Client Modal - Basic version to avoid complexity */}
+        {/* Edit Client Modal - COMPLETE VERSION WITH ALL FIELDS */}
         {showEditModal && selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200">
                 <h3 className="text-2xl font-bold text-gray-900">
                   Edit Client: {selectedClient.first_name} {selectedClient.last_name}
                 </h3>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-6">
+                {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
-                    <select
-                      value={selectedClient.pipeline_status}
-                      onChange={(e) => setSelectedClient({...selectedClient, pipeline_status: e.target.value})}
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      defaultValue={selectedClient.first_name || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, first_name: e.target.value})}
                       className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {pipelineStatuses.map(status => (
-                        <option key={status} value={status}>{status}</option>
-                      ))}
-                    </select>
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
-                    <select
-                      value={selectedClient.program_type}
-                      onChange={(e) => setSelectedClient({...selectedClient, program_type: e.target.value})}
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      defaultValue={selectedClient.last_name || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, last_name: e.target.value})}
                       className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="HECM">HECM</option>
-                      <option value="Equity Plus">Equity Plus</option>
-                      <option value="Peak">Peak</option>
-                      <option value="LOC">LOC</option>
-                    </select>
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      defaultValue={selectedClient.email || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, email: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      defaultValue={selectedClient.phone || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, phone: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                    <input
+                      type="date"
+                      defaultValue={selectedClient.date_of_birth || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, date_of_birth: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Spouse Information */}
+                <div className="border-t border-gray-200 pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <input
+                      type="checkbox"
+                      id="edit_is_married"
+                      checked={selectedClient.is_married || false}
+                      onChange={(e) => setSelectedClient({...selectedClient, is_married: e.target.checked})}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="edit_is_married" className="text-sm font-medium text-gray-700">
+                      Client is married
+                    </label>
+                  </div>
+
+                  {selectedClient.is_married && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
+                        <input
+                          type="text"
+                          defaultValue={selectedClient.spouse_first_name || ''}
+                          onChange={(e) => setSelectedClient({...selectedClient, spouse_first_name: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Last Name</label>
+                        <input
+                          type="text"
+                          defaultValue={selectedClient.spouse_last_name || ''}
+                          onChange={(e) => setSelectedClient({...selectedClient, spouse_last_name: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
+                        <input
+                          type="date"
+                          defaultValue={selectedClient.spouse_date_of_birth || ''}
+                          onChange={(e) => setSelectedClient({...selectedClient, spouse_date_of_birth: e.target.value})}
+                          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Property Information */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-lg font-semibold mb-4">Property Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                      <input
+                        type="number"
+                        defaultValue={selectedClient.home_value || ''}
+                        onChange={(e) => setSelectedClient({...selectedClient, home_value: parseInt(e.target.value) || 0})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
+                      <input
+                        type="number"
+                        defaultValue={selectedClient.mortgage_balance || ''}
+                        onChange={(e) => setSelectedClient({...selectedClient, mortgage_balance: parseInt(e.target.value) || 0})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
+                      <input
+                        type="text"
+                        defaultValue={selectedClient.address || ''}
+                        onChange={(e) => setSelectedClient({...selectedClient, address: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+                      <select
+                        defaultValue={selectedClient.property_type || 'Single Family Residence'}
+                        onChange={(e) => setSelectedClient({...selectedClient, property_type: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Single Family Residence">Single Family Residence</option>
+                        <option value="Condominium">Condominium</option>
+                        <option value="Townhome">Townhome</option>
+                        <option value="Manufactured Home">Manufactured Home</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Occupancy Status</label>
+                      <select
+                        defaultValue={selectedClient.occupancy_status || 'Primary Residence'}
+                        onChange={(e) => setSelectedClient({...selectedClient, occupancy_status: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Primary Residence">Primary Residence</option>
+                        <option value="Second Home">Second Home</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan Information */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-lg font-semibold mb-4">Loan Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
+                      <select
+                        defaultValue={selectedClient.program_type || 'HECM'}
+                        onChange={(e) => setSelectedClient({...selectedClient, program_type: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="HECM">HECM</option>
+                        <option value="Equity Plus">Equity Plus</option>
+                        <option value="Peak">Peak</option>
+                        <option value="LOC">LOC</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
+                      <select
+                        defaultValue={selectedClient.pipeline_status || 'Proposal Out'}
+                        onChange={(e) => setSelectedClient({...selectedClient, pipeline_status: e.target.value})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {pipelineStatuses.map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Desired Proceeds</label>
+                      <input
+                        type="number"
+                        defaultValue={selectedClient.desired_proceeds || ''}
+                        onChange={(e) => setSelectedClient({...selectedClient, desired_proceeds: parseInt(e.target.value) || 0})}
+                        className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
