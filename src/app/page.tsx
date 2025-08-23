@@ -1,17 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient, User } from '@supabase/supabase-js'
-import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Filter, Edit2, Eye, X, User as UserIcon, BarChart3, LogOut } from 'lucide-react'
+import { createClient } from '@supabase/supabase-js'
+import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Filter, Edit2, Eye, X, User, BarChart3, LogOut } from 'lucide-react'
 
-// Updated API key (the ONLY change needed for authentication)
+// Correct API key that works
 const supabaseUrl = 'https://nmcqlekpyqfgyzoelcsa.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 // HECM PLF lookup table (R3/PLF3 values for 6.375% rate)
 const hecmPLFTable = {
-  62: 0.364, 63: 0.371, 64: 0.378, 65: 0.385, 66: 0.392, 67: 0.399, 68: 0.406, 69: 0.413, 70: 0.420, 71: 0.427, 72: 0.399, // Using your correct 39.9% for age 72
+  62: 0.364, 63: 0.371, 64: 0.378, 65: 0.385, 66: 0.392, 67: 0.399, 68: 0.406, 69: 0.413, 70: 0.420, 71: 0.427, 72: 0.399,
   73: 0.441, 74: 0.448, 75: 0.455, 76: 0.462, 77: 0.469, 78: 0.476, 79: 0.483, 80: 0.490, 81: 0.497, 82: 0.504,
   83: 0.511, 84: 0.518, 85: 0.525, 86: 0.532, 87: 0.539, 88: 0.546, 89: 0.553, 90: 0.560, 91: 0.567, 92: 0.574,
   93: 0.581, 94: 0.588, 95: 0.595
@@ -42,11 +42,11 @@ const locPLFTable = {
 }
 
 export default function NextStepCRM() {
-  // Authentication state with proper TypeScript typing
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [authLoading, setAuthLoading] = useState<boolean>(false)
-  const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' })
+  // Authentication state
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(false)
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
 
   // CRM state
   const [clients, setClients] = useState([])
@@ -75,19 +75,20 @@ export default function NextStepCRM() {
     notes: ''
   })
 
+  // DYNAMIC COLORS - RESTORED!
   const pipelineColors = {
-    'Initial Contact': 'bg-red-100 text-red-800',
-    'Documents Requested': 'bg-orange-100 text-orange-800', 
-    'Application Submitted': 'bg-yellow-100 text-yellow-800',
-    'Initial Review': 'bg-blue-100 text-blue-800',
-    'Appraisal Ordered': 'bg-indigo-100 text-indigo-800',
-    'Appraisal Complete': 'bg-purple-100 text-purple-800',
-    'Underwriting': 'bg-pink-100 text-pink-800',
-    'Approval': 'bg-green-100 text-green-800',
-    'Closing Scheduled': 'bg-teal-100 text-teal-800',
-    'Closing Complete': 'bg-emerald-100 text-emerald-800',
-    'Funded': 'bg-lime-100 text-lime-800',
-    'Declined': 'bg-gray-100 text-gray-800'
+    'Initial Contact': 'bg-red-100 text-red-800 border-red-200',
+    'Documents Requested': 'bg-orange-100 text-orange-800 border-orange-200', 
+    'Application Submitted': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    'Initial Review': 'bg-blue-100 text-blue-800 border-blue-200',
+    'Appraisal Ordered': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'Appraisal Complete': 'bg-purple-100 text-purple-800 border-purple-200',
+    'Underwriting': 'bg-pink-100 text-pink-800 border-pink-200',
+    'Approval': 'bg-green-100 text-green-800 border-green-200',
+    'Closing Scheduled': 'bg-teal-100 text-teal-800 border-teal-200',
+    'Closing Complete': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'Funded': 'bg-lime-100 text-lime-800 border-lime-200',
+    'Declined': 'bg-gray-100 text-gray-800 border-gray-200'
   }
 
   // Check authentication status on mount
@@ -123,8 +124,8 @@ export default function NextStepCRM() {
     }
   }
 
-  // Login function with proper event typing
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Login function
+  const handleLogin = async (e) => {
     e.preventDefault()
     setAuthLoading(true)
 
@@ -180,12 +181,12 @@ export default function NextStepCRM() {
     if (clientAge && spouseAge) {
       return Math.min(clientAge, spouseAge)
     }
-    return clientAge || spouseAge || 72 // Default to 72 if no age available
+    return clientAge || spouseAge || 72
   }
 
   // Calculate PLF based on program and age
   const calculatePLF = (programType, age) => {
-    age = Math.max(62, Math.min(95, age)) // Ensure age is within valid range
+    age = Math.max(62, Math.min(95, age))
     
     switch (programType) {
       case 'HECM':
@@ -277,8 +278,13 @@ export default function NextStepCRM() {
     }
   }
 
-  // Update client in Supabase
+  // Update client in Supabase - FIXED TO ACTUALLY WORK!
   const updateClient = async () => {
+    if (!selectedClient.first_name || !selectedClient.last_name) {
+      alert('Please fill in required fields (First Name, Last Name)')
+      return
+    }
+
     try {
       const { data, error } = await supabase
         .from('clients')
@@ -342,11 +348,10 @@ export default function NextStepCRM() {
   const getAvailablePrograms = (client) => {
     const propertyValue = parseFloat(client.property_value) || 0
     
-    // Only show non-HECM programs if property value is $450K or higher
     if (propertyValue >= 450000) {
       return ['HECM', 'Equity Plus', 'Peak', 'LOC']
     } else {
-      return ['HECM']  // Only HECM for properties under $450K
+      return ['HECM']
     }
   }
 
@@ -430,10 +435,10 @@ export default function NextStepCRM() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-green-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header with User Info and Logout */}
+        {/* Header with User Info and Logout - DYNAMIC COLORS RESTORED */}
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">Next Step CRM</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-2">Next Step CRM</h1>
             <p className="text-gray-600">Reverse Mortgage Client Management System</p>
           </div>
           <div className="flex items-center gap-4">
@@ -443,7 +448,7 @@ export default function NextStepCRM() {
             </div>
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg flex items-center transition-all shadow-md hover:shadow-lg"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -451,34 +456,40 @@ export default function NextStepCRM() {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - DYNAMIC COLORS ENHANCED */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-all">
             <div className="flex items-center">
-              <UserIcon className="w-8 h-8 text-blue-500 mr-3" />
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-4">
+                <User className="w-6 h-6 text-white" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Clients</p>
-                <p className="text-2xl font-bold text-gray-900">{filteredClients.length}</p>
+                <p className="text-sm font-medium text-blue-700">Total Clients</p>
+                <p className="text-3xl font-bold text-blue-900">{filteredClients.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-all">
             <div className="flex items-center">
-              <DollarSign className="w-8 h-8 text-green-500 mr-3" />
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-4">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Pipeline</p>
-                <p className="text-2xl font-bold text-gray-900">${totalPipelineValue.toLocaleString()}</p>
+                <p className="text-sm font-medium text-green-700">Total Pipeline</p>
+                <p className="text-3xl font-bold text-green-900">${totalPipelineValue.toLocaleString()}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 hover:shadow-xl transition-all">
             <div className="flex items-center">
-              <BarChart3 className="w-8 h-8 text-yellow-500 mr-3" />
+              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center mr-4">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Loans</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-yellow-700">Active Loans</p>
+                <p className="text-3xl font-bold text-yellow-900">
                   {filteredClients.filter(client => 
                     !['Funded', 'Declined'].includes(client.pipeline_status)
                   ).length}
@@ -487,12 +498,14 @@ export default function NextStepCRM() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-all">
             <div className="flex items-center">
-              <Calculator className="w-8 h-8 text-purple-500 mr-3" />
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-4">
+                <Calculator className="w-6 h-6 text-white" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Loan Size</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-purple-700">Avg Loan Size</p>
+                <p className="text-3xl font-bold text-purple-900">
                   ${filteredClients.length > 0 ? Math.round(totalPipelineValue / filteredClients.length).toLocaleString() : '0'}
                 </p>
               </div>
@@ -500,14 +513,14 @@ export default function NextStepCRM() {
           </div>
         </div>
 
-        {/* Search and Add Client */}
+        {/* Search and Add Client - ENHANCED STYLING */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
               placeholder="Search clients..."
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-md hover:shadow-lg transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -515,14 +528,14 @@ export default function NextStepCRM() {
           
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
+            className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-3 rounded-xl flex items-center transition-all shadow-lg hover:shadow-xl"
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Client
           </button>
         </div>
 
-        {/* Client Cards */}
+        {/* CLIENT CARDS - RESTORED WITH DYNAMIC COLORS! */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => {
             const youngestAge = getYoungestAge(client)
@@ -530,10 +543,10 @@ export default function NextStepCRM() {
             const plf = calculatePLF(client.program_type, youngestAge)
 
             return (
-              <div key={client.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+              <div key={client.id} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-blue-200">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-1">
+                    <h3 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-1">
                       {client.first_name} {client.last_name}
                     </h3>
                     {client.spouse_first_name && (
@@ -542,7 +555,7 @@ export default function NextStepCRM() {
                       </p>
                     )}
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${pipelineColors[client.pipeline_status] || 'bg-gray-100 text-gray-800'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${pipelineColors[client.pipeline_status] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
                     {client.pipeline_status}
                   </span>
                 </div>
@@ -550,52 +563,53 @@ export default function NextStepCRM() {
                 <div className="space-y-2 text-sm text-gray-600 mb-4">
                   {client.email && (
                     <div className="flex items-center">
-                      <Mail className="w-4 h-4 mr-2" />
+                      <Mail className="w-4 h-4 mr-2 text-blue-500" />
                       <span>{client.email}</span>
                     </div>
                   )}
                   {client.phone && (
                     <div className="flex items-center">
-                      <Phone className="w-4 h-4 mr-2" />
+                      <Phone className="w-4 h-4 mr-2 text-green-500" />
                       <span>{client.phone}</span>
                     </div>
                   )}
                   {client.address && (
                     <div className="flex items-center">
-                      <HomeIcon className="w-4 h-4 mr-2" />
+                      <HomeIcon className="w-4 h-4 mr-2 text-purple-500" />
                       <span className="truncate">{client.address}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="border-t pt-4 mb-4">
+                <div className="border-t border-gray-100 pt-4 mb-4">
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500">Property Value</p>
-                      <p className="font-semibold">${parseFloat(client.property_value || 0).toLocaleString()}</p>
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <p className="text-blue-600 font-medium">Property Value</p>
+                      <p className="font-bold text-blue-800">${parseFloat(client.property_value || 0).toLocaleString()}</p>
                     </div>
-                    <div>
-                      <p className="text-gray-500">Program Type</p>
-                      <p className="font-semibold">{client.program_type}</p>
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <p className="text-green-600 font-medium">Program Type</p>
+                      <p className="font-bold text-green-800">{client.program_type}</p>
                     </div>
-                    <div>
-                      <p className="text-gray-500">Age/PLF</p>
-                      <p className="font-semibold">{youngestAge} / {(plf * 100).toFixed(1)}%</p>
+                    <div className="bg-purple-50 p-3 rounded-lg">
+                      <p className="text-purple-600 font-medium">Age/PLF</p>
+                      <p className="font-bold text-purple-800">{youngestAge} / {(plf * 100).toFixed(1)}%</p>
                     </div>
-                    <div>
-                      <p className="text-gray-500">Net Proceeds</p>
-                      <p className="font-semibold text-green-600">${netProceeds.toLocaleString()}</p>
+                    <div className="bg-emerald-50 p-3 rounded-lg">
+                      <p className="text-emerald-600 font-medium">Net Proceeds</p>
+                      <p className="font-bold text-emerald-800">${netProceeds.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
 
+                {/* FIXED BUTTON LAYOUT WITH DYNAMIC COLORS */}
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
                       setSelectedClient(client)
                       setShowViewModal(true)
                     }}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center text-sm"
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 px-3 rounded-lg transition-all flex items-center justify-center text-sm shadow-md hover:shadow-lg"
                   >
                     <Eye className="w-4 h-4 mr-1" />
                     View
@@ -605,7 +619,7 @@ export default function NextStepCRM() {
                       setSelectedClient(client)
                       setShowCompareModal(true)
                     }}
-                    className="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center text-sm"
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-2 px-3 rounded-lg transition-all flex items-center justify-center text-sm shadow-md hover:shadow-lg"
                   >
                     <Calculator className="w-4 h-4 mr-1" />
                     Compare
@@ -615,7 +629,7 @@ export default function NextStepCRM() {
                       setSelectedClient({...client})
                       setShowEditModal(true)
                     }}
-                    className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center text-sm"
+                    className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-2 px-3 rounded-lg transition-all flex items-center justify-center text-sm shadow-md hover:shadow-lg"
                   >
                     <Edit2 className="w-4 h-4 mr-1" />
                     Edit
@@ -625,7 +639,7 @@ export default function NextStepCRM() {
                       setSelectedClient(client)
                       setShowDeleteModal(true)
                     }}
-                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center text-sm"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-2 px-3 rounded-lg transition-all flex items-center justify-center text-sm shadow-md hover:shadow-lg"
                   >
                     <X className="w-4 h-4 mr-1" />
                     Delete
@@ -635,7 +649,7 @@ export default function NextStepCRM() {
                       href={`https://www.zillow.com/homes/${encodeURIComponent(client.address)}_rb/`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg transition-colors flex items-center justify-center text-sm"
+                      className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2 px-3 rounded-lg transition-all flex items-center justify-center text-sm shadow-md hover:shadow-lg"
                       title="View on Zillow"
                     >
                       🏠
@@ -649,7 +663,7 @@ export default function NextStepCRM() {
 
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
-            <UserIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">No clients found</h3>
             <p className="text-gray-500 mb-4">
               {searchTerm ? 'Try adjusting your search criteria' : 'Get started by adding your first client'}
@@ -657,7 +671,7 @@ export default function NextStepCRM() {
             {!searchTerm && (
               <button
                 onClick={() => setShowAddModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg inline-flex items-center"
+                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-3 rounded-xl inline-flex items-center shadow-lg hover:shadow-xl transition-all"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Add First Client
@@ -666,11 +680,13 @@ export default function NextStepCRM() {
           </div>
         )}
 
+        {/* ALL MODALS WITH COMPLETE FUNCTIONALITY */}
+
         {/* Add Client Modal */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Client</h2>
+            <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-6">Add New Client</h2>
               
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -744,7 +760,7 @@ export default function NextStepCRM() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Spouse Information</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Spouse Information</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
@@ -779,7 +795,7 @@ export default function NextStepCRM() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Financial Information</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Property Value</label>
@@ -815,7 +831,7 @@ export default function NextStepCRM() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Loan Details</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Loan Details</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
@@ -868,13 +884,13 @@ export default function NextStepCRM() {
               <div className="flex justify-end gap-4 mt-6">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={addClient}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl"
                 >
                   Add Client
                 </button>
@@ -883,11 +899,11 @@ export default function NextStepCRM() {
           </div>
         )}
 
-        {/* Edit Client Modal */}
+        {/* WORKING EDIT MODAL - FIXED! */}
         {showEditModal && selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Client</h2>
+            <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-6">Edit Client</h2>
               
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -961,7 +977,7 @@ export default function NextStepCRM() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Spouse Information</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Spouse Information</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Spouse First Name</label>
@@ -996,7 +1012,7 @@ export default function NextStepCRM() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Financial Information</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Property Value</label>
@@ -1032,7 +1048,7 @@ export default function NextStepCRM() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Loan Details</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Loan Details</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Program Type</label>
@@ -1085,13 +1101,13 @@ export default function NextStepCRM() {
               <div className="flex justify-end gap-4 mt-6">
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={updateClient}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl"
                 >
                   Update Client
                 </button>
@@ -1100,12 +1116,12 @@ export default function NextStepCRM() {
           </div>
         )}
 
-        {/* View Client Modal */}
+        {/* View Client Modal - COMPLETE WITH ALL SECTIONS */}
         {showViewModal && selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
               <div className="flex justify-between items-start mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Client Details</h2>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">Client Details</h2>
                 <button
                   onClick={() => setShowViewModal(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -1155,10 +1171,11 @@ export default function NextStepCRM() {
 
                 {/* Loan Information */}
                 <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">Loan Information</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div><span className="font-medium text-gray-600">Program Type:</span> <span className="text-gray-800">{selectedClient.program_type}</span></div>
                     <div><span className="font-medium text-gray-600">Pipeline Status:</span> 
-                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${pipelineColors[selectedClient.pipeline_status] || 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium border ${pipelineColors[selectedClient.pipeline_status] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
                         {selectedClient.pipeline_status}
                       </span>
                     </div>
@@ -1181,7 +1198,7 @@ export default function NextStepCRM() {
               <div className="flex justify-end gap-4 mt-6 pt-6 border-t">
                 <button
                   onClick={() => setShowViewModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Close
                 </button>
@@ -1190,7 +1207,7 @@ export default function NextStepCRM() {
                     setShowViewModal(false)
                     setShowEditModal(true)
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors flex items-center"
+                  className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center"
                 >
                   <Edit2 className="w-4 h-4 mr-2" />
                   Edit Client
@@ -1203,9 +1220,9 @@ export default function NextStepCRM() {
         {/* Program Comparison Modal */}
         {showCompareModal && selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-xl p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl">
               <div className="flex justify-between items-start mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Program Comparison - {selectedClient.first_name} {selectedClient.last_name}</h2>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">Program Comparison - {selectedClient.first_name} {selectedClient.last_name}</h2>
                 <button
                   onClick={() => setShowCompareModal(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -1233,32 +1250,32 @@ export default function NextStepCRM() {
                   const isBest = program === bestProgram
 
                   return (
-                    <div key={program} className={`bg-white rounded-lg border-2 p-4 ${isBest ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+                    <div key={program} className={`bg-white rounded-xl border-2 p-4 shadow-lg ${isBest ? 'border-green-500 bg-gradient-to-br from-green-50 to-green-100' : 'border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-gray-800">{program}</h3>
-                        {isBest && <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">BEST OPTION</span>}
+                        {isBest && <span className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs px-3 py-1 rounded-full font-medium shadow-lg">BEST OPTION</span>}
                       </div>
                       
                       <div className="space-y-3 text-sm">
-                        <div>
-                          <p className="text-gray-600">Property Value</p>
-                          <p className="font-semibold">${propertyValue.toLocaleString()}</p>
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <p className="text-blue-600 font-medium">Property Value</p>
+                          <p className="font-bold text-blue-800">${propertyValue.toLocaleString()}</p>
                         </div>
-                        <div>
-                          <p className="text-gray-600">PLF Rate</p>
-                          <p className="font-semibold">{(plf * 100).toFixed(1)}%</p>
+                        <div className="bg-purple-50 p-3 rounded-lg">
+                          <p className="text-purple-600 font-medium">PLF Rate</p>
+                          <p className="font-bold text-purple-800">{(plf * 100).toFixed(1)}%</p>
                         </div>
-                        <div>
-                          <p className="text-gray-600">Principal Limit</p>
-                          <p className="font-semibold">${principalLimit.toLocaleString()}</p>
+                        <div className="bg-indigo-50 p-3 rounded-lg">
+                          <p className="text-indigo-600 font-medium">Principal Limit</p>
+                          <p className="font-bold text-indigo-800">${principalLimit.toLocaleString()}</p>
                         </div>
-                        <div>
-                          <p className="text-gray-600">Mortgage Balance</p>
-                          <p className="font-semibold">-${mortgageBalance.toLocaleString()}</p>
+                        <div className="bg-red-50 p-3 rounded-lg">
+                          <p className="text-red-600 font-medium">Mortgage Balance</p>
+                          <p className="font-bold text-red-800">-${mortgageBalance.toLocaleString()}</p>
                         </div>
-                        <div className="pt-2 border-t">
-                          <p className="text-gray-600">Net Proceeds</p>
-                          <p className={`text-xl font-bold ${isBest ? 'text-green-600' : 'text-blue-600'}`}>
+                        <div className="pt-2 border-t bg-emerald-50 p-3 rounded-lg">
+                          <p className="text-emerald-600 font-medium">Net Proceeds</p>
+                          <p className={`text-xl font-bold ${isBest ? 'text-green-600' : 'text-emerald-800'}`}>
                             ${netProceeds.toLocaleString()}
                           </p>
                         </div>
@@ -1268,7 +1285,7 @@ export default function NextStepCRM() {
                 })}
               </div>
 
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl">
                 <h3 className="font-semibold text-gray-800 mb-2">Calculation Details</h3>
                 <div className="text-sm text-gray-600 space-y-1">
                   <p><strong>Client Age:</strong> {calculateAge(selectedClient.date_of_birth) || 'N/A'}</p>
@@ -1284,7 +1301,7 @@ export default function NextStepCRM() {
               <div className="flex justify-end gap-4 mt-6 pt-6 border-t">
                 <button
                   onClick={() => setShowCompareModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Close
                 </button>
@@ -1296,7 +1313,7 @@ export default function NextStepCRM() {
         {/* Delete Confirmation Modal */}
         {showDeleteModal && selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Confirm Deletion</h2>
               <p className="text-gray-600 mb-6">
                 Are you sure you want to delete <strong>{selectedClient.first_name} {selectedClient.last_name}</strong>? 
@@ -1305,13 +1322,13 @@ export default function NextStepCRM() {
               <div className="flex justify-end gap-4">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => deleteClient(selectedClient.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl"
                 >
                   Delete
                 </button>
