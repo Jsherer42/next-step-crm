@@ -57,10 +57,29 @@ const LOC_PLF = {
   91: 0.559, 92: 0.559, 93: 0.559, 94: 0.559, 95: 0.559
 }
 
-// Get pipeline stage color
+// Get pipeline stage color for badges
 const getPipelineStageColor = (status) => {
   const stage = PIPELINE_STAGES.find(s => s.value === status || s.label === status)
   return stage ? stage.color : 'bg-gray-100 border-gray-300 text-gray-800'
+}
+
+// Get dynamic glassmorphism styling based on pipeline status
+const getPipelineCardStyling = (status) => {
+  const styles = {
+    'Proposal Out': 'bg-gradient-to-br from-sky-400/20 to-blue-500/20 border border-sky-300/30 backdrop-blur-lg',
+    'Counseling Scheduled': 'bg-gradient-to-br from-blue-400/20 to-indigo-500/20 border border-blue-300/30 backdrop-blur-lg',
+    'Counseling In': 'bg-gradient-to-br from-teal-400/20 to-cyan-500/20 border border-teal-300/30 backdrop-blur-lg',
+    'Docs Out': 'bg-gradient-to-br from-yellow-400/20 to-amber-500/20 border border-yellow-300/30 backdrop-blur-lg',
+    'Docs In': 'bg-gradient-to-br from-orange-400/20 to-red-500/20 border border-orange-300/30 backdrop-blur-lg',
+    'Submitted to Processing': 'bg-gradient-to-br from-purple-400/20 to-violet-500/20 border border-purple-300/30 backdrop-blur-lg',
+    'Appraisal Ordered': 'bg-gradient-to-br from-pink-400/20 to-rose-500/20 border border-pink-300/30 backdrop-blur-lg',
+    'Appraisal In': 'bg-gradient-to-br from-fuchsia-400/20 to-purple-500/20 border border-fuchsia-300/30 backdrop-blur-lg',
+    'Submit to UW': 'bg-gradient-to-br from-red-400/20 to-pink-500/20 border border-red-300/30 backdrop-blur-lg',
+    'Conditional Approval': 'bg-gradient-to-br from-lime-400/20 to-green-500/20 border border-lime-300/30 backdrop-blur-lg',
+    'CTC': 'bg-gradient-to-br from-green-400/20 to-emerald-500/20 border border-green-300/30 backdrop-blur-lg',
+    'Funded': 'bg-gradient-to-br from-gray-400/20 to-slate-500/20 border border-gray-300/30 backdrop-blur-lg'
+  }
+  return styles[status] || 'bg-white/90 backdrop-blur-lg border border-white/30'
 }
 
 export default function NextStepCRM() {
@@ -450,7 +469,7 @@ export default function NextStepCRM() {
             const netProceeds = calculateNetProceeds(client.home_value, client.mortgage_balance, age)
             
             return (
-              <div key={client.id} className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/30 hover:shadow-2xl transition-all transform hover:scale-105">
+              <div key={client.id} className={`rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 ${getPipelineCardStyling(client.pipeline_status)}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900">
@@ -494,8 +513,8 @@ export default function NextStepCRM() {
                   </div>
 
                   {netProceeds > 0 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <span className="text-sm font-semibold text-green-800">
+                    <div className="bg-white/30 backdrop-blur-sm border border-green-300/40 rounded-xl p-3 shadow-lg">
+                      <span className="text-sm font-bold text-green-900 drop-shadow-sm">
                         Est. Net Proceeds: ${Math.round(netProceeds).toLocaleString()}
                       </span>
                     </div>
