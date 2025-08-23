@@ -63,23 +63,23 @@ const getPipelineStageColor = (status) => {
   return stage ? stage.color : 'bg-gray-100 border-gray-300 text-gray-800'
 }
 
-// Get clean card styling with pipeline-colored left border accent
+// Get light tinted card styling with strong pipeline-colored borders
 const getPipelineCardStyling = (status) => {
   const styles = {
-    'Proposal Out': 'bg-white border-l-4 border-sky-400 shadow-lg hover:shadow-xl', // Light blue accent
-    'Counseling Scheduled': 'bg-white border-l-4 border-blue-500 shadow-lg hover:shadow-xl', // Blue accent
-    'Counseling In': 'bg-white border-l-4 border-teal-500 shadow-lg hover:shadow-xl', // Teal accent
-    'Docs Out': 'bg-white border-l-4 border-yellow-500 shadow-lg hover:shadow-xl', // Yellow accent
-    'Docs In': 'bg-white border-l-4 border-orange-500 shadow-lg hover:shadow-xl', // Orange accent
-    'Submitted to Processing': 'bg-white border-l-4 border-purple-500 shadow-lg hover:shadow-xl', // Purple accent
-    'Appraisal Ordered': 'bg-white border-l-4 border-pink-500 shadow-lg hover:shadow-xl', // Pink accent
-    'Appraisal In': 'bg-white border-l-4 border-fuchsia-500 shadow-lg hover:shadow-xl', // Magenta accent
-    'Submit to UW': 'bg-white border-l-4 border-red-500 shadow-lg hover:shadow-xl', // Red accent
-    'Conditional Approval': 'bg-white border-l-4 border-lime-500 shadow-lg hover:shadow-xl', // Lime accent
-    'CTC': 'bg-white border-l-4 border-green-500 shadow-lg hover:shadow-xl', // Green accent
-    'Funded': 'bg-white border-l-4 border-gray-500 shadow-lg hover:shadow-xl' // Gray accent - completed
+    'Proposal Out': 'bg-sky-50 border-2 border-sky-400 shadow-lg hover:shadow-xl text-gray-900', // Light sky background
+    'Counseling Scheduled': 'bg-blue-50 border-2 border-blue-500 shadow-lg hover:shadow-xl text-gray-900', // Light blue background
+    'Counseling In': 'bg-teal-50 border-2 border-teal-500 shadow-lg hover:shadow-xl text-gray-900', // Light teal background
+    'Docs Out': 'bg-yellow-50 border-2 border-yellow-500 shadow-lg hover:shadow-xl text-gray-900', // Light yellow background
+    'Docs In': 'bg-orange-50 border-2 border-orange-500 shadow-lg hover:shadow-xl text-gray-900', // Light orange background
+    'Submitted to Processing': 'bg-purple-50 border-2 border-purple-500 shadow-lg hover:shadow-xl text-gray-900', // Light purple background
+    'Appraisal Ordered': 'bg-pink-50 border-2 border-pink-500 shadow-lg hover:shadow-xl text-gray-900', // Light pink background
+    'Appraisal In': 'bg-fuchsia-50 border-2 border-fuchsia-500 shadow-lg hover:shadow-xl text-gray-900', // Light fuchsia background
+    'Submit to UW': 'bg-red-50 border-2 border-red-500 shadow-lg hover:shadow-xl text-gray-900', // Light red background
+    'Conditional Approval': 'bg-lime-50 border-2 border-lime-500 shadow-lg hover:shadow-xl text-gray-900', // Light lime background
+    'CTC': 'bg-green-50 border-2 border-green-500 shadow-lg hover:shadow-xl text-gray-900', // Light green background
+    'Funded': 'bg-gray-50 border-2 border-gray-500 shadow-lg hover:shadow-xl text-gray-900' // Light gray background - completed
   }
-  return styles[status] || 'bg-white border-l-4 border-gray-300 shadow-lg hover:shadow-xl'
+  return styles[status] || 'bg-white border-2 border-gray-300 shadow-lg hover:shadow-xl text-gray-900'
 }
 
 export default function NextStepCRM() {
@@ -469,7 +469,7 @@ export default function NextStepCRM() {
             const netProceeds = calculateNetProceeds(client.home_value, client.mortgage_balance, age)
             
             return (
-              <div key={client.id} className={`rounded-2xl p-6 transition-all transform hover:scale-105 border border-gray-100 ${getPipelineCardStyling(client.pipeline_status)}`}>
+              <div key={client.id} className={`rounded-2xl p-6 transition-all transform hover:scale-105 ${getPipelineCardStyling(client.pipeline_status)}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900">
