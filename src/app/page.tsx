@@ -63,23 +63,23 @@ const getPipelineStageColor = (status) => {
   return stage ? stage.color : 'bg-gray-100 border-gray-300 text-gray-800'
 }
 
-// Get dynamic glassmorphism styling based on pipeline status - MATCHING PIPELINE COLORS
+// Get clean card styling with pipeline-colored left border accent
 const getPipelineCardStyling = (status) => {
   const styles = {
-    'Proposal Out': 'bg-gradient-to-br from-sky-400/25 to-sky-600/15 border border-sky-300/40 backdrop-blur-lg', // Light blue
-    'Counseling Scheduled': 'bg-gradient-to-br from-blue-400/25 to-blue-600/15 border border-blue-300/40 backdrop-blur-lg', // Blue
-    'Counseling In': 'bg-gradient-to-br from-teal-400/25 to-teal-600/15 border border-teal-300/40 backdrop-blur-lg', // Teal
-    'Docs Out': 'bg-gradient-to-br from-yellow-400/25 to-yellow-600/15 border border-yellow-300/40 backdrop-blur-lg', // Yellow
-    'Docs In': 'bg-gradient-to-br from-orange-400/25 to-orange-600/15 border border-orange-300/40 backdrop-blur-lg', // Orange
-    'Submitted to Processing': 'bg-gradient-to-br from-purple-400/25 to-purple-600/15 border border-purple-300/40 backdrop-blur-lg', // Purple
-    'Appraisal Ordered': 'bg-gradient-to-br from-pink-400/25 to-pink-600/15 border border-pink-300/40 backdrop-blur-lg', // Pink
-    'Appraisal In': 'bg-gradient-to-br from-fuchsia-400/25 to-fuchsia-600/15 border border-fuchsia-300/40 backdrop-blur-lg', // Magenta
-    'Submit to UW': 'bg-gradient-to-br from-red-400/25 to-red-600/15 border border-red-300/40 backdrop-blur-lg', // Red
-    'Conditional Approval': 'bg-gradient-to-br from-lime-400/25 to-lime-600/15 border border-lime-300/40 backdrop-blur-lg', // Lime
-    'CTC': 'bg-gradient-to-br from-green-400/25 to-green-600/15 border border-green-300/40 backdrop-blur-lg', // Green
-    'Funded': 'bg-gradient-to-br from-gray-400/25 to-gray-600/15 border border-gray-300/40 backdrop-blur-lg' // Gray - completed
+    'Proposal Out': 'bg-white border-l-4 border-sky-400 shadow-lg hover:shadow-xl', // Light blue accent
+    'Counseling Scheduled': 'bg-white border-l-4 border-blue-500 shadow-lg hover:shadow-xl', // Blue accent
+    'Counseling In': 'bg-white border-l-4 border-teal-500 shadow-lg hover:shadow-xl', // Teal accent
+    'Docs Out': 'bg-white border-l-4 border-yellow-500 shadow-lg hover:shadow-xl', // Yellow accent
+    'Docs In': 'bg-white border-l-4 border-orange-500 shadow-lg hover:shadow-xl', // Orange accent
+    'Submitted to Processing': 'bg-white border-l-4 border-purple-500 shadow-lg hover:shadow-xl', // Purple accent
+    'Appraisal Ordered': 'bg-white border-l-4 border-pink-500 shadow-lg hover:shadow-xl', // Pink accent
+    'Appraisal In': 'bg-white border-l-4 border-fuchsia-500 shadow-lg hover:shadow-xl', // Magenta accent
+    'Submit to UW': 'bg-white border-l-4 border-red-500 shadow-lg hover:shadow-xl', // Red accent
+    'Conditional Approval': 'bg-white border-l-4 border-lime-500 shadow-lg hover:shadow-xl', // Lime accent
+    'CTC': 'bg-white border-l-4 border-green-500 shadow-lg hover:shadow-xl', // Green accent
+    'Funded': 'bg-white border-l-4 border-gray-500 shadow-lg hover:shadow-xl' // Gray accent - completed
   }
-  return styles[status] || 'bg-white/90 backdrop-blur-lg border border-white/30'
+  return styles[status] || 'bg-white border-l-4 border-gray-300 shadow-lg hover:shadow-xl'
 }
 
 export default function NextStepCRM() {
@@ -469,7 +469,7 @@ export default function NextStepCRM() {
             const netProceeds = calculateNetProceeds(client.home_value, client.mortgage_balance, age)
             
             return (
-              <div key={client.id} className={`rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 ${getPipelineCardStyling(client.pipeline_status)}`}>
+              <div key={client.id} className={`rounded-2xl p-6 transition-all transform hover:scale-105 border border-gray-100 ${getPipelineCardStyling(client.pipeline_status)}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900">
@@ -513,8 +513,8 @@ export default function NextStepCRM() {
                   </div>
 
                   {netProceeds > 0 && (
-                    <div className="bg-white/30 backdrop-blur-sm border border-green-300/40 rounded-xl p-3 shadow-lg">
-                      <span className="text-sm font-bold text-green-900 drop-shadow-sm">
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-3 shadow-sm">
+                      <span className="text-sm font-bold text-green-800">
                         Est. Net Proceeds: ${Math.round(netProceeds).toLocaleString()}
                       </span>
                     </div>
