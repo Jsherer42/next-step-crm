@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -18,7 +17,7 @@ const hecmPLFTable = {
 }
 
 export default function NextStepCRM() {
-  // Authentication state - fix TypeScript typing
+  // Authentication state - proper typing
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [authLoading, setAuthLoading] = useState(false)
@@ -600,6 +599,279 @@ export default function NextStepCRM() {
 
         {/* GHL Webhook Endpoint for automatic lead import */}
         {/* This endpoint receives leads from GHL when disposition = "Next Step CRM" */}
+
+        {/* Add Client Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-2xl font-bold text-gray-900">Add New Client</h3>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newClient.first_name}
+                      onChange={(e) => setNewClient({...newClient, first_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newClient.last_name}
+                      onChange={(e) => setNewClient({...newClient, last_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={newClient.email}
+                      onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={newClient.phone}
+                      onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={newClient.date_of_birth}
+                      onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                    <input
+                      type="number"
+                      value={newClient.home_value}
+                      onChange={(e) => setNewClient({...newClient, home_value: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-4 pt-6 border-t">
+                  <button
+                    onClick={() => setShowAddModal(false)}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddClient}
+                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white rounded-xl transition-all duration-200"
+                  >
+                    Add Client
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Client Modal */}
+        {showEditModal && selectedClient && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Edit Client: {selectedClient.first_name} {selectedClient.last_name}
+                </h3>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      value={selectedClient.first_name || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, first_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      value={selectedClient.last_name || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, last_name: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={selectedClient.email || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, email: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={selectedClient.phone || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, phone: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={selectedClient.date_of_birth || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, date_of_birth: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Home Value</label>
+                    <input
+                      type="number"
+                      value={selectedClient.home_value || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, home_value: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pipeline Status</label>
+                    <select
+                      value={selectedClient.pipeline_status || ''}
+                      onChange={(e) => setSelectedClient({...selectedClient, pipeline_status: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Lead Generated">Lead Generated</option>
+                      <option value="Initial Contact">Initial Contact</option>
+                      <option value="Application Started">Application Started</option>
+                      <option value="Application Submitted">Application Submitted</option>
+                      <option value="Under Review">Under Review</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Closed">Closed</option>
+                      <option value="GHL Import">GHL Import</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-4 pt-6 border-t">
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false)
+                      setSelectedClient(null)
+                    }}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white rounded-xl transition-all duration-200"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Client Modal */}
+        {viewingClient && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    {viewingClient.first_name} {viewingClient.last_name}
+                  </h3>
+                  <button
+                    onClick={() => setViewingClient(null)}
+                    className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <div className="space-y-6">
+                  {/* Basic Information */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">Basic Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><span className="font-medium text-gray-600">First Name:</span> <span className="text-gray-800">{viewingClient.first_name}</span></div>
+                      <div><span className="font-medium text-gray-600">Last Name:</span> <span className="text-gray-800">{viewingClient.last_name}</span></div>
+                      <div><span className="font-medium text-gray-600">Email:</span> <span className="text-gray-800">{viewingClient.email || 'Not provided'}</span></div>
+                      <div><span className="font-medium text-gray-600">Phone:</span> <span className="text-gray-800">{viewingClient.phone || 'Not provided'}</span></div>
+                      <div><span className="font-medium text-gray-600">Age:</span> <span className="text-gray-800">{calculateAge(viewingClient.date_of_birth) || 'Unknown'}</span></div>
+                      <div><span className="font-medium text-gray-600">Pipeline Status:</span> <span className="text-gray-800">{viewingClient.pipeline_status}</span></div>
+                    </div>
+                  </div>
+
+                  {/* Financial Information */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 text-gray-800 border-b border-gray-200 pb-2">Financial Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><span className="font-medium text-gray-600">Home Value:</span> <span className="text-gray-800">${(viewingClient.home_value || 0).toLocaleString()}</span></div>
+                      <div><span className="font-medium text-gray-600">Program Type:</span> <span className="text-gray-800">{viewingClient.program_type || 'Not selected'}</span></div>
+                      <div><span className="font-medium text-gray-600">Max Loan Amount:</span> <span className="text-gray-800">${calculateUPB(viewingClient.home_value, getYoungestAge(viewingClient), viewingClient.program_type).toLocaleString()}</span></div>
+                      <div><span className="font-medium text-gray-600">Est. Net Proceeds:</span> <span className="text-gray-800">${Math.max(0, calculateUPB(viewingClient.home_value, getYoungestAge(viewingClient), viewingClient.program_type) - (viewingClient.mortgage_balance || 0)).toLocaleString()}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Confirm Deletion</h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete this client? This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => setShowDeleteConfirm(null)}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClient(showDeleteConfirm)}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
