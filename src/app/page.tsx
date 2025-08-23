@@ -42,7 +42,7 @@ const locPLFTable = {
 }
 
 export default function NextStepCRM() {
-  // Authentication state
+  // Authentication state - SIMPLE FIX
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [authLoading, setAuthLoading] = useState(false)
@@ -124,7 +124,7 @@ export default function NextStepCRM() {
     }
   }
 
-  // Login function
+  // Login function - SIMPLE FIX
   const handleLogin = async (e) => {
     e.preventDefault()
     setAuthLoading(true)
@@ -160,7 +160,7 @@ export default function NextStepCRM() {
     }
   }
 
-  // Calculate age from date of birth
+  // Calculate age from date of birth - SIMPLE FIX
   const calculateAge = (dob) => {
     if (!dob) return null
     const birthDate = new Date(dob)
