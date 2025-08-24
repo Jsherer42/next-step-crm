@@ -391,7 +391,7 @@ export default function NextStepCRM() {
   const addClient = async () => {
     const { error } = await supabase
       .from('clients')
-      .insert([{ ...newClient, user_id: user.id }])
+      .insert([newClient]) // Remove user_id requirement
 
     if (error) {
       console.error('Error adding client:', error)
