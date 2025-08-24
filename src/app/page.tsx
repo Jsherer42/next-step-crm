@@ -388,10 +388,29 @@ export default function NextStepCRM() {
     }
   }
 
+  // Convert MM/DD/YYYY to YYYY-MM-DD for database
+  const convertDateForDatabase = (dateString) => {
+    if (!dateString) return null
+    
+    // Handle MM/DD/YYYY format
+    if (dateString.includes('/')) {
+      const [month, day, year] = dateString.split('/')
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    }
+    
+    return dateString // Already in correct format
+  }
+
   const addClient = async () => {
+    // Convert date format before saving
+    const clientData = {
+      ...newClient,
+      date_of_birth: convertDateForDatabase(newClient.date_of_birth)
+    }
+
     const { error } = await supabase
       .from('clients')
-      .insert([newClient]) // Remove user_id requirement
+      .insert([clientData])
 
     if (error) {
       console.error('Error adding client:', error)
@@ -859,10 +878,11 @@ export default function NextStepCRM() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
                   <input
-                    type="date"
+                    type="text"
                     value={newClient.date_of_birth}
                     onChange={(e) => setNewClient({ ...newClient, date_of_birth: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="MM/DD/YYYY (e.g., 05/05/1958)"
                   />
                 </div>
 
