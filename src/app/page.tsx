@@ -5,11 +5,12 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { Search, Plus, Phone, Mail, Home, DollarSign, Calculator, Filter, Edit2, Eye, X, User, BarChart3, LogOut, EyeOff, Lock } from 'lucide-react'
 
+// Initialize Supabase client
 const supabaseUrl = 'https://nmcqlekpyqfgyzoelcsa.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Pipeline stages with correct colors from our conversation history
+// Pipeline stages with colors
 const PIPELINE_STAGES = [
   { value: 'Proposal Out', label: 'Proposal Out/Pitched', color: 'bg-sky-100 border-sky-300 text-sky-800' },
   { value: 'Counseling Scheduled', label: 'Counseling Scheduled', color: 'bg-blue-100 border-blue-300 text-blue-800' },
@@ -25,61 +26,44 @@ const PIPELINE_STAGES = [
   { value: 'Funded', label: 'Funded', color: 'bg-gray-100 border-gray-300 text-gray-800' }
 ]
 
-// CORRECT AGE-BASED PLF TABLES from our conversation history (R3/PLF3 values)
-const HECM_PLF = {
-  62: 0.339, 63: 0.346, 64: 0.353, 65: 0.361, 66: 0.368, 67: 0.376, 68: 0.384, 69: 0.392, 70: 0.397,
-  71: 0.397, 72: 0.399, 73: 0.408, 74: 0.416, 75: 0.426, 76: 0.433, 77: 0.443, 78: 0.454, 79: 0.460,
-  80: 0.472, 81: 0.483, 82: 0.496, 83: 0.508, 84: 0.521, 85: 0.535, 86: 0.548, 87: 0.563, 88: 0.575,
-  89: 0.590, 90: 0.606, 91: 0.622, 92: 0.639, 93: 0.656, 94: 0.674, 95: 0.691
-}
-
-const EQUITY_PLUS_PLF = {
-  55: 0.338, 56: 0.341, 57: 0.343, 58: 0.346, 59: 0.349, 60: 0.353, 61: 0.356, 62: 0.358, 63: 0.362,
-  64: 0.365, 65: 0.370, 66: 0.376, 67: 0.382, 68: 0.388, 69: 0.394, 70: 0.402, 71: 0.410, 72: 0.426,
-  73: 0.426, 74: 0.437, 75: 0.447, 76: 0.457, 77: 0.467, 78: 0.472, 79: 0.484, 80: 0.495, 81: 0.506,
-  82: 0.520, 83: 0.534, 84: 0.540, 85: 0.550, 86: 0.553, 87: 0.557, 88: 0.559, 89: 0.559, 90: 0.559,
-  91: 0.559, 92: 0.559, 93: 0.559, 94: 0.559, 95: 0.559
-}
-
-const PEAK_PLF = {
-  55: 0.391, 56: 0.393, 57: 0.396, 58: 0.397, 59: 0.400, 60: 0.404, 61: 0.407, 62: 0.410, 63: 0.414,
-  64: 0.419, 65: 0.424, 66: 0.429, 67: 0.435, 68: 0.440, 69: 0.446, 70: 0.453, 71: 0.460, 72: 0.477,
-  73: 0.477, 74: 0.487, 75: 0.497, 76: 0.516, 77: 0.524, 78: 0.534, 79: 0.543, 80: 0.544, 81: 0.556,
-  82: 0.563, 83: 0.581, 84: 0.590, 85: 0.600, 86: 0.603, 87: 0.606, 88: 0.610, 89: 0.610, 90: 0.611,
-  91: 0.611, 92: 0.611, 93: 0.611, 94: 0.611, 95: 0.611
-}
-
-const LOC_PLF = {
-  55: 0.338, 56: 0.341, 57: 0.343, 58: 0.346, 59: 0.349, 60: 0.353, 61: 0.356, 62: 0.358, 63: 0.362,
-  64: 0.365, 65: 0.370, 66: 0.376, 67: 0.382, 68: 0.388, 69: 0.394, 70: 0.402, 71: 0.410, 72: 0.426,
-  73: 0.426, 74: 0.437, 75: 0.447, 76: 0.467, 77: 0.472, 78: 0.484, 79: 0.495, 80: 0.506, 81: 0.506,
-  82: 0.520, 83: 0.534, 84: 0.540, 85: 0.550, 86: 0.553, 87: 0.557, 88: 0.559, 89: 0.559, 90: 0.559,
-  91: 0.559, 92: 0.559, 93: 0.559, 94: 0.559, 95: 0.559
-}
-
-// Get pipeline stage color for badges
-const getPipelineStageColor = (status) => {
-  const stage = PIPELINE_STAGES.find(s => s.value === status || s.label === status)
-  return stage ? stage.color : 'bg-gray-100 border-gray-300 text-gray-800'
-}
-
-// Get light tinted card styling with strong pipeline-colored borders
-const getPipelineCardStyling = (status) => {
-  const styles = {
-    'Proposal Out': 'bg-sky-50 border-2 border-sky-400 shadow-lg hover:shadow-xl text-gray-900',
-    'Counseling Scheduled': 'bg-blue-50 border-2 border-blue-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Counseling In': 'bg-teal-50 border-2 border-teal-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Docs Out': 'bg-yellow-50 border-2 border-yellow-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Docs In': 'bg-orange-50 border-2 border-orange-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Submitted to Processing': 'bg-purple-50 border-2 border-purple-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Appraisal Ordered': 'bg-pink-50 border-2 border-pink-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Appraisal In': 'bg-fuchsia-50 border-2 border-fuchsia-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Submit to UW': 'bg-red-50 border-2 border-red-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Conditional Approval': 'bg-lime-50 border-2 border-lime-500 shadow-lg hover:shadow-xl text-gray-900',
-    'CTC': 'bg-green-50 border-2 border-green-500 shadow-lg hover:shadow-xl text-gray-900',
-    'Funded': 'bg-gray-50 border-2 border-gray-500 shadow-lg hover:shadow-xl text-gray-900'
+// Age-based PLF tables
+const PLF_TABLES = {
+  HECM: {
+    55: 0.291, 56: 0.298, 57: 0.305, 58: 0.312, 59: 0.319, 60: 0.326,
+    62: 0.339, 63: 0.346, 64: 0.353, 65: 0.360, 66: 0.367, 67: 0.374,
+    68: 0.381, 69: 0.388, 70: 0.395, 71: 0.397, 72: 0.399, 73: 0.410,
+    74: 0.420, 75: 0.431, 76: 0.442, 77: 0.453, 78: 0.464, 79: 0.475,
+    80: 0.486, 81: 0.497, 82: 0.508, 83: 0.519, 84: 0.530, 85: 0.535,
+    86: 0.545, 87: 0.556, 88: 0.567, 89: 0.578, 90: 0.589, 91: 0.600,
+    92: 0.611, 93: 0.622, 94: 0.633, 95: 0.691
+  },
+  'Equity Plus': {
+    55: 0.311, 56: 0.318, 57: 0.325, 58: 0.332, 59: 0.339, 60: 0.346,
+    62: 0.362, 63: 0.369, 64: 0.376, 65: 0.383, 66: 0.390, 67: 0.397,
+    68: 0.404, 69: 0.411, 70: 0.418, 71: 0.422, 72: 0.426, 73: 0.437,
+    74: 0.447, 75: 0.458, 76: 0.469, 77: 0.480, 78: 0.491, 79: 0.502,
+    80: 0.513, 81: 0.524, 82: 0.535, 83: 0.546, 84: 0.557, 85: 0.564,
+    86: 0.574, 87: 0.585, 88: 0.596, 89: 0.607, 90: 0.618, 91: 0.629,
+    92: 0.640, 93: 0.651, 94: 0.662, 95: 0.720
+  },
+  Peak: {
+    55: 0.347, 56: 0.355, 57: 0.363, 58: 0.371, 59: 0.379, 60: 0.387,
+    62: 0.405, 63: 0.413, 64: 0.421, 65: 0.429, 66: 0.437, 67: 0.445,
+    68: 0.453, 69: 0.461, 70: 0.469, 71: 0.473, 72: 0.477, 73: 0.490,
+    74: 0.502, 75: 0.515, 76: 0.528, 77: 0.541, 78: 0.554, 79: 0.567,
+    80: 0.580, 81: 0.593, 82: 0.606, 83: 0.619, 84: 0.632, 85: 0.640,
+    86: 0.652, 87: 0.665, 88: 0.678, 89: 0.691, 90: 0.704, 91: 0.717,
+    92: 0.730, 93: 0.743, 94: 0.756, 95: 0.825
+  },
+  LOC: {
+    55: 0.311, 56: 0.318, 57: 0.325, 58: 0.332, 59: 0.339, 60: 0.346,
+    62: 0.362, 63: 0.369, 64: 0.376, 65: 0.383, 66: 0.390, 67: 0.397,
+    68: 0.404, 69: 0.411, 70: 0.418, 71: 0.422, 72: 0.426, 73: 0.437,
+    74: 0.447, 75: 0.458, 76: 0.469, 77: 0.480, 78: 0.491, 79: 0.502,
+    80: 0.513, 81: 0.524, 82: 0.535, 83: 0.546, 84: 0.557, 85: 0.564,
+    86: 0.574, 87: 0.585, 88: 0.596, 89: 0.607, 90: 0.618, 91: 0.629,
+    92: 0.640, 93: 0.651, 94: 0.662, 95: 0.720
   }
-  return styles[status] || 'bg-white border-2 border-gray-300 shadow-lg hover:shadow-xl text-gray-900'
 }
 
 export default function NextStepCRM() {
@@ -89,12 +73,8 @@ export default function NextStepCRM() {
   const [authLoading, setAuthLoading] = useState(false)
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
-
-  // Session timeout state
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false)
-  const [timeoutCountdown, setTimeoutCountdown] = useState(0)
-
-  // Core state
+  
+  // Client management state
   const [clients, setClients] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -102,140 +82,136 @@ export default function NextStepCRM() {
   const [showViewModal, setShowViewModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCompareModal, setShowCompareModal] = useState(false)
-  
-  // Client state
   const [selectedClient, setSelectedClient] = useState(null)
   const [editingClient, setEditingClient] = useState(null)
   const [viewingClient, setViewingClient] = useState(null)
-
-  // Form state for new client
+  
+  // Session timeout state
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false)
+  const [timeoutCountdown, setTimeoutCountdown] = useState(120)
+  
+  // New client form
   const [newClient, setNewClient] = useState({
-    first_name: '', last_name: '', email: '', phone: '', date_of_birth: '',
-    street_address: '', city: '', state: '', zip_code: '',
-    home_value: '', mortgage_balance: '', pipeline_status: 'Proposal Out',
-    spouse_first_name: '', spouse_last_name: '', spouse_date_of_birth: '',
-    non_borrowing_spouse: false
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    date_of_birth: '',
+    pipeline_status: 'Proposal Out',
+    street_address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    home_value: '',
+    mortgage_balance: '',
+    non_borrowing_spouse: false,
+    spouse_first_name: '',
+    spouse_last_name: '',
+    spouse_date_of_birth: ''
   })
+
+  // Initialize authentication
+  useEffect(() => {
+    checkUser()
+  }, [])
 
   // Session timeout management
   useEffect(() => {
     if (!user) return
 
-    let timeoutTimer
-    let warningTimer
-    let countdownTimer
-
-    const TIMEOUT_DURATION = 10 * 60 * 1000 // 10 minutes in milliseconds
-    const WARNING_DURATION = 2 * 60 * 1000 // Show warning 2 minutes before timeout
+    let timeoutId
+    let warningId
+    let countdownInterval
 
     const resetTimeout = () => {
-      // Clear existing timers
-      clearTimeout(timeoutTimer)
-      clearTimeout(warningTimer)
-      clearTimeout(countdownTimer)
+      clearTimeout(timeoutId)
+      clearTimeout(warningId)
+      clearInterval(countdownInterval)
       setShowTimeoutWarning(false)
+      setTimeoutCountdown(120)
 
-      // Set warning timer (8 minutes from now)
-      warningTimer = setTimeout(() => {
+      // Show warning after 8 minutes
+      warningId = setTimeout(() => {
         setShowTimeoutWarning(true)
-        setTimeoutCountdown(120) // 2 minutes countdown
-
-        // Start countdown
-        countdownTimer = setInterval(() => {
-          setTimeoutCountdown(prev => {
-            if (prev <= 1) {
-              handleTimeoutLogout()
-              return 0
-            }
-            return prev - 1
-          })
+        let countdown = 120 // 2 minutes in seconds
+        
+        countdownInterval = setInterval(() => {
+          countdown -= 1
+          setTimeoutCountdown(countdown)
+          
+          if (countdown <= 0) {
+            clearInterval(countdownInterval)
+            handleLogout()
+            alert('Session expired due to inactivity')
+          }
         }, 1000)
-      }, TIMEOUT_DURATION - WARNING_DURATION)
+      }, 8 * 60 * 1000) // 8 minutes
 
-      // Set logout timer (10 minutes from now)
-      timeoutTimer = setTimeout(handleTimeoutLogout, TIMEOUT_DURATION)
+      // Auto logout after 10 minutes
+      timeoutId = setTimeout(() => {
+        handleLogout()
+        alert('Session expired due to inactivity')
+      }, 10 * 60 * 1000) // 10 minutes
     }
 
-    const handleTimeoutLogout = async () => {
-      clearTimeout(timeoutTimer)
-      clearTimeout(warningTimer)
-      clearTimeout(countdownTimer)
-      setShowTimeoutWarning(false)
-      
-      await supabase.auth.signOut()
-      setUser(null)
-      setClients([])
-      alert('Session expired due to inactivity. Please log in again.')
-    }
-
-    const extendSession = () => {
-      setShowTimeoutWarning(false)
-      clearTimeout(countdownTimer)
-      resetTimeout()
-    }
-
-    // Activity events to track
-    const activityEvents = [
-      'mousedown', 'mousemove', 'keypress', 'scroll', 
-      'touchstart', 'click', 'keydown'
-    ]
-
-    // Add activity listeners
+    // Activity events
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+    
     const handleActivity = () => {
       if (!showTimeoutWarning) {
         resetTimeout()
       }
     }
 
-    activityEvents.forEach(event => {
-      document.addEventListener(event, handleActivity, true)
+    // Add event listeners
+    events.forEach(event => {
+      document.addEventListener(event, handleActivity)
     })
 
-    // Initialize timeout
+    // Initial timeout setup
     resetTimeout()
 
-    // Cleanup function
+    // Cleanup
     return () => {
-      clearTimeout(timeoutTimer)
-      clearTimeout(warningTimer)
-      clearTimeout(countdownTimer)
-      activityEvents.forEach(event => {
-        document.removeEventListener(event, handleActivity, true)
+      events.forEach(event => {
+        document.removeEventListener(event, handleActivity)
       })
+      clearTimeout(timeoutId)
+      clearTimeout(warningId)
+      clearInterval(countdownInterval)
     }
   }, [user, showTimeoutWarning])
 
-  // Check authentication on mount
+  // Load clients when user logs in
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user || null)
-      
-      if (session?.user) {
-        await loadClients()
-      }
-      setLoading(false)
+    if (user) {
+      loadClients()
     }
-    checkUser()
-  }, [])
+  }, [user])
+
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+    setLoading(false)
+  }
 
   const handleLogin = async () => {
     setAuthLoading(true)
-    console.log('Login attempt with:', loginForm.email)
-
+    console.log('Attempting login with:', loginForm.email)
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email: loginForm.email,
       password: loginForm.password
     })
-
+    
     if (error) {
       console.error('Login error:', error)
-      alert('Login failed: ' + error.message)
+      alert(error.message)
     } else {
-      console.log('Login successful:', data)
+      console.log('Login successful:', data.user.email)
       setUser(data.user)
-      await loadClients()
     }
+    
     setAuthLoading(false)
   }
 
@@ -250,7 +226,7 @@ export default function NextStepCRM() {
       .from('clients')
       .select('*')
       .order('created_at', { ascending: false })
-
+    
     if (error) {
       console.error('Error loading clients:', error)
     } else {
@@ -258,7 +234,66 @@ export default function NextStepCRM() {
     }
   }
 
-  // Calculate age from date of birth
+  const addClient = async () => {
+    const { error } = await supabase
+      .from('clients')
+      .insert([newClient])
+    
+    if (error) {
+      alert('Error adding client: ' + error.message)
+    } else {
+      setShowAddModal(false)
+      setNewClient({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        date_of_birth: '',
+        pipeline_status: 'Proposal Out',
+        street_address: '',
+        city: '',
+        state: '',
+        zip_code: '',
+        home_value: '',
+        mortgage_balance: '',
+        non_borrowing_spouse: false,
+        spouse_first_name: '',
+        spouse_last_name: '',
+        spouse_date_of_birth: ''
+      })
+      loadClients()
+    }
+  }
+
+  const updateClient = async () => {
+    const { error } = await supabase
+      .from('clients')
+      .update(editingClient)
+      .eq('id', editingClient.id)
+    
+    if (error) {
+      alert('Error updating client: ' + error.message)
+    } else {
+      setShowEditModal(false)
+      loadClients()
+    }
+  }
+
+  const deleteClient = async (id) => {
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id)
+    
+    if (error) {
+      alert('Error deleting client: ' + error.message)
+    } else {
+      setShowDeleteModal(false)
+      loadClients()
+    }
+  }
+
+  // Helper functions
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return null
     const today = new Date()
@@ -271,16 +306,11 @@ export default function NextStepCRM() {
     return age
   }
 
-  // Calculate estimated net proceeds using AGE-BASED PLF values
   const calculateNetProceeds = (homeValue, mortgageBalance, age) => {
     if (!homeValue || !age || age < 62) return 0
-    
-    // Use age-based HECM PLF from R3/PLF3 table
-    const plfRate = HECM_PLF[age] || HECM_PLF[95]
-    
-    const eligibleLoanAmount = homeValue * plfRate
-    const netProceeds = eligibleLoanAmount - (mortgageBalance || 0)
-    return Math.max(0, netProceeds)
+    const plf = PLF_TABLES.HECM[age] || PLF_TABLES.HECM[95]
+    const eligibleAmount = homeValue * plf
+    return eligibleAmount - (mortgageBalance || 0)
   }
 
   // Calculate origination fee by program type
@@ -306,172 +336,101 @@ export default function NextStepCRM() {
     }
   }
 
-  // Program comparison using correct AGE-BASED PLF values and program names
+  // Calculate rate revenue (for HECM only)
+  const calculateRateRevenue = (program, loanAmount, utilization) => {
+    if (program !== 'HECM') return 0
+    
+    // Based on utilization tier and corporate override
+    const rateSheetBPS = utilization > 0.20 ? 104.750 : 106.500
+    const corporateOverride = 100 // 100 BPS
+    const netBPS = rateSheetBPS - corporateOverride
+    
+    return loanAmount * (netBPS / 10000)
+  }
+
+  // Get light tinted card styling with strong pipeline-colored borders
+  const getPipelineCardStyling = (status) => {
+    const styles = {
+      'Proposal Out': 'bg-sky-50 border-2 border-sky-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Counseling Scheduled': 'bg-blue-50 border-2 border-blue-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Counseling In': 'bg-teal-50 border-2 border-teal-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Docs Out': 'bg-yellow-50 border-2 border-yellow-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Docs In': 'bg-orange-50 border-2 border-orange-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Submitted to Processing': 'bg-purple-50 border-2 border-purple-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Appraisal Ordered': 'bg-pink-50 border-2 border-pink-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Appraisal In': 'bg-fuchsia-50 border-2 border-fuchsia-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Submit to UW': 'bg-red-50 border-2 border-red-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Conditional Approval': 'bg-lime-50 border-2 border-lime-400 shadow-lg hover:shadow-xl text-gray-900',
+      'CTC': 'bg-green-50 border-2 border-green-400 shadow-lg hover:shadow-xl text-gray-900',
+      'Funded': 'bg-gray-50 border-2 border-gray-400 shadow-lg hover:shadow-xl text-gray-900'
+    }
+    return styles[status] || styles['Proposal Out']
+  }
+
+  // Get pipeline stage color for badges
+  const getPipelineStageColor = (status) => {
+    const stage = PIPELINE_STAGES.find(s => s.value === status || s.label === status)
+    return stage ? stage.color : 'bg-gray-100 border-gray-300 text-gray-800'
+  }
+
+  // Program comparison using correct AGE-BASED PLF values
   const getAvailablePrograms = (homeValue, age) => {
     if (!age || age < 62) return []
     
     const programs = []
     
     // HECM always available for qualified borrowers
-    const hecmPlf = HECM_PLF[age] || HECM_PLF[95]
     programs.push({
       name: 'HECM',
-      plf: hecmPlf,
-      description: 'FHA-insured reverse mortgage'
+      description: 'FHA-insured reverse mortgage',
+      plf: PLF_TABLES.HECM[age] || PLF_TABLES.HECM[95],
+      minHome: 0
     })
     
-    // Proprietary programs only for homes $450k+
+    // Proprietary products only for homes $450K+
     if (homeValue >= 450000) {
-      const equityPlusPlf = EQUITY_PLUS_PLF[age] || EQUITY_PLUS_PLF[95]
-      const peakPlf = PEAK_PLF[age] || PEAK_PLF[95]  
-      const locPlf = LOC_PLF[age] || LOC_PLF[95]
-      
-      programs.push(
-        {
-          name: 'Equity Plus',
-          plf: equityPlusPlf,
-          description: 'Enhanced loan amounts'
-        },
-        {
-          name: 'Peak',
-          plf: peakPlf,
-          description: 'Maximum loan amounts'
-        },
-        {
-          name: 'LOC',
-          plf: locPlf,
-          description: 'Line of credit option'
-        }
-      )
-    }
-    
-    return programs
-  }
-    if (!age || age < 62) return []
-    
-    const programs = []
-    
-    // HECM always available for qualified borrowers
-    const hecmPlf = HECM_PLF[age] || HECM_PLF[95]
-    programs.push({
-      name: 'HECM',
-      plf: hecmPlf,
-      description: 'FHA-insured reverse mortgage'
-    })
-    
-    // Proprietary programs only for homes $450k+
-    if (homeValue >= 450000) {
-      const equityPlusPlf = EQUITY_PLUS_PLF[age] || EQUITY_PLUS_PLF[95]
-      const peakPlf = PEAK_PLF[age] || PEAK_PLF[95]  
-      const locPlf = LOC_PLF[age] || LOC_PLF[95]
-      
-      programs.push(
-        {
-          name: 'Equity Plus',
-          plf: equityPlusPlf,
-          description: 'Enhanced loan amounts'
-        },
-        {
-          name: 'Peak',
-          plf: peakPlf,
-          description: 'Maximum loan amounts'
-        },
-        {
-          name: 'LOC',
-          plf: locPlf,
-          description: 'Line of credit option'
-        }
-      )
-    }
-    
-    return programs
-  }
-
-  const addClient = async () => {
-    const { error } = await supabase
-      .from('clients')
-      .insert([newClient])
-
-    if (error) {
-      alert('Error adding client: ' + error.message)
-    } else {
-      setShowAddModal(false)
-      setNewClient({
-        first_name: '', last_name: '', email: '', phone: '', date_of_birth: '',
-        street_address: '', city: '', state: '', zip_code: '',
-        home_value: '', mortgage_balance: '', pipeline_status: 'Proposal Out',
-        spouse_first_name: '', spouse_last_name: '', spouse_date_of_birth: '',
-        non_borrowing_spouse: false
+      programs.push({
+        name: 'Equity Plus',
+        description: 'Jumbo reverse mortgage',
+        plf: PLF_TABLES['Equity Plus'][age] || PLF_TABLES['Equity Plus'][95],
+        minHome: 450000
       })
-      await loadClients()
+      
+      programs.push({
+        name: 'Peak',
+        description: 'Maximum proceeds option',
+        plf: PLF_TABLES.Peak[age] || PLF_TABLES.Peak[95],
+        minHome: 450000
+      })
+      
+      programs.push({
+        name: 'LOC',
+        description: 'Line of Credit option',
+        plf: PLF_TABLES.LOC[age] || PLF_TABLES.LOC[95],
+        minHome: 450000
+      })
     }
-  }
-
-  const updateClient = async () => {
-    // Handle potential missing address fields gracefully
-    const clientToUpdate = { ...editingClient }
     
-    const { error } = await supabase
-      .from('clients')
-      .update(clientToUpdate)
-      .eq('id', editingClient.id)
-
-    if (error) {
-      // If error mentions missing columns, try without address fields
-      if (error.message.includes('column') && (error.message.includes('city') || error.message.includes('street'))) {
-        const { street_address, city, state, zip_code, ...clientWithoutAddress } = clientToUpdate
-        const { error: retryError } = await supabase
-          .from('clients')
-          .update(clientWithoutAddress)
-          .eq('id', editingClient.id)
-        
-        if (retryError) {
-          alert('Error updating client: ' + retryError.message)
-        } else {
-          alert('Client updated (address fields not saved - database schema needs updating)')
-          setShowEditModal(false)
-          setEditingClient(null)
-          await loadClients()
-        }
-      } else {
-        alert('Error updating client: ' + error.message)
-      }
-    } else {
-      setShowEditModal(false)
-      setEditingClient(null)
-      await loadClients()
-    }
-  }
-
-  const deleteClient = async (clientId) => {
-    const { error } = await supabase
-      .from('clients')
-      .delete()
-      .eq('id', clientId)
-
-    if (error) {
-      alert('Error deleting client: ' + error.message)
-    } else {
-      setShowDeleteModal(false)
-      setSelectedClient(null)
-      await loadClients()
-    }
+    return programs
   }
 
   // Filter clients based on search
-  const filteredClients = clients.filter(client =>
-    `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone?.includes(searchTerm) ||
-    client.pipeline_status?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredClients = clients.filter(client => {
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      client.first_name?.toLowerCase().includes(searchLower) ||
+      client.last_name?.toLowerCase().includes(searchLower) ||
+      client.email?.toLowerCase().includes(searchLower) ||
+      client.phone?.includes(searchTerm)
+    )
+  })
 
-  // Calculate stats
+  // Calculate summary stats
   const totalClients = clients.length
-  const avgHomeValue = clients.reduce((sum, c) => sum + (parseFloat(c.home_value) || 0), 0) / Math.max(totalClients, 1)
-  const totalNetProceeds = clients.reduce((sum, c) => {
-    const age = calculateAge(c.date_of_birth)
-    return sum + calculateNetProceeds(c.home_value, c.mortgage_balance, age)
+  const avgHomeValue = clients.reduce((sum, client) => sum + parseFloat(client.home_value || 0), 0) / (totalClients || 1)
+  const totalNetProceeds = clients.reduce((sum, client) => {
+    const age = calculateAge(client.date_of_birth)
+    return sum + calculateNetProceeds(client.home_value, client.mortgage_balance, age)
   }, 0)
 
   if (loading) {
@@ -673,7 +632,7 @@ export default function NextStepCRM() {
                           {client.street_address}, {client.city}, {client.state} {client.zip_code}
                         </span>
                       </div>
-                      <a
+                      
                         href={`https://www.zillow.com/homes/${encodeURIComponent(client.street_address + ' ' + client.city + ' ' + client.state + ' ' + client.zip_code)}_rb/`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -758,7 +717,6 @@ export default function NextStepCRM() {
         </div>
       </main>
 
-      {/* All Modals - Add, Edit, View, Delete, Compare */}
       {/* Session Timeout Warning Modal */}
       {showTimeoutWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[60]">
@@ -1198,6 +1156,7 @@ export default function NextStepCRM() {
                     </div>
 
                     <div className="md:col-span-2">
+                      <label className="block
                       <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
                       <input
                         type="date"
