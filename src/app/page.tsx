@@ -388,17 +388,68 @@ export default function NextStepCRM() {
     }
   }
 
-  const addClient = async () => {
-    // Simple fix: remove date_of_birth if it's empty to avoid database error
-    const clientData = { ...newClient }
-    if (!clientData.date_of_birth || clientData.date_of_birth.trim() === '') {
-      delete clientData.date_of_birth // Remove empty date field
-    } else {
-      // Convert MM/DD/YYYY to YYYY-MM-DD
-      if (clientData.date_of_birth.includes('/')) {
-        const [month, day, year] = clientData.date_of_birth.split('/')
-        clientData.date_of_birth = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+  // Robust date converter - handles multiple formats
+  const convertDateForDatabase = (dateInput) => {
+    if (!dateInput || dateInput.trim() === '') return null
+    
+    try {
+      let date
+      
+      // Handle MM/DD/YYYY or M/D/YYYY
+      if (dateInput.includes('/')) {
+        const [month, day, year] = dateInput.split('/')
+        date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
       }
+      // Handle MM-DD-YYYY
+      else if (dateInput.includes('-') && dateInput.length <= 10) {
+        const parts = dateInput.split('-')
+        if (parts[0].length === 4) {
+          // YYYY-MM-DD format
+          date = new Date(dateInput)
+        } else {
+          // MM-DD-YYYY format
+          const [month, day, year] = parts
+          date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+        }
+      }
+      // Handle other formats - let JavaScript try to parse
+      else {
+        date = new Date(dateInput)
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return null
+      }
+      
+      // Return in YYYY-MM-DD format
+      const year = date.getFullYear()
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const day = date.getDate().toString().padStart(2, '0')
+      
+      return `${year}-${month}-${day}`
+      
+    } catch (error) {
+      console.error('Date conversion error:', error)
+      return null
+    }
+  }
+
+  const addClient = async () => {
+    // Convert date format before saving
+    const clientData = { ...newClient }
+    
+    // Handle date conversion
+    const convertedDate = convertDateForDatabase(clientData.date_of_birth)
+    if (convertedDate) {
+      clientData.date_of_birth = convertedDate
+    } else if (clientData.date_of_birth) {
+      // If date conversion failed but there was input, show error
+      alert('Please enter a valid date format (MM/DD/YYYY, MM-DD-YYYY, or YYYY-MM-DD)')
+      return
+    } else {
+      // Remove empty date field
+      delete clientData.date_of_birth
     }
 
     const { error } = await supabase
@@ -865,17 +916,6 @@ export default function NextStepCRM() {
                     value={newClient.phone}
                     onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-                  <input
-                    type="text"
-                    value={newClient.date_of_birth}
-                    onChange={(e) => setNewClient({ ...newClient, date_of_birth: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="MM/DD/YYYY (e.g., 05/05/1958)"
                   />
                 </div>
 
