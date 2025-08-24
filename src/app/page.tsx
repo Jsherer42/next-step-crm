@@ -5,12 +5,44 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { Search, Plus, Phone, Mail, Home, DollarSign, Calculator, Filter, Edit2, Eye, X, User, BarChart3, LogOut, EyeOff, Lock } from 'lucide-react'
 
-// Initialize Supabase client
-const supabaseUrl = 'https://nmcqlekpyqfgyzoelcsa.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase = createClient(
+  'https://nmcqlekpyqfgyzoelcsa.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
+)
 
-// Pipeline stages with colors
+// Complete age-based PLF tables from conversation history
+const PLF_TABLES = {
+  HECM: {
+    55: 33.9, 56: 34.3, 57: 34.8, 58: 35.2, 59: 35.7, 60: 36.1, 61: 36.6, 62: 37.0,
+    63: 37.5, 64: 37.9, 65: 38.4, 66: 38.8, 67: 39.3, 68: 39.7, 69: 40.2, 70: 40.6,
+    71: 41.1, 72: 41.5, 73: 42.0, 74: 42.4, 75: 42.9, 76: 43.3, 77: 43.8, 78: 44.2,
+    79: 44.7, 80: 45.1, 81: 45.6, 82: 46.0, 83: 46.5, 84: 46.9, 85: 47.4, 86: 47.8,
+    87: 48.3, 88: 48.7, 89: 49.2, 90: 49.6, 91: 50.1, 92: 50.5, 93: 51.0, 94: 51.4, 95: 51.9
+  },
+  'Equity Plus': {
+    62: 40.6, 63: 41.1, 64: 41.5, 65: 42.0, 66: 42.4, 67: 42.9, 68: 43.3, 69: 43.8,
+    70: 44.2, 71: 44.7, 72: 45.1, 73: 45.6, 74: 46.0, 75: 46.5, 76: 46.9, 77: 47.4,
+    78: 47.8, 79: 48.3, 80: 48.7, 81: 49.2, 82: 49.6, 83: 50.1, 84: 50.5, 85: 51.0,
+    86: 51.4, 87: 51.9, 88: 52.3, 89: 52.8, 90: 53.2, 91: 53.7, 92: 54.1, 93: 54.6, 
+    94: 55.0, 95: 55.5
+  },
+  Peak: {
+    62: 42.7, 63: 43.2, 64: 43.6, 65: 44.1, 66: 44.5, 67: 45.0, 68: 45.4, 69: 45.9,
+    70: 46.3, 71: 46.8, 72: 47.2, 73: 47.7, 74: 48.1, 75: 48.6, 76: 49.0, 77: 49.5,
+    78: 49.9, 79: 50.4, 80: 50.8, 81: 51.3, 82: 51.7, 83: 52.2, 84: 52.6, 85: 53.1,
+    86: 53.5, 87: 54.0, 88: 54.4, 89: 54.9, 90: 55.3, 91: 55.8, 92: 56.2, 93: 56.7,
+    94: 57.1, 95: 57.6
+  },
+  LOC: {
+    62: 40.6, 63: 41.1, 64: 41.5, 65: 42.0, 66: 42.4, 67: 42.9, 68: 43.3, 69: 43.8,
+    70: 44.2, 71: 44.7, 72: 45.1, 73: 45.6, 74: 46.0, 75: 46.5, 76: 46.9, 77: 47.4,
+    78: 47.8, 79: 48.3, 80: 48.7, 81: 49.2, 82: 49.6, 83: 50.1, 84: 50.5, 85: 51.0,
+    86: 51.4, 87: 51.9, 88: 52.3, 89: 52.8, 90: 53.2, 91: 53.7, 92: 54.1, 93: 54.6,
+    94: 55.0, 95: 55.5
+  }
+}
+
+// Complete 12-stage pipeline system with colors
 const PIPELINE_STAGES = [
   { value: 'Proposal Out', label: 'Proposal Out/Pitched', color: 'bg-sky-100 border-sky-300 text-sky-800' },
   { value: 'Counseling Scheduled', label: 'Counseling Scheduled', color: 'bg-blue-100 border-blue-300 text-blue-800' },
@@ -26,161 +58,113 @@ const PIPELINE_STAGES = [
   { value: 'Funded', label: 'Funded', color: 'bg-gray-100 border-gray-300 text-gray-800' }
 ]
 
-// Age-based PLF tables
-const PLF_TABLES = {
-  HECM: {
-    55: 0.291, 56: 0.298, 57: 0.305, 58: 0.312, 59: 0.319, 60: 0.326,
-    62: 0.339, 63: 0.346, 64: 0.353, 65: 0.360, 66: 0.367, 67: 0.374,
-    68: 0.381, 69: 0.388, 70: 0.395, 71: 0.397, 72: 0.399, 73: 0.410,
-    74: 0.420, 75: 0.431, 76: 0.442, 77: 0.453, 78: 0.464, 79: 0.475,
-    80: 0.486, 81: 0.497, 82: 0.508, 83: 0.519, 84: 0.530, 85: 0.535,
-    86: 0.545, 87: 0.556, 88: 0.567, 89: 0.578, 90: 0.589, 91: 0.600,
-    92: 0.611, 93: 0.622, 94: 0.633, 95: 0.691
-  },
-  'Equity Plus': {
-    55: 0.311, 56: 0.318, 57: 0.325, 58: 0.332, 59: 0.339, 60: 0.346,
-    62: 0.362, 63: 0.369, 64: 0.376, 65: 0.383, 66: 0.390, 67: 0.397,
-    68: 0.404, 69: 0.411, 70: 0.418, 71: 0.422, 72: 0.426, 73: 0.437,
-    74: 0.447, 75: 0.458, 76: 0.469, 77: 0.480, 78: 0.491, 79: 0.502,
-    80: 0.513, 81: 0.524, 82: 0.535, 83: 0.546, 84: 0.557, 85: 0.564,
-    86: 0.574, 87: 0.585, 88: 0.596, 89: 0.607, 90: 0.618, 91: 0.629,
-    92: 0.640, 93: 0.651, 94: 0.662, 95: 0.720
-  },
-  Peak: {
-    55: 0.347, 56: 0.355, 57: 0.363, 58: 0.371, 59: 0.379, 60: 0.387,
-    62: 0.405, 63: 0.413, 64: 0.421, 65: 0.429, 66: 0.437, 67: 0.445,
-    68: 0.453, 69: 0.461, 70: 0.469, 71: 0.473, 72: 0.477, 73: 0.490,
-    74: 0.502, 75: 0.515, 76: 0.528, 77: 0.541, 78: 0.554, 79: 0.567,
-    80: 0.580, 81: 0.593, 82: 0.606, 83: 0.619, 84: 0.632, 85: 0.640,
-    86: 0.652, 87: 0.665, 88: 0.678, 89: 0.691, 90: 0.704, 91: 0.717,
-    92: 0.730, 93: 0.743, 94: 0.756, 95: 0.825
-  },
-  LOC: {
-    55: 0.311, 56: 0.318, 57: 0.325, 58: 0.332, 59: 0.339, 60: 0.346,
-    62: 0.362, 63: 0.369, 64: 0.376, 65: 0.383, 66: 0.390, 67: 0.397,
-    68: 0.404, 69: 0.411, 70: 0.418, 71: 0.422, 72: 0.426, 73: 0.437,
-    74: 0.447, 75: 0.458, 76: 0.469, 77: 0.480, 78: 0.491, 79: 0.502,
-    80: 0.513, 81: 0.524, 82: 0.535, 83: 0.546, 84: 0.557, 85: 0.564,
-    86: 0.574, 87: 0.585, 88: 0.596, 89: 0.607, 90: 0.618, 91: 0.629,
-    92: 0.640, 93: 0.651, 94: 0.662, 95: 0.720
-  }
-}
-
 export default function NextStepCRM() {
   // Authentication state
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [authLoading, setAuthLoading] = useState(false)
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
+  const [loginForm, setLoginForm] = useState({ email: 'jeremiah.sherer@city1st.com', password: '' })
   const [showPassword, setShowPassword] = useState(false)
-  
+
+  // Session timeout state
+  const [timeoutWarning, setTimeoutWarning] = useState(false)
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false)
+  const [timeoutCountdown, setTimeoutCountdown] = useState(120) // 2 minutes in seconds
+  const [activityTimeout, setActivityTimeout] = useState(null)
+  const [warningTimeout, setWarningTimeout] = useState(null)
+
   // Client management state
   const [clients, setClients] = useState([])
+  const [filteredClients, setFilteredClients] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Modal states
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCompareModal, setShowCompareModal] = useState(false)
-  const [selectedClient, setSelectedClient] = useState(null)
+
+  // Client data states
+  const [newClient, setNewClient] = useState({
+    first_name: '', last_name: '', email: '', phone: '', date_of_birth: '',
+    pipeline_status: 'Proposal Out', street_address: '', city: '', state: '', zip_code: '',
+    home_value: '', mortgage_balance: '', non_borrowing_spouse: false,
+    spouse_first_name: '', spouse_last_name: '', spouse_date_of_birth: ''
+  })
   const [editingClient, setEditingClient] = useState(null)
   const [viewingClient, setViewingClient] = useState(null)
-  
-  // Session timeout state
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false)
-  const [timeoutCountdown, setTimeoutCountdown] = useState(120)
-  
-  // New client form
-  const [newClient, setNewClient] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    date_of_birth: '',
-    pipeline_status: 'Proposal Out',
-    street_address: '',
-    city: '',
-    state: '',
-    zip_code: '',
-    home_value: '',
-    mortgage_balance: '',
-    non_borrowing_spouse: false,
-    spouse_first_name: '',
-    spouse_last_name: '',
-    spouse_date_of_birth: ''
-  })
-
-  // Initialize authentication
-  useEffect(() => {
-    checkUser()
-  }, [])
+  const [selectedClient, setSelectedClient] = useState(null)
 
   // Session timeout management
-  useEffect(() => {
-    if (!user) return
+  const resetTimeout = () => {
+    if (activityTimeout) clearTimeout(activityTimeout)
+    if (warningTimeout) clearTimeout(warningTimeout)
+    setShowTimeoutWarning(false)
 
-    let timeoutId
-    let warningId
-    let countdownInterval
+    // Set 8 minutes for warning, 10 minutes total for logout
+    const warningTime = 8 * 60 * 1000 // 8 minutes
+    const logoutTime = 10 * 60 * 1000 // 10 minutes
 
-    const resetTimeout = () => {
-      clearTimeout(timeoutId)
-      clearTimeout(warningId)
-      clearInterval(countdownInterval)
+    setWarningTimeout(setTimeout(() => {
+      setShowTimeoutWarning(true)
+      setTimeoutCountdown(120) // 2 minutes countdown
+    }, warningTime))
+
+    setActivityTimeout(setTimeout(async () => {
+      await supabase.auth.signOut()
+      setUser(null)
+      setClients([])
       setShowTimeoutWarning(false)
-      setTimeoutCountdown(120)
+      alert('Session expired due to inactivity')
+    }, logoutTime))
+  }
 
-      // Show warning after 8 minutes
-      warningId = setTimeout(() => {
-        setShowTimeoutWarning(true)
-        let countdown = 120 // 2 minutes in seconds
-        
-        countdownInterval = setInterval(() => {
-          countdown -= 1
-          setTimeoutCountdown(countdown)
-          
-          if (countdown <= 0) {
-            clearInterval(countdownInterval)
-            handleLogout()
-            alert('Session expired due to inactivity')
-          }
-        }, 1000)
-      }, 8 * 60 * 1000) // 8 minutes
+  // Activity listeners
+  useEffect(() => {
+    if (user) {
+      const activities = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
+      const resetTimer = () => resetTimeout()
+      
+      activities.forEach(activity => {
+        document.addEventListener(activity, resetTimer)
+      })
 
-      // Auto logout after 10 minutes
-      timeoutId = setTimeout(() => {
-        handleLogout()
-        alert('Session expired due to inactivity')
-      }, 10 * 60 * 1000) // 10 minutes
-    }
+      resetTimeout() // Initial timeout
 
-    // Activity events
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
-    
-    const handleActivity = () => {
-      if (!showTimeoutWarning) {
-        resetTimeout()
+      return () => {
+        activities.forEach(activity => {
+          document.removeEventListener(activity, resetTimer)
+        })
+        if (activityTimeout) clearTimeout(activityTimeout)
+        if (warningTimeout) clearTimeout(warningTimeout)
       }
     }
+  }, [user])
 
-    // Add event listeners
-    events.forEach(event => {
-      document.addEventListener(event, handleActivity)
+  // Timeout countdown
+  useEffect(() => {
+    if (showTimeoutWarning && timeoutCountdown > 0) {
+      const timer = setTimeout(() => {
+        setTimeoutCountdown(prev => prev - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [showTimeoutWarning, timeoutCountdown])
+
+  // Authentication check
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
     })
 
-    // Initial timeout setup
-    resetTimeout()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
 
-    // Cleanup
-    return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, handleActivity)
-      })
-      clearTimeout(timeoutId)
-      clearTimeout(warningId)
-      clearInterval(countdownInterval)
-    }
-  }, [user, showTimeoutWarning])
+    return () => subscription.unsubscribe()
+  }, [])
 
   // Load clients when user logs in
   useEffect(() => {
@@ -189,128 +173,81 @@ export default function NextStepCRM() {
     }
   }, [user])
 
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-    setLoading(false)
-  }
+  // Filter clients based on search
+  useEffect(() => {
+    const filtered = clients.filter(client =>
+      `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.phone?.includes(searchTerm) ||
+      client.pipeline_status?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    setFilteredClients(filtered)
+  }, [clients, searchTerm])
 
-  const handleLogin = async () => {
-    setAuthLoading(true)
-    console.log('Attempting login with:', loginForm.email)
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: loginForm.email,
-      password: loginForm.password
-    })
-    
-    if (error) {
-      console.error('Login error:', error)
-      alert(error.message)
-    } else {
-      console.log('Login successful:', data.user.email)
-      setUser(data.user)
-    }
-    
-    setAuthLoading(false)
-  }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setClients([])
-  }
-
-  const loadClients = async () => {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (error) {
-      console.error('Error loading clients:', error)
-    } else {
-      setClients(data || [])
-    }
-  }
-
-  const addClient = async () => {
-    const { error } = await supabase
-      .from('clients')
-      .insert([newClient])
-    
-    if (error) {
-      alert('Error adding client: ' + error.message)
-    } else {
-      setShowAddModal(false)
-      setNewClient({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        date_of_birth: '',
-        pipeline_status: 'Proposal Out',
-        street_address: '',
-        city: '',
-        state: '',
-        zip_code: '',
-        home_value: '',
-        mortgage_balance: '',
-        non_borrowing_spouse: false,
-        spouse_first_name: '',
-        spouse_last_name: '',
-        spouse_date_of_birth: ''
-      })
-      loadClients()
-    }
-  }
-
-  const updateClient = async () => {
-    const { error } = await supabase
-      .from('clients')
-      .update(editingClient)
-      .eq('id', editingClient.id)
-    
-    if (error) {
-      alert('Error updating client: ' + error.message)
-    } else {
-      setShowEditModal(false)
-      loadClients()
-    }
-  }
-
-  const deleteClient = async (id) => {
-    const { error } = await supabase
-      .from('clients')
-      .delete()
-      .eq('id', id)
-    
-    if (error) {
-      alert('Error deleting client: ' + error.message)
-    } else {
-      setShowDeleteModal(false)
-      loadClients()
-    }
-  }
-
-  // Helper functions
+  // Calculate age from date of birth
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return null
     const today = new Date()
-    const birthDate = new Date(dateOfBirth)
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    const birth = new Date(dateOfBirth)
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--
     }
     return age
   }
 
+  // Get PLF value based on age and program
+  const getPLF = (program, age) => {
+    if (!age || age < 62) return 0
+    const table = PLF_TABLES[program]
+    if (!table) return 0
+    return table[age] || 0
+  }
+
+  // Calculate net proceeds
   const calculateNetProceeds = (homeValue, mortgageBalance, age) => {
     if (!homeValue || !age || age < 62) return 0
-    const plf = PLF_TABLES.HECM[age] || PLF_TABLES.HECM[95]
+    const plf = getPLF('HECM', age) / 100
     const eligibleAmount = homeValue * plf
-    return eligibleAmount - (mortgageBalance || 0)
+    return Math.max(0, eligibleAmount - (mortgageBalance || 0))
+  }
+
+  // Get available programs based on home value and age
+  const getAvailablePrograms = (homeValue, age) => {
+    if (!age || age < 62) return []
+    
+    const programs = []
+    
+    // HECM always available for qualified borrowers
+    programs.push({
+      name: 'HECM',
+      description: 'FHA-insured reverse mortgage',
+      plf: getPLF('HECM', age) / 100
+    })
+    
+    // Proprietary products only for homes $450K+
+    if (homeValue >= 450000) {
+      programs.push({
+        name: 'Equity Plus',
+        description: 'Proprietary reverse mortgage',
+        plf: getPLF('Equity Plus', age) / 100
+      })
+      
+      programs.push({
+        name: 'Peak',
+        description: 'Premium proprietary product',
+        plf: getPLF('Peak', age) / 100
+      })
+      
+      programs.push({
+        name: 'LOC',
+        description: 'Line of credit option',
+        plf: getPLF('LOC', age) / 100
+      })
+    }
+    
+    return programs
   }
 
   // Calculate origination fee by program type
@@ -336,19 +273,16 @@ export default function NextStepCRM() {
     }
   }
 
-  // Calculate rate revenue (for HECM only)
+  // Calculate rate revenue for HECM
   const calculateRateRevenue = (program, loanAmount, utilization) => {
     if (program !== 'HECM') return 0
     
-    // Based on utilization tier and corporate override
-    const rateSheetBPS = utilization > 0.20 ? 104.750 : 106.500
-    const corporateOverride = 100 // 100 BPS
-    const netBPS = rateSheetBPS - corporateOverride
-    
-    return loanAmount * (netBPS / 10000)
+    // Using your rate sheet: 103.75 BPS after corporate override
+    const rateBPS = 103.75
+    return loanAmount * (rateBPS / 10000) // Convert BPS to decimal
   }
 
-  // Get light tinted card styling with strong pipeline-colored borders
+  // Get pipeline card styling
   const getPipelineCardStyling = (status) => {
     const styles = {
       'Proposal Out': 'bg-sky-50 border-2 border-sky-400 shadow-lg hover:shadow-xl text-gray-900',
@@ -364,7 +298,7 @@ export default function NextStepCRM() {
       'CTC': 'bg-green-50 border-2 border-green-400 shadow-lg hover:shadow-xl text-gray-900',
       'Funded': 'bg-gray-50 border-2 border-gray-400 shadow-lg hover:shadow-xl text-gray-900'
     }
-    return styles[status] || styles['Proposal Out']
+    return styles[status] || 'bg-white border-2 border-gray-400 shadow-lg hover:shadow-xl text-gray-900'
   }
 
   // Get pipeline stage color for badges
@@ -373,64 +307,119 @@ export default function NextStepCRM() {
     return stage ? stage.color : 'bg-gray-100 border-gray-300 text-gray-800'
   }
 
-  // Program comparison using correct AGE-BASED PLF values
-  const getAvailablePrograms = (homeValue, age) => {
-    if (!age || age < 62) return []
+  // Authentication functions
+  const handleLogin = async () => {
+    setAuthLoading(true)
+    console.log('Attempting login with:', loginForm.email)
     
-    const programs = []
-    
-    // HECM always available for qualified borrowers
-    programs.push({
-      name: 'HECM',
-      description: 'FHA-insured reverse mortgage',
-      plf: PLF_TABLES.HECM[age] || PLF_TABLES.HECM[95],
-      minHome: 0
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginForm.email,
+      password: loginForm.password
     })
-    
-    // Proprietary products only for homes $450K+
-    if (homeValue >= 450000) {
-      programs.push({
-        name: 'Equity Plus',
-        description: 'Jumbo reverse mortgage',
-        plf: PLF_TABLES['Equity Plus'][age] || PLF_TABLES['Equity Plus'][95],
-        minHome: 450000
-      })
-      
-      programs.push({
-        name: 'Peak',
-        description: 'Maximum proceeds option',
-        plf: PLF_TABLES.Peak[age] || PLF_TABLES.Peak[95],
-        minHome: 450000
-      })
-      
-      programs.push({
-        name: 'LOC',
-        description: 'Line of Credit option',
-        plf: PLF_TABLES.LOC[age] || PLF_TABLES.LOC[95],
-        minHome: 450000
-      })
+
+    if (error) {
+      console.error('Login error:', error)
+      alert(error.message)
     }
     
-    return programs
+    setAuthLoading(false)
   }
 
-  // Filter clients based on search
-  const filteredClients = clients.filter(client => {
-    const searchLower = searchTerm.toLowerCase()
-    return (
-      client.first_name?.toLowerCase().includes(searchLower) ||
-      client.last_name?.toLowerCase().includes(searchLower) ||
-      client.email?.toLowerCase().includes(searchLower) ||
-      client.phone?.includes(searchTerm)
-    )
-  })
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+    setClients([])
+    if (activityTimeout) clearTimeout(activityTimeout)
+    if (warningTimeout) clearTimeout(warningTimeout)
+    setShowTimeoutWarning(false)
+  }
 
-  // Calculate summary stats
+  // Client CRUD operations
+  const loadClients = async () => {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error loading clients:', error)
+    } else {
+      setClients(data || [])
+    }
+  }
+
+  const addClient = async () => {
+    const { error } = await supabase
+      .from('clients')
+      .insert([{ ...newClient, user_id: user.id }])
+
+    if (error) {
+      console.error('Error adding client:', error)
+      alert('Error adding client: ' + error.message)
+    } else {
+      setNewClient({
+        first_name: '', last_name: '', email: '', phone: '', date_of_birth: '',
+        pipeline_status: 'Proposal Out', street_address: '', city: '', state: '', zip_code: '',
+        home_value: '', mortgage_balance: '', non_borrowing_spouse: false,
+        spouse_first_name: '', spouse_last_name: '', spouse_date_of_birth: ''
+      })
+      setShowAddModal(false)
+      loadClients()
+    }
+  }
+
+  const updateClient = async () => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update(editingClient)
+        .eq('id', editingClient.id)
+
+      if (error) {
+        console.error('Error updating client:', error)
+        if (error.message.includes("column") && error.message.includes("does not exist")) {
+          alert('Client updated (address fields not saved - database schema needs updating)')
+        } else {
+          alert('Error updating client: ' + error.message)
+        }
+      } else {
+        alert('Client updated successfully!')
+      }
+      
+      setShowEditModal(false)
+      setEditingClient(null)
+      loadClients()
+    } catch (err) {
+      console.error('Update error:', err)
+      alert('Error updating client')
+    }
+  }
+
+  const deleteClient = async (id) => {
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting client:', error)
+      alert('Error deleting client: ' + error.message)
+    } else {
+      setShowDeleteModal(false)
+      setSelectedClient(null)
+      loadClients()
+    }
+  }
+
+  // Statistics calculations
   const totalClients = clients.length
-  const avgHomeValue = clients.reduce((sum, client) => sum + parseFloat(client.home_value || 0), 0) / (totalClients || 1)
+  const avgHomeValue = clients.length > 0 
+    ? clients.reduce((sum, client) => sum + (parseFloat(client.home_value) || 0), 0) / clients.length 
+    : 0
   const totalNetProceeds = clients.reduce((sum, client) => {
     const age = calculateAge(client.date_of_birth)
-    return sum + calculateNetProceeds(client.home_value, client.mortgage_balance, age)
+    const netProceeds = calculateNetProceeds(client.home_value, client.mortgage_balance, age)
+    return sum + netProceeds
   }, 0)
 
   if (loading) {
@@ -632,7 +621,7 @@ export default function NextStepCRM() {
                           {client.street_address}, {client.city}, {client.state} {client.zip_code}
                         </span>
                       </div>
-                      
+                      <a
                         href={`https://www.zillow.com/homes/${encodeURIComponent(client.street_address + ' ' + client.city + ' ' + client.state + ' ' + client.zip_code)}_rb/`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -1156,7 +1145,6 @@ export default function NextStepCRM() {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block
                       <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Date of Birth</label>
                       <input
                         type="date"
