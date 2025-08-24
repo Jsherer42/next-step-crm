@@ -197,9 +197,24 @@ export default function NextStepCRM() {
     return age
   }
 
-  // Get PLF value based on age and program
+  // Get PLF value based on age and program - CORRECTED VALUES
   const getPLF = (program, age) => {
     if (!age || age < 62) return 0
+    
+    // HECM R3/PLF3 values at 6.375% rate
+    const HECM_PLF_R3 = {
+      62: 0.358, 63: 0.362, 64: 0.365, 65: 0.370, 66: 0.359, 67: 0.382, 68: 0.388,
+      69: 0.394, 70: 0.402, 71: 0.410, 72: 0.399, 73: 0.426, 74: 0.437, 75: 0.447,
+      76: 0.457, 77: 0.467, 78: 0.477, 79: 0.484, 80: 0.495, 81: 0.506, 82: 0.520,
+      83: 0.534, 84: 0.548, 85: 0.563, 86: 0.575, 87: 0.590, 88: 0.606, 89: 0.622,
+      90: 0.639, 91: 0.656, 92: 0.674, 93: 0.691, 94: 0.709, 95: 0.728
+    }
+    
+    if (program === 'HECM') {
+      return HECM_PLF_R3[age] || 0
+    }
+    
+    // Keep old tables for other programs (will fix these later)
     const table = PLF_TABLES[program]
     if (!table) return 0
     return table[age] || 0
@@ -273,13 +288,38 @@ export default function NextStepCRM() {
     }
   }
 
-  // Calculate rate revenue for HECM
-  const calculateRateRevenue = (program, loanAmount, utilization) => {
+  // Calculate rate revenue for HECM based on utilization
+  const calculateRateRevenue = (program, totalUPB, principalLimit) => {
     if (program !== 'HECM') return 0
     
-    // Using your rate sheet: 103.75 BPS after corporate override
-    const rateBPS = 103.75
-    return loanAmount * (rateBPS / 10000) // Convert BPS to decimal
+    const utilization = (totalUPB / principalLimit) * 100
+    
+    // Rate sheet BPS values at 2.5% margin minus 1.00% corporate override
+    let netBPS = 0
+    
+    if (utilization <= 10) {
+      netBPS = 110.375 // 111.375 - 1.00
+    } else if (utilization <= 20) {
+      netBPS = 107.375 // 108.375 - 1.00
+    } else if (utilization <= 30) {
+      netBPS = 106.000 // 107.000 - 1.00
+    } else if (utilization <= 40) {
+      netBPS = 104.875 // 105.875 - 1.00
+    } else if (utilization <= 50) {
+      netBPS = 104.125 // 105.125 - 1.00
+    } else if (utilization <= 60) {
+      netBPS = 104.125 // 105.125 - 1.00
+    } else if (utilization <= 70) {
+      netBPS = 103.375 // 104.375 - 1.00
+    } else if (utilization <= 80) {
+      netBPS = 103.125 // 104.125 - 1.00
+    } else if (utilization <= 90) {
+      netBPS = 102.875 // 103.875 - 1.00
+    } else {
+      netBPS = 102.625 // 103.625 - 1.00
+    }
+    
+    return totalUPB * (netBPS / 10000) // Convert BPS to decimal
   }
 
   // Get pipeline card styling
@@ -1325,67 +1365,93 @@ export default function NextStepCRM() {
                 })}
               </div>
 
-              {/* NEW PROFITABILITY SECTION */}
+              {/* NEW HECM PROFITABILITY SECTION */}
               <div className="border-t border-gray-200 pt-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">💰 Profitability Analysis</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-6">💰 HECM Profitability Analysis</h3>
                 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                  {getAvailablePrograms(selectedClient.home_value, calculateAge(selectedClient.date_of_birth)).map((program) => {
-                    const age = calculateAge(selectedClient.date_of_birth)
-                    const principalLimit = selectedClient.home_value * program.plf
-                    
-                    // Default utilization scenarios
-                    const utilizationScenarios = [0.60, 0.80] // 60% and 80%
-                    
-                    return (
-                      <div key={`profit-${program.name}`} className="bg-green-50 border border-green-200 rounded-xl p-4">
-                        <h4 className="text-lg font-semibold text-green-800 mb-4">{program.name} Profit</h4>
-                        
-                        {utilizationScenarios.map((utilization) => {
-                          const loanAmount = principalLimit * utilization
-                          const originationFee = calculateOriginationFee(program.name, selectedClient.home_value, loanAmount)
-                          const rateRevenue = calculateRateRevenue(program.name, loanAmount, utilization)
-                          const totalProfit = originationFee + rateRevenue
+                <div className="grid gap-6 md:grid-cols-1">
+                  {getAvailablePrograms(selectedClient.home_value, calculateAge(selectedClient.date_of_birth))
+                    .filter(program => program.name === 'HECM')
+                    .map((program) => {
+                      const age = calculateAge(selectedClient.date_of_birth)
+                      const disbursement = calculateHECMDisbursement(
+                        selectedClient.home_value, 
+                        selectedClient.mortgage_balance, 
+                        age
+                      )
+                      const rateRevenue = calculateRateRevenue('HECM', disbursement.totalUPB, disbursement.principalLimit)
+                      const utilization = ((disbursement.totalUPB / disbursement.principalLimit) * 100).toFixed(1)
+                      const totalProfit = disbursement.originationFee + rateRevenue
+                      
+                      return (
+                        <div key="hecm-profit" className="bg-green-50 border border-green-200 rounded-xl p-6">
+                          <h4 className="text-xl font-semibold text-green-800 mb-6">HECM Loan Breakdown</h4>
                           
-                          return (
-                            <div key={utilization} className="mb-4 p-3 bg-white rounded-lg border border-green-100">
-                              <div className="font-semibold text-green-700 mb-2">
-                                {(utilization * 100).toFixed(0)}% Utilization
-                              </div>
-                              
-                              <div className="space-y-1 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">UPB:</span>
-                                  <span className="font-medium">${Math.round(loanAmount).toLocaleString()}</span>
-                                </div>
-                                
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">Origination Fee:</span>
-                                  <span className="font-medium text-green-600">${Math.round(originationFee).toLocaleString()}</span>
-                                </div>
-                                
-                                {program.name === 'HECM' && (
+                          <div className="grid md:grid-cols-2 gap-6">
+                            {/* Left Column - Loan Details */}
+                            <div className="space-y-4">
+                              <div className="bg-white rounded-lg p-4 border border-green-100">
+                                <h5 className="font-semibold text-green-700 mb-3">Loan Structure</h5>
+                                <div className="space-y-2 text-sm">
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">Rate Revenue:</span>
-                                    <span className="font-medium text-green-600">${Math.round(rateRevenue).toLocaleString()}</span>
+                                    <span className="text-gray-600">Principal Limit:</span>
+                                    <span className="font-medium">${disbursement.principalLimit.toLocaleString()}</span>
                                   </div>
-                                )}
-                                
-                                <div className="flex justify-between border-t border-green-200 pt-1 mt-2">
-                                  <span className="font-semibold text-gray-900">Total Profit:</span>
-                                  <span className="font-bold text-green-700">${Math.round(totalProfit).toLocaleString()}</span>
-                                </div>
-                                
-                                <div className="text-xs text-green-600 text-center mt-1">
-                                  Available for Commission Split
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Cash Out:</span>
+                                    <span className="font-medium text-blue-600">${disbursement.cashOut.toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Line of Credit:</span>
+                                    <span className="font-medium text-purple-600">${disbursement.lineOfCredit.toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between border-t border-green-200 pt-2 mt-2">
+                                    <span className="font-semibold text-gray-900">Total UPB:</span>
+                                    <span className="font-bold text-green-700">${disbursement.totalUPB.toLocaleString()}</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })}
+
+                            {/* Right Column - Profitability */}
+                            <div className="space-y-4">
+                              <div className="bg-white rounded-lg p-4 border border-green-100">
+                                <h5 className="font-semibold text-green-700 mb-3">Revenue Breakdown</h5>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Origination Fee:</span>
+                                    <span className="font-medium text-green-600">${disbursement.originationFee.toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Utilization:</span>
+                                    <span className="font-medium text-blue-600">{utilization}%</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Rate Revenue (Net BPS):</span>
+                                    <span className="font-medium text-green-600">${Math.round(rateRevenue).toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between border-t border-green-200 pt-2 mt-2">
+                                    <span className="font-semibold text-gray-900">Total Profit:</span>
+                                    <span className="font-bold text-green-700">${Math.round(totalProfit).toLocaleString()}</span>
+                                  </div>
+                                  <div className="text-xs text-green-600 text-center mt-2 pt-2 border-t border-green-100">
+                                    Available for Commission Split
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                              <strong>Client gets:</strong> ${disbursement.cashOut.toLocaleString()} cash out + ${disbursement.lineOfCredit.toLocaleString()} line of credit
+                              <br />
+                              <strong>Lender profit:</strong> ${Math.round(totalProfit).toLocaleString()} available for commission split
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
                 </div>
               </div>
               
