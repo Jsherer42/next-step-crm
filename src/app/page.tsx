@@ -283,8 +283,70 @@ export default function NextStepCRM() {
     return Math.max(0, netProceeds)
   }
 
+  // Calculate origination fee by program type
+  const calculateOriginationFee = (program, homeValue, loanAmount) => {
+    switch(program) {
+      case 'HECM':
+        const mca = Math.min(homeValue, 1209750)
+        const first200k = Math.min(mca, 200000)
+        const over200k = Math.max(0, mca - 200000)
+        const basicFee = Math.max(2500, first200k * 0.02)
+        const additionalFee = over200k * 0.01
+        return Math.min(basicFee + additionalFee, 6000)
+      
+      case 'Peak':
+        return loanAmount * 0.04 // 4%
+      
+      case 'Equity Plus':
+      case 'LOC':
+        return loanAmount * 0.015 // 1.5%
+      
+      default:
+        return 0
+    }
+  }
+
   // Program comparison using correct AGE-BASED PLF values and program names
   const getAvailablePrograms = (homeValue, age) => {
+    if (!age || age < 62) return []
+    
+    const programs = []
+    
+    // HECM always available for qualified borrowers
+    const hecmPlf = HECM_PLF[age] || HECM_PLF[95]
+    programs.push({
+      name: 'HECM',
+      plf: hecmPlf,
+      description: 'FHA-insured reverse mortgage'
+    })
+    
+    // Proprietary programs only for homes $450k+
+    if (homeValue >= 450000) {
+      const equityPlusPlf = EQUITY_PLUS_PLF[age] || EQUITY_PLUS_PLF[95]
+      const peakPlf = PEAK_PLF[age] || PEAK_PLF[95]  
+      const locPlf = LOC_PLF[age] || LOC_PLF[95]
+      
+      programs.push(
+        {
+          name: 'Equity Plus',
+          plf: equityPlusPlf,
+          description: 'Enhanced loan amounts'
+        },
+        {
+          name: 'Peak',
+          plf: peakPlf,
+          description: 'Maximum loan amounts'
+        },
+        {
+          name: 'LOC',
+          plf: locPlf,
+          description: 'Line of credit option'
+        }
+      )
+    }
+    
+    return programs
+  }
     if (!age || age < 62) return []
     
     const programs = []
@@ -1265,7 +1327,7 @@ export default function NextStepCRM() {
       {/* Compare Programs Modal */}
       {showCompareModal && selectedClient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-screen overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -1279,7 +1341,8 @@ export default function NextStepCRM() {
                 </button>
               </div>
               
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Program Comparison Grid */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
                 {getAvailablePrograms(selectedClient.home_value, calculateAge(selectedClient.date_of_birth)).map((program) => {
                   const age = calculateAge(selectedClient.date_of_birth)
                   const eligibleAmount = selectedClient.home_value * program.plf
@@ -1314,11 +1377,75 @@ export default function NextStepCRM() {
                   )
                 })}
               </div>
+
+              {/* NEW PROFITABILITY SECTION */}
+              <div className="border-t border-gray-200 pt-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">💰 Profitability Analysis</h3>
+                
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                  {getAvailablePrograms(selectedClient.home_value, calculateAge(selectedClient.date_of_birth)).map((program) => {
+                    const age = calculateAge(selectedClient.date_of_birth)
+                    const principalLimit = selectedClient.home_value * program.plf
+                    
+                    // Default utilization scenarios
+                    const utilizationScenarios = [0.60, 0.80] // 60% and 80%
+                    
+                    return (
+                      <div key={`profit-${program.name}`} className="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <h4 className="text-lg font-semibold text-green-800 mb-4">{program.name} Profit</h4>
+                        
+                        {utilizationScenarios.map((utilization) => {
+                          const loanAmount = principalLimit * utilization
+                          const originationFee = calculateOriginationFee(program.name, selectedClient.home_value, loanAmount)
+                          const rateRevenue = calculateRateRevenue(program.name, loanAmount, utilization)
+                          const totalProfit = originationFee + rateRevenue
+                          
+                          return (
+                            <div key={utilization} className="mb-4 p-3 bg-white rounded-lg border border-green-100">
+                              <div className="font-semibold text-green-700 mb-2">
+                                {(utilization * 100).toFixed(0)}% Utilization
+                              </div>
+                              
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">UPB:</span>
+                                  <span className="font-medium">${Math.round(loanAmount).toLocaleString()}</span>
+                                </div>
+                                
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Origination Fee:</span>
+                                  <span className="font-medium text-green-600">${Math.round(originationFee).toLocaleString()}</span>
+                                </div>
+                                
+                                {program.name === 'HECM' && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Rate Revenue:</span>
+                                    <span className="font-medium text-green-600">${Math.round(rateRevenue).toLocaleString()}</span>
+                                  </div>
+                                )}
+                                
+                                <div className="flex justify-between border-t border-green-200 pt-1 mt-2">
+                                  <span className="font-semibold text-gray-900">Total Profit:</span>
+                                  <span className="font-bold text-green-700">${Math.round(totalProfit).toLocaleString()}</span>
+                                </div>
+                                
+                                <div className="text-xs text-green-600 text-center mt-1">
+                                  Available for Commission Split
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
               
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
                   <strong>Note:</strong> These are estimated calculations based on current rates and age-based PLF tables. 
-                  Actual loan amounts may vary based on interest rates, closing costs, and other factors.
+                  HECM rate revenue includes corporate 100 BPS override. Origination fees: HECM (2025 FHA), Peak (4%), Others (1.5%).
                   Age {calculateAge(selectedClient.date_of_birth)} client qualifies for {getAvailablePrograms(selectedClient.home_value, calculateAge(selectedClient.date_of_birth)).length} program(s).
                 </p>
               </div>
