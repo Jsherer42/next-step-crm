@@ -388,24 +388,17 @@ export default function NextStepCRM() {
     }
   }
 
-  // Convert MM/DD/YYYY to YYYY-MM-DD for database
-  const convertDateForDatabase = (dateString) => {
-    if (!dateString) return null
-    
-    // Handle MM/DD/YYYY format
-    if (dateString.includes('/')) {
-      const [month, day, year] = dateString.split('/')
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
-    }
-    
-    return dateString // Already in correct format
-  }
-
   const addClient = async () => {
-    // Convert date format before saving
-    const clientData = {
-      ...newClient,
-      date_of_birth: convertDateForDatabase(newClient.date_of_birth)
+    // Simple fix: remove date_of_birth if it's empty to avoid database error
+    const clientData = { ...newClient }
+    if (!clientData.date_of_birth || clientData.date_of_birth.trim() === '') {
+      delete clientData.date_of_birth // Remove empty date field
+    } else {
+      // Convert MM/DD/YYYY to YYYY-MM-DD
+      if (clientData.date_of_birth.includes('/')) {
+        const [month, day, year] = clientData.date_of_birth.split('/')
+        clientData.date_of_birth = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+      }
     }
 
     const { error } = await supabase
