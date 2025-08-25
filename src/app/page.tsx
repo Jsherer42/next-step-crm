@@ -11,16 +11,16 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export default function NextStepCRM() {
-  const [clients, setClients] = useState([])
-  const [filteredClients, setFilteredClients] = useState([])
+  const [clients, setClients] = useState<any[]>([])
+  const [filteredClients, setFilteredClients] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('All')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showCompareModal, setShowCompareModal] = useState(false)
-  const [selectedClient, setSelectedClient] = useState(null)
-  const [editingClient, setEditingClient] = useState({})
+  const [selectedClient, setSelectedClient] = useState<any>(null)
+  const [editingClient, setEditingClient] = useState<any>({})
   const [newClient, setNewClient] = useState({
     first_name: '',
     last_name: '',
