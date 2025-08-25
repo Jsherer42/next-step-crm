@@ -110,7 +110,7 @@ export default function NextStepCRM() {
     setFilteredClients(filtered)
   }
 
-  const calculateAge = (dateOfBirth) => {
+  const calculateAge = (dateOfBirth: string) => {
     if (!dateOfBirth) return null
     const today = new Date()
     const birth = new Date(dateOfBirth)
@@ -167,7 +167,7 @@ export default function NextStepCRM() {
     }
   }
 
-  const deleteClient = async (clientId) => {
+  const deleteClient = async (clientId: string) => {
     if (window.confirm('Are you sure you want to delete this client?')) {
       const { error } = await supabase
         .from('clients')
@@ -183,23 +183,23 @@ export default function NextStepCRM() {
     }
   }
 
-  const openEditModal = (client) => {
+  const openEditModal = (client: any) => {
     setEditingClient({ ...client })
     setShowEditModal(true)
   }
 
-  const openViewModal = (client) => {
+  const openViewModal = (client: any) => {
     setSelectedClient(client)
     setShowViewModal(true)
   }
 
-  const openCompareModal = (client) => {
+  const openCompareModal = (client: any) => {
     setSelectedClient(client)
     setShowCompareModal(true)
   }
 
   // Get PLF value based on age and program
-  const getPLF = (program, age) => {
+  const getPLF = (program: string, age: number) => {
     if (!age || age < 62) return 0
     
     // Age-based PLF values
@@ -224,7 +224,7 @@ export default function NextStepCRM() {
   }
 
   // Get available programs based on home value and age
-  const getAvailablePrograms = (homeValue, age) => {
+  const getAvailablePrograms = (homeValue: number, age: number) => {
     const programs = []
     
     if (age >= 62) {
@@ -241,7 +241,7 @@ export default function NextStepCRM() {
   }
 
   // Calculate loan amounts and proceeds
-  const calculateLoanDetails = (program, homeValue, currentMortgage, age) => {
+  const calculateLoanDetails = (program: string, homeValue: number, currentMortgage: number, age: number) => {
     const plf = getPLF(program, age)
     if (!plf) return null
     
