@@ -258,7 +258,7 @@ export default function NextStepCRM() {
       setClients(data || [])
     } catch (error) {
       console.error('Error loading clients:', error)
-      alert('Error loading clients. Please refresh the page.')
+      alert('Error loading clients Test. Please refresh the page.')
     }
   }
 
