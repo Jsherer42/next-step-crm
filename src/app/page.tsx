@@ -11,7 +11,7 @@ const supabase = createClient(
 )
 
 // Login Component
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin }: { onLogin: (userData: any) => void }) {
   const [email, setEmail] = useState('jeremiah.sherer@city1st.com')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
