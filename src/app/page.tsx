@@ -570,14 +570,14 @@ export default function NextStepCRM() {
         {/* Client Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => (
-            <div key={client.id} className="bg-white/80 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden hover:shadow-lg transition-all duration-200">
+            <div key={client.id} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden hover:bg-white/15 hover:shadow-2xl transition-all duration-300 shadow-xl">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-white">
                       {client.first_name} {client.last_name}
                     </h3>
-                    <p className="text-gray-600 text-sm">{client.phone}</p>
+                    <p className="text-slate-300 text-sm">{client.phone}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(client.pipeline_status)}`}>
                     {client.pipeline_status}
@@ -585,16 +585,16 @@ export default function NextStepCRM() {
                 </div>
                 
                 <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-slate-300">
                     <HomeIcon className="w-4 h-4" />
                     <span>${parseInt(client.home_value || 0).toLocaleString()}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-slate-300">
                     <DollarSign className="w-4 h-4" />
                     <span>Mortgage: ${parseInt(client.current_mortgage_balance || 0).toLocaleString()}</span>
                   </div>
                   {client.date_of_birth && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-slate-300">
                       <User className="w-4 h-4" />
                       <span>Age: {calculateAge(client.date_of_birth)}</span>
                     </div>
@@ -604,21 +604,21 @@ export default function NextStepCRM() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => openViewModal(client)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1 backdrop-blur-sm border border-white/10"
                   >
                     <Eye className="w-4 h-4" />
                     View
                   </button>
                   <button
                     onClick={() => openEditModal(client)}
-                    className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                    className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 hover:text-blue-200 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1 backdrop-blur-sm border border-blue-400/20"
                   >
                     <Edit2 className="w-4 h-4" />
                     Edit
                   </button>
                   <button
                     onClick={() => openCompareModal(client)}
-                    className="flex-1 bg-green-100 hover:bg-green-200 text-green-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                    className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 hover:text-green-200 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1 backdrop-blur-sm border border-green-400/20"
                   >
                     <Calculator className="w-4 h-4" />
                     Compare
@@ -631,9 +631,9 @@ export default function NextStepCRM() {
 
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
-            <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg">No clients found</p>
-            <p className="text-gray-500">Add your first client to get started</p>
+            <User className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-300 text-lg">No clients found</p>
+            <p className="text-slate-400">Add your first client to get started</p>
           </div>
         )}
       </main>
