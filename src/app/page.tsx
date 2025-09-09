@@ -7,8 +7,8 @@ import { Search, Plus, Phone, Mail, Home as HomeIcon, DollarSign, Calculator, Fi
 
 // Initialize Supabase
 const supabase = createClient(
-  'https://qyrbkwcmsnrtomndsojb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cmJrd2Ntc25ydG9tbmRzb2piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU4OTcyNjUsImV4cCI6MjA0MTQ3MzI2NX0.OZVkWEuUy3KJPyGOdHTL1gI2sB8hFv--EIQ8bbElJTI'
+  'https://nmcqlekpyqfgyzoelcsa.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3FsZWtweXFmZ3l6b2VsY3NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MzE5MjYsImV4cCI6MjA2OTUwNzkyNn0.SeBMt_beE7Dtab79PxEUW6-k_0Aprud0k79LbGVbCiA'
 )
 
 // Login Component
